@@ -16,19 +16,15 @@
   <body>
     <canvas id="bg"></canvas>
     <div class="overlay">
-      <h1 class="title" id="title"></h1>
-      <p class="description">Edit <span class="code">src/splash/splash.ts</span> to get started.</p>
-      <div class="counter-row">
-        <!-- Counter buttons removed. Value updated programmatically. -->
-        <span class="counter-value" id="counter-value">0</span>
+      <div class="instructions" id="instructions">
+        <p>Click to start • WASD to move • E to interact</p>
       </div>
-      <footer class="footer">
-        <div class="docs-link" tabindex="0" id="docs-link">Docs</div>
-        <span class="divider">|</span>
-        <div class="docs-link" tabindex="0" id="playtest-link">r/Devvit</div>
-        <span class="divider">|</span>
-        <div class="docs-link" tabindex="0" id="discord-link">Discord</div>
-      </footer>
+    </div>
+    <div id="popup" class="popup">
+      <div class="popup-content">
+        <div id="popup-text" class="popup-text"></div>
+        <button id="popup-close" class="popup-close">Close</button>
+      </div>
     </div>
     <script type="module" src="game/game.ts" defer></script>
   </body>
