@@ -11,8 +11,8 @@ if (!canvas) {
 }
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0d0d0d);
-scene.fog = new THREE.Fog(0x0d0d0d, 15, 60);
+scene.background = new THREE.Color(0x1a1a1a);
+scene.fog = new THREE.Fog(0x1a1a1a, 20, 70);
 
 // ============================================
 // 2.5D CAMERA - ANGLED SIDE VIEW
@@ -80,33 +80,44 @@ const scrollTexture = textureLoader.load(
 );
 
 // ============================================
-// LIGHTING - DIM, OPPRESSIVE, FLUORESCENT
+// LIGHTING - BRIGHTER BUT STILL ATMOSPHERIC
 // ============================================
-const ambientLight = new THREE.AmbientLight(0x302010, 0.3);
+const ambientLight = new THREE.AmbientLight(0x444444, 0.6);
 scene.add(ambientLight);
 
-// Dim overhead fluorescent lights (yellowish, sickly)
-const light1 = new THREE.PointLight(0xffeecc, 0.8, 30);
+// Brighter overhead fluorescent lights
+const light1 = new THREE.PointLight(0xffeecc, 1.5, 40);
 light1.position.set(-10, 10, 5);
 light1.castShadow = true;
 scene.add(light1);
 
-const light2 = new THREE.PointLight(0xffeecc, 0.6, 25);
+const light2 = new THREE.PointLight(0xffeecc, 1.3, 35);
 light2.position.set(10, 10, 5);
 light2.castShadow = true;
 scene.add(light2);
 
-const light3 = new THREE.PointLight(0xffddaa, 0.7, 25);
+const light3 = new THREE.PointLight(0xffddaa, 1.4, 35);
 light3.position.set(25, 12, 5);
 light3.castShadow = true;
 scene.add(light3);
 
+// Additional lights for better visibility
+const light4 = new THREE.PointLight(0xffeecc, 1.2, 35);
+light4.position.set(-25, 10, 5);
+light4.castShadow = true;
+scene.add(light4);
+
+const light5 = new THREE.PointLight(0xffeecc, 1.3, 35);
+light5.position.set(40, 10, 5);
+light5.castShadow = true;
+scene.add(light5);
+
 // Accent neon (sparse - just hints)
-const neonPink = new THREE.PointLight(0xff1a66, 1.5, 15);
+const neonPink = new THREE.PointLight(0xff1a66, 2, 20);
 neonPink.position.set(-15, 8, 8);
 scene.add(neonPink);
 
-const neonCyan = new THREE.PointLight(0x00ddff, 1.2, 15);
+const neonCyan = new THREE.PointLight(0x00ddff, 1.8, 20);
 neonCyan.position.set(30, 7, 8);
 scene.add(neonCyan);
 
