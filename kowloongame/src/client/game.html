@@ -7,7 +7,7 @@
       name="viewport"
       content="initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, width=device-width, height=device-height, user-scalable=0"
     />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="full-screen" content="yes" />
     <meta name="x5-fullscreen" content="true" />
     <meta name="360-fullscreen" content="true" />
@@ -17,8 +17,12 @@
     <canvas id="bg"></canvas>
     <div class="overlay">
       <div class="instructions" id="instructions">
-        <p>Click to start • WASD to move • E to interact</p>
+        <h1>KOWLOON BACKROOMS</h1>
+        <p>Click to start</p>
+        <p class="controls">A/D or Arrow Keys to move • W/Space to jump</p>
+        <p class="hint">Collect all 7 scrolls hidden in the Walled City...</p>
       </div>
+      <div class="scroll-counter" id="scroll-counter">SCROLLS: 0/7</div>
     </div>
     <div id="popup" class="popup">
       <div class="popup-content">
