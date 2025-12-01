@@ -2,13 +2,14 @@ import * as THREE from 'three';
 
 // ============================================
 // KOWLOON WALLED CITY
-// Neon-lit Streets & Eerie Interiors
+// Dense Cyberpunk Aesthetic
 // ============================================
 
 const canvas = document.getElementById('bg') as HTMLCanvasElement;
 if (!canvas) console.error('Canvas not found!');
 
 const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1a1025);
 
 const outdoorScene = new THREE.Group();
 const indoorScene = new THREE.Group();
@@ -20,11 +21,11 @@ indoorScene.visible = false;
 // CAMERA
 // ============================================
 const aspect = window.innerWidth / window.innerHeight;
-let viewSize = 15;
+let viewSize = 16;
 const camera = new THREE.OrthographicCamera(
   -viewSize * aspect, viewSize * aspect,
   viewSize, -viewSize,
-  0.1, 500
+  0.1, 300
 );
 
 // ============================================
@@ -35,101 +36,50 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio ?? 1, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 
 // ============================================
-// GAME STATE
+// STATE
 // ============================================
-interface GameState {
-  mode: 'outdoor' | 'indoor';
-  currentBuilding: number;
-  currentFloor: number;
-}
-
-const state: GameState = {
-  mode: 'outdoor',
+const state = {
+  mode: 'outdoor' as 'outdoor' | 'indoor',
   currentBuilding: -1,
   currentFloor: 0
 };
 
 // ============================================
-// COLORS - KOWLOON NEON PALETTE
-// ============================================
-const COLORS = {
-  sky: 0x0a0a15,
-  street: 0x1a1a1a,
-  sidewalk: 0x2a2a2a,
-  building: 0x252530,
-  window: 0x0a2040,
-  windowLit: 0xffcc55,
-  windowBlue: 0x3399ff,
-  windowGreen: 0x33ff99,
-  door: 0x553322,
-  neonPink: 0xff1155,
-  neonCyan: 0x00ffff,
-  neonGreen: 0x00ff66,
-  neonOrange: 0xff6600,
-  neonPurple: 0xaa00ff,
-  neonRed: 0xff0033,
-  neonYellow: 0xffff00,
-  floor: 0x3a3530,
-  floorAlt: 0x454035,
-  wall: 0x2a2520,
-  stairs: 0x228822,
-};
-
-// ============================================
-// OUTDOOR SCENE - KOWLOON STREET
+// OUTDOOR SCENE - KOWLOON ALLEY
 // ============================================
 
-// Dark ambient with colored fill
-const outdoorAmbient = new THREE.AmbientLight(0x223344, 0.4);
-outdoorScene.add(outdoorAmbient);
+// Good ambient light - can actually see stuff
+const ambient = new THREE.AmbientLight(0xffffff, 0.5);
+outdoorScene.add(ambient);
 
-// Dim moonlight
-const moonLight = new THREE.DirectionalLight(0x445566, 0.2);
-moonLight.position.set(-20, 30, 10);
-outdoorScene.add(moonLight);
+// Warm fill from neon
+const fillLight = new THREE.DirectionalLight(0xffccaa, 0.4);
+fillLight.position.set(-5, 10, 5);
+outdoorScene.add(fillLight);
 
-scene.background = new THREE.Color(COLORS.sky);
+// Cool fill from other side
+const fillLight2 = new THREE.DirectionalLight(0xaaccff, 0.3);
+fillLight2.position.set(5, 8, -5);
+outdoorScene.add(fillLight2);
 
-// Street
-const street = new THREE.Mesh(
-  new THREE.PlaneGeometry(250, 12),
-  new THREE.MeshStandardMaterial({ color: COLORS.street })
+// Ground - dark concrete alley
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(120, 25),
+  new THREE.MeshLambertMaterial({ color: 0x222222 })
 );
-street.rotation.x = -Math.PI / 2;
-street.position.set(0, 0, 0);
-outdoorScene.add(street);
+ground.rotation.x = -Math.PI / 2;
+outdoorScene.add(ground);
 
-// Wet street reflection effect
-const wetStreet = new THREE.Mesh(
-  new THREE.PlaneGeometry(250, 12),
-  new THREE.MeshStandardMaterial({ 
-    color: 0x111122, 
-    transparent: true, 
-    opacity: 0.3,
-    metalness: 0.8,
-    roughness: 0.2
-  })
-);
-wetStreet.rotation.x = -Math.PI / 2;
-wetStreet.position.set(0, 0.01, 0);
-outdoorScene.add(wetStreet);
-
-// Sidewalks
-const sidewalkFront = new THREE.Mesh(
-  new THREE.PlaneGeometry(250, 4),
-  new THREE.MeshStandardMaterial({ color: COLORS.sidewalk })
-);
-sidewalkFront.rotation.x = -Math.PI / 2;
-sidewalkFront.position.set(0, 0.05, 8);
-outdoorScene.add(sidewalkFront);
-
-const sidewalkBack = new THREE.Mesh(
-  new THREE.PlaneGeometry(250, 4),
-  new THREE.MeshStandardMaterial({ color: COLORS.sidewalk })
-);
-sidewalkBack.rotation.x = -Math.PI / 2;
-sidewalkBack.position.set(0, 0.05, -8);
-outdoorScene.add(sidewalkBack);
+// Puddles (reflective spots)
+for (let i = 0; i < 8; i++) {
+  const puddle = new THREE.Mesh(
+    new THREE.CircleGeometry(1 + Math.random() * 1.5, 16),
+    new THREE.MeshLambertMaterial({ color: 0x334455 })
+  );
+  puddle.rotation.x = -Math.PI / 2;
+  puddle.position.set(-30 + i * 9 + Math.random() * 4, 0.01, -3 + Math.random() * 6);
+  outdoorScene.add(puddle);
+}
 
 // ============================================
 // BUILDING DATA
@@ -137,562 +87,450 @@ outdoorScene.add(sidewalkBack);
 interface BuildingData {
   x: number;
   floors: number;
-  width: number;
-  side: 'front' | 'back';
-  doorX: number;
-  doorZ: number;
 }
 
 const buildingsData: BuildingData[] = [];
 
-function createKowloonBuilding(x: number, floors: number, width: number, side: 'front' | 'back'): number {
-  const height = floors * 2.8;
+// Create a dense Kowloon-style building
+function createBuilding(x: number, floors: number, side: 'left' | 'right'): number {
+  const width = 8 + Math.random() * 4;
+  const height = floors * 2.5;
+  const z = side === 'left' ? -10 : 10;
   const depth = 6;
-  const z = side === 'front' ? 13 : -13;
-  const faceZ = side === 'front' ? z - depth / 2 : z + depth / 2;
+
+  // Main building body - varied colors
+  const colors = [0x3a3540, 0x2d2832, 0x352d38, 0x2a2530];
+  const buildingColor = colors[Math.floor(Math.random() * colors.length)];
   
-  // Main building
   const building = new THREE.Mesh(
     new THREE.BoxGeometry(width, height, depth),
-    new THREE.MeshStandardMaterial({ color: COLORS.building })
+    new THREE.MeshLambertMaterial({ color: buildingColor })
   );
   building.position.set(x, height / 2, z);
   outdoorScene.add(building);
 
-  // Add grime/texture layers
-  const grime = new THREE.Mesh(
-    new THREE.BoxGeometry(width + 0.1, height + 0.1, depth + 0.1),
-    new THREE.MeshStandardMaterial({ 
-      color: 0x1a1a1a, 
-      transparent: true, 
-      opacity: 0.3 
-    })
-  );
-  grime.position.copy(building.position);
-  outdoorScene.add(grime);
+  // Layers of detail - pipes, AC units, balconies
+  const detailColor = 0x1a1a1a;
+  
+  // Vertical pipes
+  for (let p = 0; p < 3; p++) {
+    const pipe = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.08, 0.08, height, 6),
+      new THREE.MeshLambertMaterial({ color: detailColor })
+    );
+    pipe.position.set(x - width/2 + 0.5 + p * (width/2 - 0.5), height/2, z + (side === 'left' ? depth/2 + 0.1 : -depth/2 - 0.1));
+    outdoorScene.add(pipe);
+  }
 
-  // Windows with random lighting
+  // Horizontal pipes/wires
+  for (let h = 0; h < floors; h++) {
+    if (Math.random() > 0.5) {
+      const hPipe = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.04, 0.04, width * 0.8, 4),
+        new THREE.MeshLambertMaterial({ color: 0x111111 })
+      );
+      hPipe.rotation.z = Math.PI / 2;
+      hPipe.position.set(x, h * 2.5 + 1.5, z + (side === 'left' ? depth/2 + 0.2 : -depth/2 - 0.2));
+      outdoorScene.add(hPipe);
+    }
+  }
+
+  // AC units
+  for (let a = 0; a < floors - 1; a++) {
+    if (Math.random() > 0.4) {
+      const ac = new THREE.Mesh(
+        new THREE.BoxGeometry(1.2, 0.8, 0.5),
+        new THREE.MeshLambertMaterial({ color: 0x556666 })
+      );
+      ac.position.set(
+        x - width/2 + 1 + Math.random() * (width - 2),
+        a * 2.5 + 2,
+        z + (side === 'left' ? depth/2 + 0.3 : -depth/2 - 0.3)
+      );
+      outdoorScene.add(ac);
+    }
+  }
+
+  // Windows - lots of them, varied lighting
+  const faceZ = side === 'left' ? z + depth/2 + 0.01 : z - depth/2 - 0.01;
   for (let f = 0; f < floors; f++) {
-    const floorY = f * 2.8 + 1.8;
-    const windowsPerFloor = Math.floor(width / 2.5);
-    
-    for (let w = 0; w < windowsPerFloor; w++) {
-      const wx = x - width / 2 + 1.5 + w * 2.5;
+    const y = f * 2.5 + 1.5;
+    const numWindows = Math.floor(width / 2);
+    for (let w = 0; w < numWindows; w++) {
       const isLit = Math.random() > 0.3;
-      const litColor = [COLORS.windowLit, COLORS.windowBlue, COLORS.windowGreen][Math.floor(Math.random() * 3)];
+      const colors = [0xffdd77, 0xffaa55, 0x77ddff, 0xaaffaa, 0xffaaff];
+      const litColor = isLit ? colors[Math.floor(Math.random() * colors.length)] : 0x1a2535;
       
       const win = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.2, 1.6),
-        new THREE.MeshStandardMaterial({
-          color: isLit ? litColor : COLORS.window,
-          emissive: isLit ? litColor : 0,
-          emissiveIntensity: isLit ? 0.6 : 0
-        })
+        new THREE.PlaneGeometry(1, 1.5),
+        new THREE.MeshBasicMaterial({ color: litColor })
       );
-      win.position.set(wx, floorY, faceZ + (side === 'front' ? -0.01 : 0.01));
-      if (side === 'back') win.rotation.y = Math.PI;
+      win.position.set(x - width/2 + 1.2 + w * 2, y, faceZ);
+      if (side === 'right') win.rotation.y = Math.PI;
       outdoorScene.add(win);
-
+      
       // Window glow
-      if (isLit && Math.random() > 0.7) {
-        const glow = new THREE.PointLight(litColor, 0.3, 4);
-        glow.position.set(wx, floorY, faceZ + (side === 'front' ? -0.5 : 0.5));
+      if (isLit && Math.random() > 0.6) {
+        const glow = new THREE.PointLight(litColor, 0.3, 3);
+        glow.position.set(x - width/2 + 1.2 + w * 2, y, faceZ + (side === 'left' ? 0.5 : -0.5));
         outdoorScene.add(glow);
       }
     }
   }
 
-  // AC units scattered on facade
-  for (let i = 0; i < floors * 2; i++) {
-    const ac = new THREE.Mesh(
-      new THREE.BoxGeometry(0.8, 0.5, 0.4),
-      new THREE.MeshStandardMaterial({ color: 0x555555 })
+  // Neon signs - colorful and bright
+  if (Math.random() > 0.3) {
+    const neonColors = [0xff0066, 0x00ffff, 0xff6600, 0x00ff66, 0xff00ff, 0xffff00];
+    const neonColor = neonColors[Math.floor(Math.random() * neonColors.length)];
+    const signHeight = 2 + Math.random() * 4;
+    const signY = 3 + Math.random() * (height - 6);
+    const isVertical = Math.random() > 0.5;
+    
+    const sign = new THREE.Mesh(
+      isVertical 
+        ? new THREE.BoxGeometry(0.5, signHeight, 0.2)
+        : new THREE.BoxGeometry(3 + Math.random() * 2, 0.6, 0.2),
+      new THREE.MeshBasicMaterial({ color: neonColor })
     );
-    ac.position.set(
-      x - width / 2 + Math.random() * width,
-      1 + Math.random() * (height - 2),
-      faceZ + (side === 'front' ? -0.3 : 0.3)
-    );
-    outdoorScene.add(ac);
+    sign.position.set(x + (Math.random() - 0.5) * width * 0.5, signY, faceZ + (side === 'left' ? 0.3 : -0.3));
+    outdoorScene.add(sign);
+    
+    // Neon glow
+    const neonLight = new THREE.PointLight(neonColor, 1.5, 8);
+    neonLight.position.set(sign.position.x, sign.position.y, sign.position.z + (side === 'left' ? 1 : -1));
+    outdoorScene.add(neonLight);
   }
 
-  // Pipes running down
-  for (let p = 0; p < 2; p++) {
-    const pipe = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.08, 0.08, height, 6),
-      new THREE.MeshStandardMaterial({ color: 0x333333 })
+  // Door (only on left side buildings for entry)
+  if (side === 'left') {
+    const doorFrame = new THREE.Mesh(
+      new THREE.BoxGeometry(2.5, 3.5, 0.3),
+      new THREE.MeshLambertMaterial({ color: 0x442211 })
     );
-    pipe.position.set(
-      x - width / 2 + 0.5 + p * (width - 1),
-      height / 2,
-      faceZ + (side === 'front' ? -0.15 : 0.15)
+    doorFrame.position.set(x, 1.75, z + depth/2 + 0.2);
+    outdoorScene.add(doorFrame);
+    
+    const door = new THREE.Mesh(
+      new THREE.PlaneGeometry(2, 3),
+      new THREE.MeshBasicMaterial({ color: 0x663322 })
     );
-    outdoorScene.add(pipe);
+    door.position.set(x, 1.6, z + depth/2 + 0.35);
+    outdoorScene.add(door);
+    
+    // Door light
+    const doorLight = new THREE.PointLight(0xffaa66, 1, 5);
+    doorLight.position.set(x, 3.5, z + depth/2 + 1);
+    outdoorScene.add(doorLight);
+    
+    // ENTER sign
+    const enterSign = new THREE.Mesh(
+      new THREE.BoxGeometry(2.2, 0.4, 0.1),
+      new THREE.MeshBasicMaterial({ color: 0x00ff44 })
+    );
+    enterSign.position.set(x, 3.8, z + depth/2 + 0.4);
+    outdoorScene.add(enterSign);
+    
+    const enterGlow = new THREE.PointLight(0x00ff44, 0.8, 4);
+    enterGlow.position.set(x, 3.8, z + depth/2 + 1);
+    outdoorScene.add(enterGlow);
+    
+    buildingsData.push({ x, floors });
   }
-
-  // DOOR - clearly visible with glow
-  const doorZ2 = side === 'front' ? z - depth / 2 - 0.1 : z + depth / 2 + 0.1;
   
-  // Door frame
-  const doorFrame = new THREE.Mesh(
-    new THREE.BoxGeometry(3, 3.5, 0.3),
-    new THREE.MeshStandardMaterial({ color: 0x332211 })
-  );
-  doorFrame.position.set(x, 1.75, doorZ2);
-  outdoorScene.add(doorFrame);
-
-  // Door
-  const door = new THREE.Mesh(
-    new THREE.PlaneGeometry(2.2, 3),
-    new THREE.MeshStandardMaterial({ color: COLORS.door })
-  );
-  door.position.set(x, 1.5, doorZ2 + (side === 'front' ? -0.2 : 0.2));
-  if (side === 'back') door.rotation.y = Math.PI;
-  outdoorScene.add(door);
-
-  // Door light (warm glow)
-  const doorLight = new THREE.PointLight(0xffaa55, 1, 6);
-  doorLight.position.set(x, 3, doorZ2 + (side === 'front' ? -1 : 1));
-  outdoorScene.add(doorLight);
-
-  // "ENTER" indicator above door
-  const enterSign = new THREE.Mesh(
-    new THREE.PlaneGeometry(2, 0.5),
-    new THREE.MeshStandardMaterial({ 
-      color: 0x00ff00, 
-      emissive: 0x00ff00, 
-      emissiveIntensity: 0.8 
-    })
-  );
-  enterSign.position.set(x, 3.8, doorZ2 + (side === 'front' ? -0.3 : 0.3));
-  if (side === 'back') enterSign.rotation.y = Math.PI;
-  outdoorScene.add(enterSign);
-
-  const idx = buildingsData.length;
-  buildingsData.push({
-    x,
-    floors,
-    width,
-    side,
-    doorX: x,
-    doorZ: side === 'front' ? 8 : -8  // Position on sidewalk
-  });
-
-  return idx;
+  return buildingsData.length - 1;
 }
 
-// Add neon sign to building
-function addNeonSign(x: number, y: number, z: number, color: number, width: number, height: number, vertical: boolean = false) {
-  const sign = new THREE.Mesh(
-    new THREE.BoxGeometry(vertical ? 0.8 : width, vertical ? height : 0.8, 0.3),
-    new THREE.MeshStandardMaterial({ 
-      color, 
-      emissive: color, 
-      emissiveIntensity: 1.5 
-    })
-  );
-  sign.position.set(x, y, z);
-  outdoorScene.add(sign);
-  
-  // Strong glow
-  const glow = new THREE.PointLight(color, 2, 12);
-  glow.position.set(x, y, z + 0.5);
-  outdoorScene.add(glow);
+// Create dense building rows
+// Left side (enterable)
+createBuilding(-35, 12, 'left');
+createBuilding(-22, 16, 'left');
+createBuilding(-8, 10, 'left');
+createBuilding(6, 18, 'left');
+createBuilding(20, 14, 'left');
+createBuilding(34, 12, 'left');
 
-  // Reflection on ground
-  const reflection = new THREE.PointLight(color, 0.5, 8);
-  reflection.position.set(x, 0.1, z > 0 ? 5 : -5);
-  outdoorScene.add(reflection);
-}
+// Right side (backdrop)
+createBuilding(-30, 14, 'right');
+createBuilding(-16, 18, 'right');
+createBuilding(-2, 12, 'right');
+createBuilding(12, 16, 'right');
+createBuilding(26, 10, 'right');
+createBuilding(40, 14, 'right');
 
-// Create buildings - FRONT SIDE
-createKowloonBuilding(-40, 14, 12, 'front');
-createKowloonBuilding(-25, 18, 10, 'front');
-createKowloonBuilding(-12, 12, 11, 'front');
-createKowloonBuilding(2, 20, 12, 'front');
-createKowloonBuilding(16, 15, 10, 'front');
-createKowloonBuilding(30, 17, 12, 'front');
-createKowloonBuilding(45, 13, 11, 'front');
-
-// Create buildings - BACK SIDE
-createKowloonBuilding(-35, 16, 11, 'back');
-createKowloonBuilding(-20, 14, 10, 'back');
-createKowloonBuilding(-5, 19, 12, 'back');
-createKowloonBuilding(10, 11, 10, 'back');
-createKowloonBuilding(25, 18, 12, 'back');
-createKowloonBuilding(40, 15, 11, 'back');
-
-// NEON SIGNS - Lots of them!
-// Front buildings
-addNeonSign(-40, 10, 9.5, COLORS.neonPink, 4, 1);
-addNeonSign(-40, 18, 9.5, COLORS.neonCyan, 1, 6, true);
-addNeonSign(-25, 14, 9.5, COLORS.neonGreen, 3, 1);
-addNeonSign(-25, 8, 9.5, COLORS.neonOrange, 1, 4, true);
-addNeonSign(-12, 7, 9.5, COLORS.neonPurple, 4, 1);
-addNeonSign(2, 16, 9.5, COLORS.neonRed, 5, 1);
-addNeonSign(2, 10, 9.5, COLORS.neonCyan, 1, 8, true);
-addNeonSign(2, 6, 9.5, COLORS.neonYellow, 3, 1);
-addNeonSign(16, 12, 9.5, COLORS.neonPink, 4, 1);
-addNeonSign(30, 9, 9.5, COLORS.neonGreen, 1, 5, true);
-addNeonSign(30, 15, 9.5, COLORS.neonOrange, 4, 1);
-addNeonSign(45, 8, 9.5, COLORS.neonPurple, 3, 1);
-
-// Back buildings
-addNeonSign(-35, 12, -9.5, COLORS.neonCyan, 4, 1);
-addNeonSign(-20, 9, -9.5, COLORS.neonPink, 1, 5, true);
-addNeonSign(-5, 15, -9.5, COLORS.neonGreen, 5, 1);
-addNeonSign(-5, 8, -9.5, COLORS.neonRed, 1, 6, true);
-addNeonSign(10, 7, -9.5, COLORS.neonYellow, 3, 1);
-addNeonSign(25, 14, -9.5, COLORS.neonPurple, 4, 1);
-addNeonSign(25, 8, -9.5, COLORS.neonOrange, 1, 5, true);
-addNeonSign(40, 11, -9.5, COLORS.neonCyan, 4, 1);
-
-// Hanging wires between buildings
-for (let i = 0; i < 20; i++) {
+// Overhead wires/cables
+for (let i = 0; i < 15; i++) {
   const wire = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.02, 0.02, 8 + Math.random() * 6, 4),
-    new THREE.MeshStandardMaterial({ color: 0x111111 })
+    new THREE.CylinderGeometry(0.02, 0.02, 18, 4),
+    new THREE.MeshBasicMaterial({ color: 0x111111 })
   );
-  wire.position.set(-50 + i * 5, 10 + Math.random() * 15, 0);
-  wire.rotation.z = Math.PI / 2;
-  wire.rotation.y = (Math.random() - 0.5) * 0.3;
+  wire.position.set(-40 + i * 6, 8 + Math.random() * 10, 0);
+  wire.rotation.x = Math.PI / 2;
+  wire.rotation.z = (Math.random() - 0.5) * 0.3;
   outdoorScene.add(wire);
 }
 
-// Street lamps with flickering
-for (let i = -5; i <= 5; i++) {
-  const pole = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.08, 0.08, 4),
-    new THREE.MeshStandardMaterial({ color: 0x222222 })
-  );
-  pole.position.set(i * 12, 2, 5);
-  outdoorScene.add(pole);
-
-  const lamp = new THREE.Mesh(
-    new THREE.SphereGeometry(0.3, 8, 8),
-    new THREE.MeshStandardMaterial({ 
-      color: 0xffdd88, 
-      emissive: 0xffdd88, 
-      emissiveIntensity: 0.5 
+// Hanging laundry/flags
+for (let i = 0; i < 10; i++) {
+  const flag = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.8, 1.2),
+    new THREE.MeshBasicMaterial({ 
+      color: [0xff6666, 0x6666ff, 0xffff66, 0x66ff66][Math.floor(Math.random() * 4)],
+      side: THREE.DoubleSide
     })
   );
-  lamp.position.set(i * 12, 4.2, 5);
-  outdoorScene.add(lamp);
-
-  const light = new THREE.PointLight(0xffdd88, 0.6, 10);
-  light.position.set(i * 12, 4, 5);
-  outdoorScene.add(light);
+  flag.position.set(-35 + i * 8, 5 + Math.random() * 6, -5 + Math.random() * 10);
+  flag.rotation.y = Math.random() * 0.5;
+  outdoorScene.add(flag);
 }
 
-// Trash, debris
-for (let i = 0; i < 15; i++) {
-  const trash = new THREE.Mesh(
-    new THREE.BoxGeometry(0.3 + Math.random() * 0.3, 0.2, 0.3 + Math.random() * 0.3),
-    new THREE.MeshStandardMaterial({ color: 0x333322 })
+// Street lights
+for (let i = -3; i <= 3; i++) {
+  const pole = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.1, 0.12, 5, 6),
+    new THREE.MeshLambertMaterial({ color: 0x333333 })
   );
-  trash.position.set(-50 + Math.random() * 100, 0.1, -6 + Math.random() * 12);
-  trash.rotation.y = Math.random() * Math.PI;
-  outdoorScene.add(trash);
+  pole.position.set(i * 14, 2.5, 0);
+  outdoorScene.add(pole);
+  
+  const light = new THREE.PointLight(0xffffcc, 0.8, 12);
+  light.position.set(i * 14, 5.5, 0);
+  outdoorScene.add(light);
 }
 
 // ============================================
 // INDOOR SCENE
 // ============================================
-
-const indoorAmbient = new THREE.AmbientLight(0x222222, 0.3);
+const indoorAmbient = new THREE.AmbientLight(0xffffff, 0.4);
 indoorScene.add(indoorAmbient);
 
 let currentFloorGroup: THREE.Group | null = null;
 
 function createFloorView(buildingIdx: number, floor: number) {
-  if (currentFloorGroup) {
-    indoorScene.remove(currentFloorGroup);
-  }
+  if (currentFloorGroup) indoorScene.remove(currentFloorGroup);
 
   const bd = buildingsData[buildingIdx];
-  if (!bd) return { floorWidth: 28, floorDepth: 18, isTopFloor: false, isGroundFloor: true };
+  if (!bd) return { w: 30, d: 20, top: false, ground: true };
   
-  const floorGroup = new THREE.Group();
-  
-  const floorWidth = 28;
-  const floorDepth = 18;
-  const isTopFloor = floor === bd.floors - 1;
-  const isGroundFloor = floor === 0;
+  const group = new THREE.Group();
+  const w = 30, d = 20, wallH = 4;
+  const isTop = floor === bd.floors - 1;
+  const isGround = floor === 0;
 
-  // Floor tiles (checkered, grimy)
-  for (let tx = -7; tx <= 7; tx++) {
-    for (let tz = -4; tz <= 4; tz++) {
-      const isDark = (tx + tz) % 2 === 0;
+  // Floor with tiles
+  for (let x = -7; x <= 7; x++) {
+    for (let z = -5; z <= 5; z++) {
       const tile = new THREE.Mesh(
-        new THREE.BoxGeometry(1.9, 0.15, 1.9),
-        new THREE.MeshStandardMaterial({ 
-          color: isDark ? COLORS.floor : COLORS.floorAlt,
-          roughness: 0.9
+        new THREE.BoxGeometry(1.9, 0.1, 1.9),
+        new THREE.MeshLambertMaterial({ 
+          color: (x + z) % 2 === 0 ? 0x4a4540 : 0x555045 
         })
       );
-      tile.position.set(tx * 2, 0, tz * 2);
-      floorGroup.add(tile);
+      tile.position.set(x * 2, 0.05, z * 2);
+      group.add(tile);
     }
   }
 
   // Walls
-  const wallMat = new THREE.MeshStandardMaterial({ 
-    color: COLORS.wall, 
-    roughness: 0.95
-  });
-  const wallHeight = 3.5;
+  const wallMat = new THREE.MeshLambertMaterial({ color: 0x3a3530 });
+  
+  // Back
+  const back = new THREE.Mesh(new THREE.BoxGeometry(w, wallH, 0.3), wallMat);
+  back.position.set(0, wallH/2, -d/2);
+  group.add(back);
+  
+  // Sides
+  const left = new THREE.Mesh(new THREE.BoxGeometry(0.3, wallH, d), wallMat);
+  left.position.set(-w/2, wallH/2, 0);
+  group.add(left);
+  
+  const right = new THREE.Mesh(new THREE.BoxGeometry(0.3, wallH, d), wallMat);
+  right.position.set(w/2, wallH/2, 0);
+  group.add(right);
 
-  // Back wall
-  const backWall = new THREE.Mesh(
-    new THREE.BoxGeometry(floorWidth, wallHeight, 0.4), wallMat
-  );
-  backWall.position.set(0, wallHeight / 2, -floorDepth / 2);
-  floorGroup.add(backWall);
-
-  // Side walls
-  const leftWall = new THREE.Mesh(
-    new THREE.BoxGeometry(0.4, wallHeight, floorDepth), wallMat
-  );
-  leftWall.position.set(-floorWidth / 2, wallHeight / 2, 0);
-  floorGroup.add(leftWall);
-
-  const rightWall = new THREE.Mesh(
-    new THREE.BoxGeometry(0.4, wallHeight, floorDepth), wallMat
-  );
-  rightWall.position.set(floorWidth / 2, wallHeight / 2, 0);
-  floorGroup.add(rightWall);
-
-  // Front wall
-  if (isGroundFloor) {
-    // With door hole
-    const frontLeft = new THREE.Mesh(
-      new THREE.BoxGeometry(floorWidth / 2 - 2.5, wallHeight, 0.4), wallMat
+  // Front
+  if (isGround) {
+    const fl = new THREE.Mesh(new THREE.BoxGeometry(w/2 - 2.5, wallH, 0.3), wallMat);
+    fl.position.set(-w/4 - 1.25, wallH/2, d/2);
+    group.add(fl);
+    
+    const fr = new THREE.Mesh(new THREE.BoxGeometry(w/2 - 2.5, wallH, 0.3), wallMat);
+    fr.position.set(w/4 + 1.25, wallH/2, d/2);
+    group.add(fr);
+    
+    // EXIT
+    const exit = new THREE.Mesh(
+      new THREE.BoxGeometry(3, 0.5, 0.1),
+      new THREE.MeshBasicMaterial({ color: 0x00ff44 })
     );
-    frontLeft.position.set(-floorWidth / 4 - 1.25, wallHeight / 2, floorDepth / 2);
-    floorGroup.add(frontLeft);
-
-    const frontRight = new THREE.Mesh(
-      new THREE.BoxGeometry(floorWidth / 2 - 2.5, wallHeight, 0.4), wallMat
-    );
-    frontRight.position.set(floorWidth / 4 + 1.25, wallHeight / 2, floorDepth / 2);
-    floorGroup.add(frontRight);
-
-    // Door header
-    const doorHeader = new THREE.Mesh(
-      new THREE.BoxGeometry(5, wallHeight - 2.8, 0.4), wallMat
-    );
-    doorHeader.position.set(0, wallHeight - 0.35, floorDepth / 2);
-    floorGroup.add(doorHeader);
-
-    // EXIT sign
-    const exitSign = new THREE.Mesh(
-      new THREE.BoxGeometry(2, 0.5, 0.1),
-      new THREE.MeshStandardMaterial({ color: 0x00ff00, emissive: 0x00ff00, emissiveIntensity: 1 })
-    );
-    exitSign.position.set(0, 3, floorDepth / 2 - 0.3);
-    floorGroup.add(exitSign);
-
-    const exitLight = new THREE.PointLight(0x00ff00, 0.8, 5);
-    exitLight.position.set(0, 3, floorDepth / 2 - 1);
-    floorGroup.add(exitLight);
+    exit.position.set(0, wallH - 0.4, d/2 - 0.2);
+    group.add(exit);
+    
+    const exitGlow = new THREE.PointLight(0x00ff44, 1, 5);
+    exitGlow.position.set(0, wallH - 0.5, d/2 - 1);
+    group.add(exitGlow);
   } else {
-    const frontWall = new THREE.Mesh(
-      new THREE.BoxGeometry(floorWidth, wallHeight, 0.4), wallMat
-    );
-    frontWall.position.set(0, wallHeight / 2, floorDepth / 2);
-    floorGroup.add(frontWall);
+    const front = new THREE.Mesh(new THREE.BoxGeometry(w, wallH, 0.3), wallMat);
+    front.position.set(0, wallH/2, d/2);
+    group.add(front);
   }
 
-  // Grimy windows (show outside)
-  for (let i = -2; i <= 2; i++) {
-    const window1 = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.8, 2),
-      new THREE.MeshStandardMaterial({ 
-        color: 0x1a2030, 
-        emissive: 0x1a2030, 
-        emissiveIntensity: 0.1,
-        transparent: true,
-        opacity: 0.6
-      })
+  // STAIRS UP - bright green
+  if (!isTop) {
+    const up = new THREE.Mesh(
+      new THREE.BoxGeometry(4, 0.3, 4),
+      new THREE.MeshBasicMaterial({ color: 0x00cc44 })
     );
-    window1.position.set(i * 4, 2, -floorDepth / 2 + 0.25);
-    floorGroup.add(window1);
+    up.position.set(w/2 - 3, 0.2, -d/2 + 3);
+    group.add(up);
+    
+    const arrow = new THREE.Mesh(
+      new THREE.ConeGeometry(0.6, 1.5, 4),
+      new THREE.MeshBasicMaterial({ color: 0x00ff55 })
+    );
+    arrow.position.set(w/2 - 3, 1.5, -d/2 + 3);
+    group.add(arrow);
+    
+    const upLight = new THREE.PointLight(0x00ff44, 2, 6);
+    upLight.position.set(w/2 - 3, 1, -d/2 + 3);
+    group.add(upLight);
   }
 
-  // STAIRS UP (back-right) - green
-  if (!isTopFloor) {
-    const stairsUp = new THREE.Mesh(
-      new THREE.BoxGeometry(3.5, 0.4, 3.5),
-      new THREE.MeshStandardMaterial({ color: COLORS.stairs })
+  // STAIRS DOWN - bright orange
+  if (!isGround) {
+    const down = new THREE.Mesh(
+      new THREE.BoxGeometry(4, 0.3, 4),
+      new THREE.MeshBasicMaterial({ color: 0xcc6600 })
     );
-    stairsUp.position.set(floorWidth / 2 - 3, 0.25, -floorDepth / 2 + 3);
-    floorGroup.add(stairsUp);
-
-    const arrowUp = new THREE.Mesh(
-      new THREE.ConeGeometry(0.6, 1.2, 4),
-      new THREE.MeshStandardMaterial({ color: 0x00ff00, emissive: 0x00ff00, emissiveIntensity: 1 })
+    down.position.set(-w/2 + 3, 0.2, -d/2 + 3);
+    group.add(down);
+    
+    const arrow = new THREE.Mesh(
+      new THREE.ConeGeometry(0.6, 1.5, 4),
+      new THREE.MeshBasicMaterial({ color: 0xff8800 })
     );
-    arrowUp.position.set(floorWidth / 2 - 3, 1.5, -floorDepth / 2 + 3);
-    floorGroup.add(arrowUp);
-
-    const upLight = new THREE.PointLight(0x00ff00, 1.5, 6);
-    upLight.position.set(floorWidth / 2 - 3, 1.5, -floorDepth / 2 + 3);
-    floorGroup.add(upLight);
+    arrow.position.set(-w/2 + 3, 1.5, -d/2 + 3);
+    arrow.rotation.z = Math.PI;
+    group.add(arrow);
+    
+    const downLight = new THREE.PointLight(0xff8800, 2, 6);
+    downLight.position.set(-w/2 + 3, 1, -d/2 + 3);
+    group.add(downLight);
   }
 
-  // STAIRS DOWN (back-left) - orange
-  if (!isGroundFloor) {
-    const stairsDown = new THREE.Mesh(
-      new THREE.BoxGeometry(3.5, 0.4, 3.5),
-      new THREE.MeshStandardMaterial({ color: 0x886633 })
+  // ROOF - bright cyan (top floor only)
+  if (isTop) {
+    const roof = new THREE.Mesh(
+      new THREE.BoxGeometry(4, 0.3, 4),
+      new THREE.MeshBasicMaterial({ color: 0x0088cc })
     );
-    stairsDown.position.set(-floorWidth / 2 + 3, 0.25, -floorDepth / 2 + 3);
-    floorGroup.add(stairsDown);
-
-    const arrowDown = new THREE.Mesh(
-      new THREE.ConeGeometry(0.6, 1.2, 4),
-      new THREE.MeshStandardMaterial({ color: 0xff8800, emissive: 0xff8800, emissiveIntensity: 1 })
+    roof.position.set(w/2 - 3, 0.2, d/2 - 3);
+    group.add(roof);
+    
+    const arrow = new THREE.Mesh(
+      new THREE.ConeGeometry(0.6, 1.5, 4),
+      new THREE.MeshBasicMaterial({ color: 0x00ccff })
     );
-    arrowDown.position.set(-floorWidth / 2 + 3, 1.5, -floorDepth / 2 + 3);
-    arrowDown.rotation.z = Math.PI;
-    floorGroup.add(arrowDown);
-
-    const downLight = new THREE.PointLight(0xff8800, 1.5, 6);
-    downLight.position.set(-floorWidth / 2 + 3, 1.5, -floorDepth / 2 + 3);
-    floorGroup.add(downLight);
+    arrow.position.set(w/2 - 3, 1.5, d/2 - 3);
+    group.add(arrow);
+    
+    const roofLight = new THREE.PointLight(0x00ccff, 2, 6);
+    roofLight.position.set(w/2 - 3, 1, d/2 - 3);
+    group.add(roofLight);
   }
 
-  // ROOF ACCESS (top floor) - blue
-  if (isTopFloor) {
-    const roofAccess = new THREE.Mesh(
-      new THREE.BoxGeometry(3.5, 0.4, 3.5),
-      new THREE.MeshStandardMaterial({ color: 0x335588 })
-    );
-    roofAccess.position.set(floorWidth / 2 - 3, 0.25, floorDepth / 2 - 3);
-    floorGroup.add(roofAccess);
+  // Ceiling light
+  const ceilLight = new THREE.PointLight(0xffffee, 0.8, 25);
+  ceilLight.position.set(0, 3.5, 0);
+  group.add(ceilLight);
 
-    const roofArrow = new THREE.Mesh(
-      new THREE.ConeGeometry(0.6, 1.2, 4),
-      new THREE.MeshStandardMaterial({ color: 0x4488ff, emissive: 0x4488ff, emissiveIntensity: 1 })
+  // Some furniture
+  for (let i = 0; i < 5; i++) {
+    const f = new THREE.Mesh(
+      new THREE.BoxGeometry(1 + Math.random(), 0.6 + Math.random() * 0.4, 1 + Math.random()),
+      new THREE.MeshLambertMaterial({ color: 0x332820 })
     );
-    roofArrow.position.set(floorWidth / 2 - 3, 1.5, floorDepth / 2 - 3);
-    floorGroup.add(roofArrow);
-
-    const roofLight = new THREE.PointLight(0x4488ff, 1.5, 6);
-    roofLight.position.set(floorWidth / 2 - 3, 1.5, floorDepth / 2 - 3);
-    floorGroup.add(roofLight);
+    f.position.set(-10 + Math.random() * 20, 0.4, -6 + Math.random() * 12);
+    group.add(f);
   }
 
-  // Random eerie furniture
-  for (let i = 0; i < 6; i++) {
-    const furn = new THREE.Mesh(
-      new THREE.BoxGeometry(1 + Math.random(), 0.5 + Math.random() * 0.8, 1 + Math.random()),
-      new THREE.MeshStandardMaterial({ color: 0x3a2a1a })
-    );
-    furn.position.set(
-      -9 + Math.random() * 18,
-      0.4,
-      -5 + Math.random() * 10
-    );
-    floorGroup.add(furn);
-  }
-
-  // Flickering ceiling light
-  const ceilingLight = new THREE.PointLight(0xffffcc, 0.4, 20);
-  ceilingLight.position.set(0, 3, 0);
-  floorGroup.add(ceilingLight);
-
-  indoorScene.add(floorGroup);
-  currentFloorGroup = floorGroup;
-
-  return { floorWidth, floorDepth, isTopFloor, isGroundFloor };
+  indoorScene.add(group);
+  currentFloorGroup = group;
+  return { w, d, top: isTop, ground: isGround };
 }
 
 // ============================================
-// PLAYER WITH FLASHLIGHT
+// PLAYER
 // ============================================
 const playerGroup = new THREE.Group();
 
-const playerBody = new THREE.Mesh(
-  new THREE.CylinderGeometry(0.35, 0.35, 1.1, 12),
-  new THREE.MeshStandardMaterial({ color: 0x1a1a1a })
+const body = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.35, 0.4, 1.2, 10),
+  new THREE.MeshLambertMaterial({ color: 0x222222 })
 );
-playerBody.position.y = 0.55;
-playerGroup.add(playerBody);
+body.position.y = 0.6;
+playerGroup.add(body);
 
-const playerHead = new THREE.Mesh(
-  new THREE.SphereGeometry(0.3, 12, 12),
-  new THREE.MeshStandardMaterial({ color: 0xeeddcc })
+const head = new THREE.Mesh(
+  new THREE.SphereGeometry(0.3, 10, 10),
+  new THREE.MeshLambertMaterial({ color: 0xeeddcc })
 );
-playerHead.position.y = 1.3;
-playerGroup.add(playerHead);
+head.position.y = 1.3;
+playerGroup.add(head);
 
-// Direction cone
-const dirMarker = new THREE.Mesh(
-  new THREE.ConeGeometry(0.15, 0.3, 4),
-  new THREE.MeshStandardMaterial({ color: 0xff0066, emissive: 0xff0066, emissiveIntensity: 0.8 })
+// Direction marker
+const dir = new THREE.Mesh(
+  new THREE.ConeGeometry(0.15, 0.35, 4),
+  new THREE.MeshBasicMaterial({ color: 0xff0066 })
 );
-dirMarker.position.set(0, 1.3, 0.4);
-dirMarker.rotation.x = Math.PI / 2;
-playerGroup.add(dirMarker);
+dir.position.set(0, 1.3, 0.45);
+dir.rotation.x = Math.PI / 2;
+playerGroup.add(dir);
 
-// Shadow
-const shadow = new THREE.Mesh(
-  new THREE.CircleGeometry(0.45, 16),
-  new THREE.MeshStandardMaterial({ color: 0x000000, transparent: true, opacity: 0.4 })
+// Flashlight
+const flash = new THREE.SpotLight(0xffffee, 4, 18, Math.PI / 5, 0.3, 1);
+flash.position.set(0, 1, 0.3);
+flash.target.position.set(0, 0, 8);
+playerGroup.add(flash);
+playerGroup.add(flash.target);
+
+// Flashlight visible part
+const flashBody = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.06, 0.08, 0.2, 6),
+  new THREE.MeshBasicMaterial({ color: 0x444444 })
 );
-shadow.rotation.x = -Math.PI / 2;
-shadow.position.y = 0.02;
-playerGroup.add(shadow);
+flashBody.position.set(0.22, 0.9, 0.35);
+flashBody.rotation.x = Math.PI / 2;
+playerGroup.add(flashBody);
 
-// FLASHLIGHT
-const flashlight = new THREE.SpotLight(0xffffee, 3, 15, Math.PI / 6, 0.3, 1);
-flashlight.position.set(0, 1, 0.3);
-flashlight.target.position.set(0, 0, 5);
-playerGroup.add(flashlight);
-playerGroup.add(flashlight.target);
-
-// Flashlight beam visual
-const beamGeo = new THREE.ConeGeometry(0.08, 0.3, 8);
-const beamMat = new THREE.MeshStandardMaterial({ 
-  color: 0xffffaa, 
-  emissive: 0xffffaa, 
-  emissiveIntensity: 0.5 
-});
-const flashlightMesh = new THREE.Mesh(beamGeo, beamMat);
-flashlightMesh.position.set(0.25, 0.8, 0.3);
-flashlightMesh.rotation.x = Math.PI / 2;
-playerGroup.add(flashlightMesh);
+// Player light
+const playerLight = new THREE.PointLight(0xffffee, 0.5, 5);
+playerLight.position.set(0, 1, 0);
+playerGroup.add(playerLight);
 
 playerGroup.position.set(0, 0.1, 0);
 outdoorScene.add(playerGroup);
 
-const player = {
-  x: 0,
-  z: 0,
-  facing: 0,
-  speed: 0.22
-};
+const player = { x: 0, z: 0, facing: 0, speed: 0.25 };
 
 // ============================================
 // INPUT
 // ============================================
-const keys = { left: false, right: false, forward: false, backward: false, interact: false };
+const keys = { left: false, right: false, up: false, down: false, action: false };
 
-window.addEventListener('keydown', (e) => {
+window.addEventListener('keydown', e => {
   if (e.code === 'KeyA' || e.code === 'ArrowLeft') keys.left = true;
   if (e.code === 'KeyD' || e.code === 'ArrowRight') keys.right = true;
-  if (e.code === 'KeyW' || e.code === 'ArrowUp') keys.forward = true;
-  if (e.code === 'KeyS' || e.code === 'ArrowDown') keys.backward = true;
-  if (e.code === 'KeyE' || e.code === 'Space') keys.interact = true;
+  if (e.code === 'KeyW' || e.code === 'ArrowUp') keys.up = true;
+  if (e.code === 'KeyS' || e.code === 'ArrowDown') keys.down = true;
+  if (e.code === 'KeyE' || e.code === 'Space') keys.action = true;
 });
 
-window.addEventListener('keyup', (e) => {
+window.addEventListener('keyup', e => {
   if (e.code === 'KeyA' || e.code === 'ArrowLeft') keys.left = false;
   if (e.code === 'KeyD' || e.code === 'ArrowRight') keys.right = false;
-  if (e.code === 'KeyW' || e.code === 'ArrowUp') keys.forward = false;
-  if (e.code === 'KeyS' || e.code === 'ArrowDown') keys.backward = false;
-  if (e.code === 'KeyE' || e.code === 'Space') keys.interact = false;
+  if (e.code === 'KeyW' || e.code === 'ArrowUp') keys.up = false;
+  if (e.code === 'KeyS' || e.code === 'ArrowDown') keys.down = false;
+  if (e.code === 'KeyE' || e.code === 'Space') keys.action = false;
 });
 
 // ============================================
@@ -704,232 +542,150 @@ const popup = document.getElementById('popup') as HTMLDivElement;
 const popupText = document.getElementById('popup-text') as HTMLDivElement;
 const popupClose = document.getElementById('popup-close') as HTMLButtonElement;
 
-let hasStarted = false;
-let interactCooldown = 0;
+let started = false;
+let cooldown = 0;
 
-canvas.addEventListener('click', () => {
-  if (!hasStarted && instructions) {
-    instructions.classList.add('hidden');
-    hasStarted = true;
-  }
-});
-instructions?.addEventListener('click', () => {
-  if (!hasStarted && instructions) {
-    instructions.classList.add('hidden');
-    hasStarted = true;
-  }
-});
+canvas.addEventListener('click', () => { if (!started && instructions) { instructions.classList.add('hidden'); started = true; }});
+instructions?.addEventListener('click', () => { if (!started && instructions) { instructions.classList.add('hidden'); started = true; }});
 popupClose?.addEventListener('click', () => { if (popup) popup.style.display = 'none'; });
 
-function showPopup(text: string): void {
-  if (popup && popupText) {
-    popupText.textContent = text;
-    popup.style.display = 'flex';
-  }
-}
+function showPopup(t: string) { if (popup && popupText) { popupText.textContent = t; popup.style.display = 'flex'; }}
 
-function updateUI(): void {
-  if (scrollCounter) {
-    if (state.mode === 'indoor' && state.currentBuilding >= 0) {
-      const bd = buildingsData[state.currentBuilding];
-      scrollCounter.textContent = `FLOOR ${state.currentFloor + 1} / ${bd?.floors ?? '?'}`;
-    } else {
-      scrollCounter.textContent = 'KOWLOON STREETS';
-    }
+function updateUI() {
+  if (!scrollCounter) return;
+  if (state.mode === 'indoor') {
+    const bd = buildingsData[state.currentBuilding];
+    scrollCounter.textContent = `FLOOR ${state.currentFloor + 1} / ${bd?.floors ?? '?'}`;
+  } else {
+    scrollCounter.textContent = 'KOWLOON CITY';
   }
 }
 
 // ============================================
-// GAME LOGIC
+// GAME
 // ============================================
-let floorInfo = { floorWidth: 28, floorDepth: 18, isTopFloor: false, isGroundFloor: true };
+let floor = { w: 30, d: 20, top: false, ground: true };
 
-function enterBuilding(buildingIdx: number) {
+function enter(i: number) {
   state.mode = 'indoor';
-  state.currentBuilding = buildingIdx;
+  state.currentBuilding = i;
   state.currentFloor = 0;
-
   outdoorScene.visible = false;
   indoorScene.visible = true;
-
   outdoorScene.remove(playerGroup);
   indoorScene.add(playerGroup);
-
-  floorInfo = createFloorView(buildingIdx, 0);
+  floor = createFloorView(i, 0);
   player.x = 0;
-  player.z = 6;
-  playerGroup.position.set(0, 0.1, 6);
-
+  player.z = floor.d / 2 - 2;
+  playerGroup.position.set(0, 0.1, player.z);
   updateUI();
 }
 
-function exitBuilding() {
+function exit() {
   state.mode = 'outdoor';
   const bd = buildingsData[state.currentBuilding];
-
   outdoorScene.visible = true;
   indoorScene.visible = false;
-
   indoorScene.remove(playerGroup);
   outdoorScene.add(playerGroup);
-
-  player.x = bd?.doorX ?? 0;
-  player.z = bd?.doorZ ?? 0;
-  playerGroup.position.set(player.x, 0.1, player.z);
-
+  player.x = bd?.x ?? 0;
+  player.z = 0;
+  playerGroup.position.set(player.x, 0.1, 0);
   state.currentBuilding = -1;
   state.currentFloor = 0;
-
   updateUI();
 }
 
-function goUpFloor() {
+function goUp() {
   const bd = buildingsData[state.currentBuilding];
-  if (!bd) return;
-  if (state.currentFloor < bd.floors - 1) {
-    state.currentFloor++;
-    floorInfo = createFloorView(state.currentBuilding, state.currentFloor);
-    player.x = floorInfo.floorWidth / 2 - 3;
-    player.z = -floorInfo.floorDepth / 2 + 5;
-    playerGroup.position.set(player.x, 0.1, player.z);
-    updateUI();
-  }
+  if (!bd || state.currentFloor >= bd.floors - 1) return;
+  state.currentFloor++;
+  floor = createFloorView(state.currentBuilding, state.currentFloor);
+  player.x = floor.w / 2 - 4;
+  player.z = -floor.d / 2 + 5;
+  playerGroup.position.set(player.x, 0.1, player.z);
+  updateUI();
 }
 
-function goDownFloor() {
-  if (state.currentFloor > 0) {
-    state.currentFloor--;
-    floorInfo = createFloorView(state.currentBuilding, state.currentFloor);
-    player.x = -floorInfo.floorWidth / 2 + 3;
-    player.z = -floorInfo.floorDepth / 2 + 5;
-    playerGroup.position.set(player.x, 0.1, player.z);
-    updateUI();
-  }
+function goDown() {
+  if (state.currentFloor <= 0) return;
+  state.currentFloor--;
+  floor = createFloorView(state.currentBuilding, state.currentFloor);
+  player.x = -floor.w / 2 + 4;
+  player.z = -floor.d / 2 + 5;
+  playerGroup.position.set(player.x, 0.1, player.z);
+  updateUI();
 }
 
-function jumpOffRoof() {
-  exitBuilding();
-  showPopup("You jumped from the roof and landed on the street below!");
+function jumpRoof() {
+  exit();
+  showPopup("You jumped from the roof!");
 }
 
 function update() {
-  if (interactCooldown > 0) interactCooldown--;
+  if (cooldown > 0) cooldown--;
 
-  let moveX = 0;
-  let moveZ = 0;
-  if (keys.left) moveX -= player.speed;
-  if (keys.right) moveX += player.speed;
-  if (keys.forward) moveZ -= player.speed;
-  if (keys.backward) moveZ += player.speed;
+  let mx = 0, mz = 0;
+  if (keys.left) mx -= player.speed;
+  if (keys.right) mx += player.speed;
+  if (keys.up) mz -= player.speed;
+  if (keys.down) mz += player.speed;
 
-  // Update facing
-  if (moveX !== 0 || moveZ !== 0) {
-    player.facing = Math.atan2(moveX, -moveZ);
-    dirMarker.rotation.y = player.facing;
-    dirMarker.position.x = Math.sin(player.facing) * 0.35;
-    dirMarker.position.z = -Math.cos(player.facing) * 0.35;
-    
-    // Update flashlight direction
-    flashlight.target.position.x = Math.sin(player.facing) * 10;
-    flashlight.target.position.z = -Math.cos(player.facing) * 10;
-    flashlightMesh.rotation.y = player.facing;
-    flashlightMesh.position.x = Math.sin(player.facing) * 0.35 + 0.1;
-    flashlightMesh.position.z = -Math.cos(player.facing) * 0.35;
+  if (mx !== 0 || mz !== 0) {
+    player.facing = Math.atan2(mx, -mz);
+    dir.rotation.y = player.facing;
+    dir.position.x = Math.sin(player.facing) * 0.45;
+    dir.position.z = -Math.cos(player.facing) * 0.45;
+    flash.target.position.x = Math.sin(player.facing) * 12;
+    flash.target.position.z = -Math.cos(player.facing) * 12;
+    flashBody.rotation.y = player.facing;
   }
 
   if (state.mode === 'outdoor') {
-    player.x += moveX;
-    player.z += moveZ;
-
-    // Stay on sidewalks/street
-    player.x = Math.max(-55, Math.min(55, player.x));
-    player.z = Math.max(-6, Math.min(6, player.z));
-
+    player.x += mx;
+    player.z += mz;
+    player.x = Math.max(-42, Math.min(42, player.x));
+    player.z = Math.max(-5, Math.min(5, player.z));
     playerGroup.position.set(player.x, 0.1, player.z);
 
-    // Check building entry
-    if (keys.interact && interactCooldown === 0) {
+    if (keys.action && cooldown === 0) {
       for (let i = 0; i < buildingsData.length; i++) {
         const bd = buildingsData[i];
         if (!bd) continue;
-        const dist = Math.abs(player.x - bd.doorX) + Math.abs(player.z - bd.doorZ);
-        if (dist < 4) {
-          enterBuilding(i);
-          interactCooldown = 15;
-          return;
-        }
-      }
+        if (Math.abs(player.x - bd.x) < 2.5 && player.z < -2) {
+          enter(i);
+          cooldown = 15;
+      return;
     }
-
+  }
+    }
   } else {
-    player.x += moveX;
-    player.z += moveZ;
-
-    const halfW = floorInfo.floorWidth / 2 - 1;
-    const halfD = floorInfo.floorDepth / 2 - 1;
-    player.x = Math.max(-halfW, Math.min(halfW, player.x));
-    player.z = Math.max(-halfD, Math.min(halfD, player.z));
-
+    player.x += mx;
+    player.z += mz;
+    const hw = floor.w / 2 - 0.5, hd = floor.d / 2 - 0.5;
+    player.x = Math.max(-hw, Math.min(hw, player.x));
+    player.z = Math.max(-hd, Math.min(hd, player.z));
     playerGroup.position.set(player.x, 0.1, player.z);
 
-    if (keys.interact && interactCooldown === 0) {
-      // STAIRS UP
-      if (!floorInfo.isTopFloor) {
-        const stairX = halfW - 1;
-        const stairZ = -halfD + 1;
-        if (Math.abs(player.x - stairX) < 2.5 && Math.abs(player.z - stairZ) < 2.5) {
-          goUpFloor();
-          interactCooldown = 15;
-          return;
-        }
-      }
-
-      // STAIRS DOWN
-      if (!floorInfo.isGroundFloor) {
-        const stairX = -halfW + 1;
-        const stairZ = -halfD + 1;
-        if (Math.abs(player.x - stairX) < 2.5 && Math.abs(player.z - stairZ) < 2.5) {
-          goDownFloor();
-          interactCooldown = 15;
-          return;
-        }
-      }
-
-      // DOOR EXIT (ground floor)
-      if (floorInfo.isGroundFloor && Math.abs(player.x) < 3 && player.z > halfD - 2) {
-        exitBuilding();
-        interactCooldown = 15;
-        return;
-      }
-
-      // ROOF EXIT (top floor)
-      if (floorInfo.isTopFloor) {
-        const roofX = halfW - 1;
-        const roofZ = halfD - 1;
-        if (Math.abs(player.x - roofX) < 2.5 && Math.abs(player.z - roofZ) < 2.5) {
-          jumpOffRoof();
-          interactCooldown = 15;
-          return;
-        }
-      }
+    if (keys.action && cooldown === 0) {
+      if (!floor.top && player.x > hw - 5 && player.z < -hd + 5) { goUp(); cooldown = 15; return; }
+      if (!floor.ground && player.x < -hw + 5 && player.z < -hd + 5) { goDown(); cooldown = 15; return; }
+      if (floor.ground && Math.abs(player.x) < 3 && player.z > hd - 2) { exit(); cooldown = 15; return; }
+      if (floor.top && player.x > hw - 5 && player.z > hd - 5) { jumpRoof(); cooldown = 15; return; }
     }
   }
 }
 
-// ============================================
-// CAMERA
-// ============================================
 function updateCamera() {
   if (state.mode === 'outdoor') {
     viewSize = 14;
-    camera.position.set(player.x + 12, 10, player.z + 22);
+    camera.position.set(player.x + 10, 14, player.z + 22);
     camera.lookAt(player.x, 4, player.z);
   } else {
-    viewSize = 16;
-    camera.position.set(0, 28, 12);
+    viewSize = 18;
+    camera.position.set(0, 32, 14);
     camera.lookAt(0, 0, 0);
   }
-
   const a = window.innerWidth / window.innerHeight;
   camera.left = -viewSize * a;
   camera.right = viewSize * a;
@@ -938,9 +694,6 @@ function updateCamera() {
   camera.updateProjectionMatrix();
 }
 
-// ============================================
-// GAME LOOP
-// ============================================
 function animate() {
   requestAnimationFrame(animate);
   update();
