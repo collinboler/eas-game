@@ -119,6 +119,36 @@ body {
   animation: pulse 2s infinite;
 }
 
+/* Restart button */
+.restart-btn {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  background: linear-gradient(135deg, #ff00ff, #cc00cc);
+  color: #ffffff;
+  border: 2px solid #ff00ff;
+  padding: 12px 24px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  pointer-events: auto;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  box-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
+  font-family: 'Courier New', monospace;
+}
+
+.restart-btn:hover {
+  background: linear-gradient(135deg, #cc00cc, #990099);
+  box-shadow: 0 0 30px rgba(255, 0, 255, 0.8);
+  transform: translateY(-2px);
+}
+
+.restart-btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
 @keyframes pulse {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.05); }

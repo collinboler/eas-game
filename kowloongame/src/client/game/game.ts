@@ -11,22 +11,24 @@ if (!canvas) {
 }
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x2a2a2a);
-scene.fog = new THREE.Fog(0x2a2a2a, 25, 100);
+scene.background = new THREE.Color(0x1a1520);
+scene.fog = new THREE.Fog(0x1a1520, 30, 120);
 
 // Game state
 let gameOver = false;
 let gameStarted = false;
-let demolitionHeight = -15;
-const DEMOLITION_SPEED = 0.012;
+let demolitionHeight = -20;
+const DEMOLITION_SPEED = 0.007;
 let highestPlatformY = 0;
 let scrollsCollected = 0;
+let mouseX = 0;
+let mouseY = 0;
 
 // ============================================
 // CAMERA
 // ============================================
 const aspect = window.innerWidth / window.innerHeight;
-const viewSize = 14;
+const viewSize = 18;
 const camera = new THREE.OrthographicCamera(
   -viewSize * aspect,
   viewSize * aspect,
@@ -35,7 +37,7 @@ const camera = new THREE.OrthographicCamera(
   0.1,
   1000
 );
-camera.position.set(25, 15, 30);
+camera.position.set(30, 20, 35);
 camera.lookAt(0, 10, 0);
 
 // ============================================
@@ -50,28 +52,32 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 // ============================================
 // LIGHTING
 // ============================================
-const ambientLight = new THREE.AmbientLight(0x888888, 0.7);
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
 scene.add(ambientLight);
 
-const mainLight = new THREE.DirectionalLight(0xfff4e6, 1.2);
-mainLight.position.set(20, 30, 15);
+const mainLight = new THREE.DirectionalLight(0xfff8e0, 1.5);
+mainLight.position.set(25, 40, 20);
 mainLight.castShadow = true;
-mainLight.shadow.camera.left = -50;
-mainLight.shadow.camera.right = 50;
-mainLight.shadow.camera.top = 50;
-mainLight.shadow.camera.bottom = -50;
+mainLight.shadow.camera.left = -60;
+mainLight.shadow.camera.right = 60;
+mainLight.shadow.camera.top = 60;
+mainLight.shadow.camera.bottom = -60;
 mainLight.shadow.mapSize.width = 2048;
 mainLight.shadow.mapSize.height = 2048;
 scene.add(mainLight);
 
-// Accent lights
-const redLight = new THREE.PointLight(0xff3300, 3, 50);
-redLight.position.set(0, -5, 10);
-scene.add(redLight);
+// Neon accent lights
+const neonPink = new THREE.PointLight(0xff1493, 2, 40);
+neonPink.position.set(-10, 25, 5);
+scene.add(neonPink);
 
-const cyanLight = new THREE.PointLight(0x00ddff, 1.5, 30);
-cyanLight.position.set(15, 20, 10);
-scene.add(cyanLight);
+const neonCyan = new THREE.PointLight(0x00ffff, 2, 40);
+neonCyan.position.set(10, 30, 8);
+scene.add(neonCyan);
+
+const explosionLight = new THREE.PointLight(0xff4400, 4, 60);
+explosionLight.position.set(0, -5, 15);
+scene.add(explosionLight);
 
 // ============================================
 // TEXTURES
@@ -79,8 +85,24 @@ scene.add(cyanLight);
 const textureLoader = new THREE.TextureLoader();
 textureLoader.crossOrigin = 'anonymous';
 
-const concreteTexture = textureLoader.load(
-  'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=512',
+const brickTexture = textureLoader.load(
+  'https://images.unsplash.com/photo-1611252441948-9f97c18f6f0e?w=512',
+  (texture) => {
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(3, 3);
+  }
+);
+
+const windowTexture = textureLoader.load(
+  'https://images.unsplash.com/photo-1565008576549-57569a49371d?w=512',
+  (texture) => {
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(4, 2);
+  }
+);
+
+const metalTexture = textureLoader.load(
+  'https://images.unsplash.com/photo-1565372195458-9de0b320ef04?w=512',
   (texture) => {
     texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
     texture.repeat.set(2, 2);
@@ -99,9 +121,9 @@ const playerGroup = new THREE.Group();
 // Body
 const bodyGeo = new THREE.BoxGeometry(0.6, 0.9, 0.4);
 const bodyMat = new THREE.MeshStandardMaterial({
-  color: 0x3a3a3a,
-  roughness: 0.7,
-  metalness: 0.2
+  color: 0x2a4a7a,
+  roughness: 0.6,
+  metalness: 0.3
 });
 const body = new THREE.Mesh(bodyGeo, bodyMat);
 body.position.set(0, 0.5, 0);
@@ -122,7 +144,7 @@ playerGroup.add(head);
 // Legs
 const legGeo = new THREE.BoxGeometry(0.22, 0.7, 0.22);
 const legMat = new THREE.MeshStandardMaterial({
-  color: 0x2a2a2a,
+  color: 0x1a1a1a,
   roughness: 0.7
 });
 const leftLeg = new THREE.Mesh(legGeo, legMat);
@@ -154,9 +176,9 @@ playerGroup.add(rightArm);
 // Eyes
 const eyeGeo = new THREE.SphereGeometry(0.06, 8, 8);
 const eyeMat = new THREE.MeshStandardMaterial({
-  color: 0xff1a66,
-  emissive: 0xff1a66,
-  emissiveIntensity: 1.2
+  color: 0x00ffff,
+  emissive: 0x00ffff,
+  emissiveIntensity: 1.5
 });
 const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
 leftEye.position.set(-0.12, 1.25, 0.21);
@@ -189,45 +211,132 @@ const player: Player = {
   depth: 0.6
 };
 
-let facingRight = true;
 let walkCycle = 0;
 
 // ============================================
-// PLATFORMS
+// PLATFORMS (Kowloon Buildings)
 // ============================================
 interface Platform {
-  mesh: THREE.Mesh;
+  mesh: THREE.Group;
   bounds: { minX: number; maxX: number; minY: number; maxY: number; minZ: number; maxZ: number };
   shaking: boolean;
   shakeTime: number;
   falling: boolean;
   fallSpeed: number;
   originalY: number;
+  originalX: number;
 }
 
 const platforms: Platform[] = [];
 
-function createPlatform(x: number, y: number, width: number, depth: number): Platform {
-  const geometry = new THREE.BoxGeometry(width, 0.6, depth);
-  const material = new THREE.MeshStandardMaterial({
-    map: concreteTexture,
-    roughness: 0.9,
-    metalness: 0.1,
-    color: 0xaaaaaa
+function createKowloonPlatform(x: number, y: number, width: number, depth: number): Platform {
+  const platformGroup = new THREE.Group();
+
+  // Main platform (rooftop)
+  const roofHeight = 0.4;
+  const roofGeo = new THREE.BoxGeometry(width, roofHeight, depth);
+  const roofMat = new THREE.MeshStandardMaterial({
+    map: metalTexture,
+    color: 0x555555,
+    roughness: 0.8,
+    metalness: 0.3
   });
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.position.set(x, y, 0);
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
-  scene.add(mesh);
+  const roof = new THREE.Mesh(roofGeo, roofMat);
+  roof.position.set(0, 0, 0);
+  roof.castShadow = true;
+  roof.receiveShadow = true;
+  platformGroup.add(roof);
+
+  // Building walls below (make it look like a rooftop)
+  const wallHeight = 6;
+  const wallGeo = new THREE.BoxGeometry(width - 0.5, wallHeight, depth - 0.5);
+  const wallMat = new THREE.MeshStandardMaterial({
+    map: brickTexture,
+    color: 0x8b7355,
+    roughness: 0.9
+  });
+  const wall = new THREE.Mesh(wallGeo, wallMat);
+  wall.position.set(0, -wallHeight / 2 - roofHeight / 2, 0);
+  wall.castShadow = true;
+  wall.receiveShadow = true;
+  platformGroup.add(wall);
+
+  // Add windows to walls
+  const windowRows = 2;
+  const windowCols = Math.floor(width / 2);
+  for (let row = 0; row < windowRows; row++) {
+    for (let col = 0; col < windowCols; col++) {
+      const windowGeo = new THREE.PlaneGeometry(0.6, 0.8);
+      const isLit = Math.random() > 0.5;
+      const windowMat = new THREE.MeshStandardMaterial({
+        color: isLit ? 0xffffaa : 0x222222,
+        emissive: isLit ? 0xffff88 : 0x000000,
+        emissiveIntensity: isLit ? 0.8 : 0
+      });
+      const window1 = new THREE.Mesh(windowGeo, windowMat);
+      window1.position.set(
+        -width / 2 + 1 + col * 1.5,
+        -1 - row * 2,
+        depth / 2 + 0.01
+      );
+      platformGroup.add(window1);
+
+      // Back windows
+      const window2 = new THREE.Mesh(windowGeo, windowMat.clone());
+      window2.position.set(
+        -width / 2 + 1 + col * 1.5,
+        -1 - row * 2,
+        -depth / 2 - 0.01
+      );
+      window2.rotation.y = Math.PI;
+      platformGroup.add(window2);
+    }
+  }
+
+  // AC units and clutter on rooftop
+  if (Math.random() > 0.4) {
+    const acGeo = new THREE.BoxGeometry(0.8, 0.5, 0.6);
+    const acMat = new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.7 });
+    const ac = new THREE.Mesh(acGeo, acMat);
+    ac.position.set(
+      (Math.random() - 0.5) * (width - 1),
+      roofHeight / 2 + 0.25,
+      (Math.random() - 0.5) * (depth - 1)
+    );
+    ac.castShadow = true;
+    platformGroup.add(ac);
+  }
+
+  // Neon signs
+  if (Math.random() > 0.6) {
+    const signGeo = new THREE.PlaneGeometry(1.5, 0.5);
+    const signColor = Math.random() > 0.5 ? 0xff1493 : 0x00ffff;
+    const signMat = new THREE.MeshStandardMaterial({
+      color: signColor,
+      emissive: signColor,
+      emissiveIntensity: 2,
+      side: THREE.DoubleSide
+    });
+    const sign = new THREE.Mesh(signGeo, signMat);
+    sign.position.set(0, 0.8, depth / 2);
+    platformGroup.add(sign);
+
+    // Add point light for neon glow
+    const signLight = new THREE.PointLight(signColor, 1.5, 8);
+    signLight.position.set(0, 0.8, depth / 2 + 0.5);
+    platformGroup.add(signLight);
+  }
+
+  platformGroup.position.set(x, y, 0);
+  scene.add(platformGroup);
 
   const platform: Platform = {
-    mesh,
+    mesh: platformGroup,
     bounds: {
       minX: x - width / 2,
       maxX: x + width / 2,
-      minY: y - 0.3,
-      maxY: y + 0.3,
+      minY: y - roofHeight / 2,
+      maxY: y + roofHeight / 2,
       minZ: -depth / 2,
       maxZ: depth / 2
     },
@@ -235,94 +344,103 @@ function createPlatform(x: number, y: number, width: number, depth: number): Pla
     shakeTime: 0,
     falling: false,
     fallSpeed: 0,
-    originalY: y
+    originalY: y,
+    originalX: x
   };
 
   platforms.push(platform);
   return platform;
 }
 
-// Generate initial starting area
-createPlatform(0, 0, 12, 10);
+// Starting platform
+createKowloonPlatform(0, 0, 14, 10);
 
-// Procedural generation
+// Procedural generation - more spaced out for hopping
 function generatePlatformCluster(startY: number): void {
-  const platformsInCluster = 5 + Math.floor(Math.random() * 3);
-  let clusterX = (Math.random() - 0.5) * 10;
+  const platformsInCluster = 4 + Math.floor(Math.random() * 2);
+  let lastX = (Math.random() - 0.5) * 12;
 
   for (let i = 0; i < platformsInCluster; i++) {
-    const yStep = 2.5 + Math.random() * 2;
-    const y = startY + i * yStep;
-    const xOffset = (Math.random() - 0.5) * 12;
-    const x = clusterX + xOffset;
-    const width = 4 + Math.random() * 4;
-    const depth = 7 + Math.random() * 2;
+    const yGap = 4 + Math.random() * 3; // Much bigger vertical gaps
+    const y = startY + i * yGap;
+    const xOffset = (Math.random() - 0.5) * 16; // Wider horizontal spread
+    const x = lastX + xOffset;
+    const width = 6 + Math.random() * 3;
+    const depth = 8 + Math.random() * 2;
 
-    createPlatform(x, y, width, depth);
+    createKowloonPlatform(x, y, width, depth);
 
     if (y > highestPlatformY) {
       highestPlatformY = y;
     }
 
-    // Add decorative walls
-    if (Math.random() > 0.6) {
-      const wallGeo = new THREE.BoxGeometry(width * 0.9, 8, 0.4);
-      const wallMat = new THREE.MeshStandardMaterial({
-        map: concreteTexture,
-        color: 0x555555,
-        roughness: 0.95
-      });
-      const wall = new THREE.Mesh(wallGeo, wallMat);
-      wall.position.set(x, y + 4, -4.5);
-      wall.castShadow = true;
-      wall.receiveShadow = true;
-      scene.add(wall);
-    }
-
-    clusterX = x;
+    lastX = x;
   }
 }
 
 // Generate initial platforms
-for (let i = 0; i < 20; i++) {
-  generatePlatformCluster(i * 12 + 5);
+for (let i = 0; i < 15; i++) {
+  generatePlatformCluster(i * 18 + 8);
 }
 
 // ============================================
-// DEMOLITION WAVE
+// DEMOLITION EXPLOSION
 // ============================================
-const demolitionGeo = new THREE.PlaneGeometry(300, 50);
-const demolitionMat = new THREE.MeshStandardMaterial({
-  color: 0xff3300,
+const explosionGeo = new THREE.PlaneGeometry(400, 60);
+const explosionMat = new THREE.MeshStandardMaterial({
+  color: 0xff5500,
   emissive: 0xff3300,
-  emissiveIntensity: 1.2,
+  emissiveIntensity: 2,
   transparent: true,
-  opacity: 0.6,
+  opacity: 0.8,
   side: THREE.DoubleSide
 });
-const demolitionWave = new THREE.Mesh(demolitionGeo, demolitionMat);
+const demolitionWave = new THREE.Mesh(explosionGeo, explosionMat);
 demolitionWave.rotation.x = Math.PI / 2;
 demolitionWave.position.set(0, demolitionHeight, 0);
 scene.add(demolitionWave);
 
-// Dust particles
+// Explosion particles
 const dustParticles: THREE.Mesh[] = [];
-const dustGeo = new THREE.BoxGeometry(0.4, 0.4, 0.4);
-const dustMat = new THREE.MeshStandardMaterial({
-  color: 0x555555,
-  transparent: true,
-  opacity: 0.5
-});
+const debrisParticles: THREE.Mesh[] = [];
 
-for (let i = 0; i < 40; i++) {
+const dustGeo = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+for (let i = 0; i < 60; i++) {
+  const isFlame = i % 3 === 0;
+  const dustMat = new THREE.MeshStandardMaterial({
+    color: isFlame ? 0xff6600 : 0x666666,
+    emissive: isFlame ? 0xff4400 : 0x000000,
+    emissiveIntensity: isFlame ? 1.2 : 0,
+    transparent: true,
+    opacity: 0.7
+  });
   const dust = new THREE.Mesh(dustGeo, dustMat);
   dust.position.set(
-    (Math.random() - 0.5) * 60,
-    demolitionHeight + Math.random() * 8,
-    (Math.random() - 0.5) * 15
+    (Math.random() - 0.5) * 80,
+    demolitionHeight + Math.random() * 15,
+    (Math.random() - 0.5) * 20
   );
   scene.add(dust);
   dustParticles.push(dust);
+}
+
+const debrisGeo = new THREE.BoxGeometry(1, 0.7, 0.8);
+for (let i = 0; i < 40; i++) {
+  const debrisMat = new THREE.MeshStandardMaterial({
+    map: brickTexture,
+    color: 0x666666,
+    roughness: 0.9
+  });
+  const debris = new THREE.Mesh(debrisGeo, debrisMat);
+  debris.position.set(
+    (Math.random() - 0.5) * 70,
+    demolitionHeight + Math.random() * 12,
+    (Math.random() - 0.5) * 15
+  );
+  debris.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+  debris.castShadow = true;
+  scene.add(debris);
+  debrisParticles.push(debris);
 }
 
 // ============================================
@@ -352,11 +470,11 @@ const scrollTexts = [
 ];
 
 function createScroll(x: number, y: number, id: number): Scroll {
-  const geometry = new THREE.PlaneGeometry(0.7, 1);
+  const geometry = new THREE.PlaneGeometry(0.8, 1.1);
   const material = new THREE.MeshStandardMaterial({
     map: scrollTexture,
     emissive: 0xffcc66,
-    emissiveIntensity: 0.4,
+    emissiveIntensity: 0.6,
     transparent: true,
     side: THREE.DoubleSide
   });
@@ -364,7 +482,7 @@ function createScroll(x: number, y: number, id: number): Scroll {
   mesh.position.set(x, y, 0);
   scene.add(mesh);
 
-  const light = new THREE.PointLight(0xffcc66, 1.5, 8);
+  const light = new THREE.PointLight(0xffcc66, 2, 10);
   light.position.set(x, y, 0.5);
   scene.add(light);
 
@@ -382,9 +500,9 @@ function createScroll(x: number, y: number, id: number): Scroll {
 
 // Spawn initial scrolls
 let scrollIdCounter = 0;
-for (let i = 0; i < 8; i++) {
-  const x = (Math.random() - 0.5) * 15;
-  const y = 8 + i * 18;
+for (let i = 0; i < 6; i++) {
+  const x = (Math.random() - 0.5) * 20;
+  const y = 12 + i * 25;
   createScroll(x, y, scrollIdCounter++);
 }
 
@@ -407,6 +525,12 @@ window.addEventListener('keyup', (e) => {
   if (e.code === 'KeyD' || e.code === 'ArrowRight') keys.right = false;
 });
 
+// Mouse tracking for character rotation
+window.addEventListener('mousemove', (e) => {
+  mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+  mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
+});
+
 // ============================================
 // UI
 // ============================================
@@ -415,6 +539,7 @@ const scrollCounter = document.getElementById('scroll-counter') as HTMLDivElemen
 const popup = document.getElementById('popup') as HTMLDivElement;
 const popupText = document.getElementById('popup-text') as HTMLDivElement;
 const popupClose = document.getElementById('popup-close') as HTMLButtonElement;
+const restartBtn = document.getElementById('restart-btn') as HTMLButtonElement;
 
 function startGame(): void {
   if (!gameStarted && instructions) {
@@ -423,8 +548,13 @@ function startGame(): void {
   }
 }
 
+function restartGame(): void {
+  window.location.reload();
+}
+
 canvas.addEventListener('click', startGame);
 if (instructions) instructions.addEventListener('click', startGame);
+if (restartBtn) restartBtn.addEventListener('click', restartGame);
 
 if (popupClose) {
   popupClose.addEventListener('click', () => {
@@ -457,7 +587,7 @@ function showGameOver(): void {
         "On March 23, 1993, demolition of Kowloon Walled City began.<br>
         By April 1994, it was gone—33,000 stories scattered to history."
       </p>
-      <p style="margin-top: 20px;"><strong>Press F5 to climb again</strong></p>
+      <p style="margin-top: 20px;"><strong>Click RESTART to climb again</strong></p>
     `;
     popup.style.display = 'flex';
   }
@@ -466,10 +596,10 @@ function showGameOver(): void {
 // ============================================
 // PHYSICS
 // ============================================
-const GRAVITY = -0.8;
-const MOVE_SPEED = 0.28;
-const JUMP_FORCE = 14;
-const MAX_FALL_SPEED = -1.5;
+const GRAVITY = -0.7;
+const MOVE_SPEED = 0.35;
+const JUMP_FORCE = 22; // Higher for bigger gaps
+const MAX_FALL_SPEED = -1.3;
 
 function updatePhysics(): void {
   if (gameOver) return;
@@ -483,16 +613,8 @@ function updatePhysics(): void {
   // Movement
   if (keys.left) {
     player.velocity.x = -MOVE_SPEED;
-    if (facingRight) {
-      facingRight = false;
-      player.mesh.rotation.y = Math.PI;
-    }
   } else if (keys.right) {
     player.velocity.x = MOVE_SPEED;
-    if (!facingRight) {
-      facingRight = true;
-      player.mesh.rotation.y = 0;
-    }
   } else {
     player.velocity.x *= 0.85;
   }
@@ -501,12 +623,12 @@ function updatePhysics(): void {
   const isMoving = Math.abs(player.velocity.x) > 0.01;
   if (isMoving && player.onGround) {
     walkCycle += 0.25;
-    const swing = Math.sin(walkCycle) * 0.35;
+    const swing = Math.sin(walkCycle) * 0.4;
     playerParts.leftLeg.rotation.x = swing;
     playerParts.rightLeg.rotation.x = -swing;
     playerParts.leftArm.rotation.x = -swing * 0.6;
     playerParts.rightArm.rotation.x = swing * 0.6;
-    playerParts.body.position.y = 0.5 + Math.abs(Math.sin(walkCycle)) * 0.06;
+    playerParts.body.position.y = 0.5 + Math.abs(Math.sin(walkCycle)) * 0.08;
   } else {
     playerParts.leftLeg.rotation.x = 0;
     playerParts.rightLeg.rotation.x = 0;
@@ -514,6 +636,10 @@ function updatePhysics(): void {
     playerParts.rightArm.rotation.x = 0;
     playerParts.body.position.y = 0.5;
   }
+
+  // Rotate character to face cursor
+  const targetRotation = Math.atan2(mouseX * 10, 1);
+  player.mesh.rotation.y += (targetRotation - player.mesh.rotation.y) * 0.1;
 
   // Jump
   if (keys.jump && player.onGround) {
@@ -541,8 +667,7 @@ function updatePhysics(): void {
         player.velocity.y = 0;
         player.onGround = true;
 
-        // Trigger shake when player lands on platform
-        if (!platform.shaking && demolitionHeight > b.minY - 15) {
+        if (!platform.shaking && demolitionHeight > b.minY - 20) {
           platform.shaking = true;
           platform.shakeTime = 0;
         }
@@ -556,7 +681,7 @@ function updatePhysics(): void {
   }
 
   // Check if caught by demolition
-  if (player.mesh.position.y < demolitionHeight + 3) {
+  if (player.mesh.position.y < demolitionHeight + 4) {
     gameOver = true;
     showGameOver();
     return;
@@ -566,26 +691,25 @@ function updatePhysics(): void {
   for (const scroll of scrolls) {
     if (!scroll.collected) {
       const dist = player.mesh.position.distanceTo(scroll.mesh.position);
-      if (dist < 1.8) {
+      if (dist < 2) {
         scroll.collected = true;
         scroll.mesh.visible = false;
         scroll.light.intensity = 0;
         scrollsCollected++;
         showPopup(scroll.text);
       }
-      scroll.mesh.rotation.y += 0.02;
-      scroll.mesh.position.y += Math.sin(Date.now() * 0.001 + scroll.id) * 0.01;
+      scroll.mesh.rotation.y += 0.03;
+      scroll.mesh.position.y += Math.sin(Date.now() * 0.001 + scroll.id) * 0.012;
     }
   }
 
   // Generate new platforms
-  if (player.mesh.position.y > highestPlatformY - 50) {
-    generatePlatformCluster(highestPlatformY + 10);
+  if (player.mesh.position.y > highestPlatformY - 60) {
+    generatePlatformCluster(highestPlatformY + 15);
 
-    // Spawn new scroll
-    if (Math.random() > 0.5 && scrollIdCounter < scrollTexts.length) {
-      const x = (Math.random() - 0.5) * 15;
-      createScroll(x, highestPlatformY - 5, scrollIdCounter++);
+    if (Math.random() > 0.4 && scrollIdCounter < scrollTexts.length * 2) {
+      const x = (Math.random() - 0.5) * 20;
+      createScroll(x, highestPlatformY - 8, scrollIdCounter++);
     }
   }
 
@@ -593,60 +717,73 @@ function updatePhysics(): void {
 }
 
 // ============================================
-// UPDATE DEMOLITION & PLATFORMS
+// UPDATE DEMOLITION
 // ============================================
 function updateDemolition(): void {
   if (gameOver || !gameStarted) return;
 
   demolitionHeight += DEMOLITION_SPEED;
   demolitionWave.position.y = demolitionHeight;
-  redLight.position.y = demolitionHeight + 10;
+  explosionLight.position.y = demolitionHeight + 20;
 
-  // Update dust
+  // Pulsing explosion
+  const pulse = Math.sin(Date.now() * 0.004) * 0.4 + 0.6;
+  explosionMat.emissiveIntensity = 1.8 + pulse * 0.8;
+
+  // Animate particles
   for (const dust of dustParticles) {
-    dust.position.y = demolitionHeight + 3 + Math.random() * 12;
-    dust.position.x += (Math.random() - 0.5) * 0.3;
-    dust.rotation.x += 0.03;
-    dust.rotation.y += 0.05;
+    dust.position.y = demolitionHeight + 8 + Math.random() * 18;
+    dust.position.x += (Math.random() - 0.5) * 0.5;
+    dust.position.z += (Math.random() - 0.5) * 0.4;
+    dust.rotation.x += 0.05;
+    dust.rotation.y += 0.07;
+  }
+
+  for (const debris of debrisParticles) {
+    debris.position.y = demolitionHeight + 3 + Math.random() * 15;
+    debris.position.x += (Math.random() - 0.5) * 0.6;
+    debris.position.z += (Math.random() - 0.5) * 0.5;
+    debris.rotation.x += 0.1;
+    debris.rotation.y += 0.12;
+    debris.rotation.z += 0.06;
   }
 
   // Update platforms
   for (let i = platforms.length - 1; i >= 0; i--) {
     const plat = platforms[i];
 
-    // Start shaking if demolition is near
-    if (!plat.shaking && !plat.falling && demolitionHeight > plat.bounds.minY - 12) {
+    if (!plat.shaking && !plat.falling && demolitionHeight > plat.bounds.minY - 20) {
       plat.shaking = true;
       plat.shakeTime = 0;
     }
 
-    // Shake animation
     if (plat.shaking && !plat.falling) {
       plat.shakeTime += 0.016;
-      const shakeIntensity = Math.min(plat.shakeTime * 0.3, 0.15);
-      plat.mesh.position.x = plat.bounds.minX + (plat.bounds.maxX - plat.bounds.minX) / 2 +
-                             (Math.random() - 0.5) * shakeIntensity;
-      plat.mesh.rotation.z = (Math.random() - 0.5) * shakeIntensity * 0.5;
+      const shakeIntensity = Math.min(plat.shakeTime * 0.4, 0.2);
+      plat.mesh.position.x = plat.originalX + (Math.random() - 0.5) * shakeIntensity;
+      plat.mesh.rotation.z = (Math.random() - 0.5) * shakeIntensity * 0.4;
 
-      // Start falling after shaking for a while
-      if (plat.shakeTime > 1.5 || demolitionHeight > plat.bounds.minY - 3) {
+      if (plat.shakeTime > 3 || demolitionHeight > plat.bounds.minY - 2) {
         plat.falling = true;
         plat.fallSpeed = 0;
       }
     }
 
-    // Falling animation
     if (plat.falling) {
-      plat.fallSpeed += 0.015;
+      plat.fallSpeed += 0.018;
       plat.mesh.position.y -= plat.fallSpeed;
-      plat.mesh.rotation.x += 0.02;
-      plat.mesh.rotation.z += 0.03;
-      (plat.mesh.material as THREE.MeshStandardMaterial).opacity = Math.max(0, 1 - plat.fallSpeed * 2);
-      (plat.mesh.material as THREE.MeshStandardMaterial).transparent = true;
+      plat.mesh.rotation.x += 0.025;
+      plat.mesh.rotation.z += 0.035;
+
+      plat.mesh.children.forEach((child) => {
+        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
+          child.material.opacity = Math.max(0, 1 - plat.fallSpeed * 2);
+          child.material.transparent = true;
+        }
+      });
     }
 
-    // Remove destroyed platforms
-    if (plat.mesh.position.y < demolitionHeight - 20) {
+    if (plat.mesh.position.y < demolitionHeight - 25) {
       scene.remove(plat.mesh);
       platforms.splice(i, 1);
     }
@@ -658,10 +795,10 @@ function updateDemolition(): void {
 // ============================================
 function updateCamera(): void {
   const targetX = player.mesh.position.x;
-  const targetY = player.mesh.position.y + 5;
+  const targetY = player.mesh.position.y + 8;
 
-  camera.position.x += (targetX + 25 - camera.position.x) * 0.08;
-  camera.position.y += (targetY + 10 - camera.position.y) * 0.08;
+  camera.position.x += (targetX + 30 - camera.position.x) * 0.06;
+  camera.position.y += (targetY + 12 - camera.position.y) * 0.06;
 
   camera.lookAt(targetX, targetY, 0);
 }
@@ -685,7 +822,7 @@ function animate(): void {
 window.addEventListener('resize', () => {
   const { innerWidth, innerHeight } = window;
   const aspect = innerWidth / innerHeight;
-  const viewSize = 14;
+  const viewSize = 18;
 
   camera.left = -viewSize * aspect;
   camera.right = viewSize * aspect;
