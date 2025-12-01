@@ -124,6 +124,40 @@ body {
   50% { transform: scale(1.05); }
 }
 
+/* Action prompt - subtle and small */
+.action-prompt {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.9);
+  pointer-events: none;
+  letter-spacing: 1px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  white-space: nowrap;
+  border-radius: 3px;
+}
+
+.action-prompt.visible {
+  opacity: 1;
+}
+
+.action-prompt .key {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  padding: 1px 5px;
+  margin-right: 6px;
+  border-radius: 2px;
+  font-size: 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
 /* Popup overlay */
 .popup {
   position: fixed;
