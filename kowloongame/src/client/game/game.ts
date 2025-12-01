@@ -1,533 +1,698 @@
 import * as THREE from 'three';
 
 // ============================================
-// KOWLOON BACKROOMS: 2.5D PLATFORMER
-// Inspired by actual Kowloon Walled City
+// KOWLOON WALLED CITY
+// Neon-lit Streets & Eerie Interiors
 // ============================================
 
 const canvas = document.getElementById('bg') as HTMLCanvasElement;
-if (!canvas) {
-  console.error('Canvas not found!');
-}
+if (!canvas) console.error('Canvas not found!');
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x1a1a1a);
-scene.fog = new THREE.Fog(0x1a1a1a, 20, 70);
+
+const outdoorScene = new THREE.Group();
+const indoorScene = new THREE.Group();
+scene.add(outdoorScene);
+scene.add(indoorScene);
+indoorScene.visible = false;
 
 // ============================================
-// 2.5D CAMERA - ANGLED SIDE VIEW
+// CAMERA
 // ============================================
 const aspect = window.innerWidth / window.innerHeight;
-const viewSize = 12;
+let viewSize = 15;
 const camera = new THREE.OrthographicCamera(
-  -viewSize * aspect,
-  viewSize * aspect,
-  viewSize,
-  -viewSize,
-  0.1,
-  1000
+  -viewSize * aspect, viewSize * aspect,
+  viewSize, -viewSize,
+  0.1, 500
 );
-
-// Position camera at an angle (2.5D perspective like the reference)
-camera.position.set(20, 12, 25);
-camera.lookAt(0, 5, 0);
 
 // ============================================
 // RENDERER
 // ============================================
 const renderer = new THREE.WebGLRenderer({ antialias: true, canvas });
-renderer.setPixelRatio(window.devicePixelRatio ?? 1);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio ?? 1, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 // ============================================
-// TEXTURE LOADER - GRITTY KOWLOON TEXTURES
+// GAME STATE
 // ============================================
-const textureLoader = new THREE.TextureLoader();
-textureLoader.crossOrigin = 'anonymous';
-
-// Dirty concrete walls
-const wallTexture = textureLoader.load(
-  'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1024',
-  (texture) => {
-    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(2, 2);
-  }
-);
-
-// Rusty metal for pipes and structures
-const metalTexture = textureLoader.load(
-  'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=1024',
-  (texture) => {
-    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(1, 1);
-  }
-);
-
-// Grimy floor
-const floorTexture = textureLoader.load(
-  'https://images.unsplash.com/photo-1516655855035-d5215bcb5604?w=1024',
-  (texture) => {
-    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(6, 6);
-  }
-);
-
-// Old paper for scrolls
-const scrollTexture = textureLoader.load(
-  'https://images.unsplash.com/photo-1509266272358-7701da638078?w=512'
-);
-
-// ============================================
-// LIGHTING - BRIGHTER BUT STILL ATMOSPHERIC
-// ============================================
-const ambientLight = new THREE.AmbientLight(0x444444, 0.6);
-scene.add(ambientLight);
-
-// Brighter overhead fluorescent lights
-const light1 = new THREE.PointLight(0xffeecc, 1.5, 40);
-light1.position.set(-10, 10, 5);
-light1.castShadow = true;
-scene.add(light1);
-
-const light2 = new THREE.PointLight(0xffeecc, 1.3, 35);
-light2.position.set(10, 10, 5);
-light2.castShadow = true;
-scene.add(light2);
-
-const light3 = new THREE.PointLight(0xffddaa, 1.4, 35);
-light3.position.set(25, 12, 5);
-light3.castShadow = true;
-scene.add(light3);
-
-// Additional lights for better visibility
-const light4 = new THREE.PointLight(0xffeecc, 1.2, 35);
-light4.position.set(-25, 10, 5);
-light4.castShadow = true;
-scene.add(light4);
-
-const light5 = new THREE.PointLight(0xffeecc, 1.3, 35);
-light5.position.set(40, 10, 5);
-light5.castShadow = true;
-scene.add(light5);
-
-// Accent neon (sparse - just hints)
-const neonPink = new THREE.PointLight(0xff1a66, 2, 20);
-neonPink.position.set(-15, 8, 8);
-scene.add(neonPink);
-
-const neonCyan = new THREE.PointLight(0x00ddff, 1.8, 20);
-neonCyan.position.set(30, 7, 8);
-scene.add(neonCyan);
-
-// ============================================
-// PLAYER
-// ============================================
-interface Player {
-  mesh: THREE.Mesh;
-  velocity: THREE.Vector3;
-  onGround: boolean;
-  width: number;
-  height: number;
-  depth: number;
+interface GameState {
+  mode: 'outdoor' | 'indoor';
+  currentBuilding: number;
+  currentFloor: number;
 }
 
-// Create a simple person-shaped character
-const playerGroup = new THREE.Group();
-
-// Body (torso)
-const bodyGeo = new THREE.BoxGeometry(0.5, 0.8, 0.3);
-const bodyMat = new THREE.MeshStandardMaterial({
-  color: 0x2a2a2a,
-  roughness: 0.8
-});
-const body = new THREE.Mesh(bodyGeo, bodyMat);
-body.position.set(0, 0.4, 0);
-body.castShadow = true;
-playerGroup.add(body);
-
-// Head
-const headGeo = new THREE.BoxGeometry(0.4, 0.4, 0.3);
-const headMat = new THREE.MeshStandardMaterial({
-  color: 0xffdbac,
-  roughness: 0.9
-});
-const head = new THREE.Mesh(headGeo, headMat);
-head.position.set(0, 1, 0);
-head.castShadow = true;
-playerGroup.add(head);
-
-// Left leg
-const legGeo = new THREE.BoxGeometry(0.2, 0.6, 0.2);
-const legMat = new THREE.MeshStandardMaterial({
-  color: 0x1a1a1a,
-  roughness: 0.8
-});
-const leftLeg = new THREE.Mesh(legGeo, legMat);
-leftLeg.position.set(-0.15, -0.3, 0);
-leftLeg.castShadow = true;
-playerGroup.add(leftLeg);
-
-// Right leg
-const rightLeg = new THREE.Mesh(legGeo, legMat);
-rightLeg.position.set(0.15, -0.3, 0);
-rightLeg.castShadow = true;
-playerGroup.add(rightLeg);
-
-// Left arm
-const armGeo = new THREE.BoxGeometry(0.15, 0.6, 0.15);
-const armMat = new THREE.MeshStandardMaterial({
-  color: 0xffdbac,
-  roughness: 0.9
-});
-const leftArm = new THREE.Mesh(armGeo, armMat);
-leftArm.position.set(-0.35, 0.5, 0);
-leftArm.castShadow = true;
-playerGroup.add(leftArm);
-
-// Right arm
-const rightArm = new THREE.Mesh(armGeo, armMat);
-rightArm.position.set(0.35, 0.5, 0);
-rightArm.castShadow = true;
-playerGroup.add(rightArm);
-
-// Glowing eyes
-const eyeGeo = new THREE.SphereGeometry(0.05, 8, 8);
-const eyeMat = new THREE.MeshStandardMaterial({
-  color: 0xff0066,
-  emissive: 0xff0066,
-  emissiveIntensity: 1
-});
-const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
-leftEye.position.set(-0.1, 1.05, 0.16);
-playerGroup.add(leftEye);
-
-const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
-rightEye.position.set(0.1, 1.05, 0.16);
-playerGroup.add(rightEye);
-
-playerGroup.position.set(-18, 2.5, 0);
-scene.add(playerGroup);
-
-const player: Player = {
-  mesh: playerGroup,
-  velocity: new THREE.Vector3(0, 0, 0),
-  onGround: false,
-  width: 0.7,
-  height: 1.6,
-  depth: 0.5
+const state: GameState = {
+  mode: 'outdoor',
+  currentBuilding: -1,
+  currentFloor: 0
 };
 
 // ============================================
-// KOWLOON ENVIRONMENT - DENSE & LAYERED
+// COLORS - KOWLOON NEON PALETTE
 // ============================================
-interface Platform {
-  mesh: THREE.Mesh;
-  bounds: {
-    minX: number;
-    maxX: number;
-    minY: number;
-    maxY: number;
-    minZ: number;
-    maxZ: number;
-  };
-}
-
-const platforms: Platform[] = [];
-const allMeshes: THREE.Mesh[] = [];
-
-function createPlatform(
-  x: number,
-  y: number,
-  z: number,
-  width: number,
-  height: number,
-  depth: number,
-  texture?: THREE.Texture
-): Platform {
-  const geometry = new THREE.BoxGeometry(width, height, depth);
-  const material = new THREE.MeshStandardMaterial({
-    map: texture || wallTexture,
-    roughness: 0.95,
-    metalness: 0.05
-  });
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.position.set(x, y, z);
-  mesh.receiveShadow = true;
-  mesh.castShadow = true;
-  scene.add(mesh);
-  allMeshes.push(mesh);
-
-  const platform: Platform = {
-    mesh,
-    bounds: {
-      minX: x - width / 2,
-      maxX: x + width / 2,
-      minY: y - height / 2,
-      maxY: y + height / 2,
-      minZ: z - depth / 2,
-      maxZ: z + depth / 2
-    }
-  };
-  platforms.push(platform);
-  return platform;
-}
-
-function createBox(
-  x: number,
-  y: number,
-  z: number,
-  width: number,
-  height: number,
-  depth: number,
-  color: number,
-  texture?: THREE.Texture
-): THREE.Mesh {
-  const geometry = new THREE.BoxGeometry(width, height, depth);
-  const material = new THREE.MeshStandardMaterial({
-    map: texture,
-    color: texture ? 0xffffff : color,
-    roughness: 0.9,
-    metalness: texture ? 0.1 : 0.3
-  });
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.position.set(x, y, z);
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
-  scene.add(mesh);
-  allMeshes.push(mesh);
-  return mesh;
-}
-
-// Main floor
-createPlatform(0, -1, 0, 100, 1, 20, floorTexture);
-
-// Create staircase-like platforms (easier progression)
-createPlatform(-18, 1, 0, 8, 0.8, 8);
-createPlatform(-11, 2.5, 0, 7, 0.8, 8);
-createPlatform(-4, 4, 0, 7, 0.8, 8);
-createPlatform(3, 5.5, 0, 7, 0.8, 8);
-createPlatform(10, 7, 0, 7, 0.8, 8);
-createPlatform(17, 8.5, 0, 7, 0.8, 8);
-createPlatform(24, 7, 0, 7, 0.8, 8);
-createPlatform(31, 5.5, 0, 7, 0.8, 8);
-createPlatform(38, 4, 0, 7, 0.8, 8);
-createPlatform(45, 2.5, 0, 7, 0.8, 8);
-
-// Back walls (creating corridor depth) - only visual, not blocking
-createBox(-18, 5, -4, 8, 10, 0.5, 0x3a3a3a, wallTexture);
-createBox(-11, 7, -4, 7, 14, 0.5, 0x3a3a3a, wallTexture);
-createBox(-4, 9, -4, 7, 18, 0.5, 0x3a3a3a, wallTexture);
-createBox(3, 10.5, -4, 7, 21, 0.5, 0x3a3a3a, wallTexture);
-createBox(10, 12, -4, 7, 24, 0.5, 0x3a3a3a, wallTexture);
-createBox(17, 13.5, -4, 7, 27, 0.5, 0x3a3a3a, wallTexture);
-createBox(24, 12, -4, 7, 24, 0.5, 0x3a3a3a, wallTexture);
-createBox(31, 10.5, -4, 7, 21, 0.5, 0x3a3a3a, wallTexture);
-createBox(38, 9, -4, 7, 18, 0.5, 0x3a3a3a, wallTexture);
-createBox(45, 7, -4, 7, 14, 0.5, 0x3a3a3a, wallTexture);
+const COLORS = {
+  sky: 0x0a0a15,
+  street: 0x1a1a1a,
+  sidewalk: 0x2a2a2a,
+  building: 0x252530,
+  window: 0x0a2040,
+  windowLit: 0xffcc55,
+  windowBlue: 0x3399ff,
+  windowGreen: 0x33ff99,
+  door: 0x553322,
+  neonPink: 0xff1155,
+  neonCyan: 0x00ffff,
+  neonGreen: 0x00ff66,
+  neonOrange: 0xff6600,
+  neonPurple: 0xaa00ff,
+  neonRed: 0xff0033,
+  neonYellow: 0xffff00,
+  floor: 0x3a3530,
+  floorAlt: 0x454035,
+  wall: 0x2a2520,
+  stairs: 0x228822,
+};
 
 // ============================================
-// DENSE KOWLOON DETAILS - PIPES, WIRES, AC UNITS
+// OUTDOOR SCENE - KOWLOON STREET
 // ============================================
 
-// Horizontal pipes along corridors
-for (let i = 0; i < 10; i++) {
-  const pipeGeo = new THREE.CylinderGeometry(0.15, 0.15, 40, 8);
-  const pipeMat = new THREE.MeshStandardMaterial({
-    map: metalTexture,
-    metalness: 0.6,
-    roughness: 0.8,
-    color: 0x555555
-  });
-  const pipe = new THREE.Mesh(pipeGeo, pipeMat);
-  pipe.rotation.z = Math.PI / 2;
-  pipe.position.set(0, 11 + i * 0.6, -3.5 + Math.random() * 0.5);
-  pipe.castShadow = true;
-  scene.add(pipe);
-  allMeshes.push(pipe);
+// Dark ambient with colored fill
+const outdoorAmbient = new THREE.AmbientLight(0x223344, 0.4);
+outdoorScene.add(outdoorAmbient);
+
+// Dim moonlight
+const moonLight = new THREE.DirectionalLight(0x445566, 0.2);
+moonLight.position.set(-20, 30, 10);
+outdoorScene.add(moonLight);
+
+scene.background = new THREE.Color(COLORS.sky);
+
+// Street
+const street = new THREE.Mesh(
+  new THREE.PlaneGeometry(250, 12),
+  new THREE.MeshStandardMaterial({ color: COLORS.street })
+);
+street.rotation.x = -Math.PI / 2;
+street.position.set(0, 0, 0);
+outdoorScene.add(street);
+
+// Wet street reflection effect
+const wetStreet = new THREE.Mesh(
+  new THREE.PlaneGeometry(250, 12),
+  new THREE.MeshStandardMaterial({ 
+    color: 0x111122, 
+    transparent: true, 
+    opacity: 0.3,
+    metalness: 0.8,
+    roughness: 0.2
+  })
+);
+wetStreet.rotation.x = -Math.PI / 2;
+wetStreet.position.set(0, 0.01, 0);
+outdoorScene.add(wetStreet);
+
+// Sidewalks
+const sidewalkFront = new THREE.Mesh(
+  new THREE.PlaneGeometry(250, 4),
+  new THREE.MeshStandardMaterial({ color: COLORS.sidewalk })
+);
+sidewalkFront.rotation.x = -Math.PI / 2;
+sidewalkFront.position.set(0, 0.05, 8);
+outdoorScene.add(sidewalkFront);
+
+const sidewalkBack = new THREE.Mesh(
+  new THREE.PlaneGeometry(250, 4),
+  new THREE.MeshStandardMaterial({ color: COLORS.sidewalk })
+);
+sidewalkBack.rotation.x = -Math.PI / 2;
+sidewalkBack.position.set(0, 0.05, -8);
+outdoorScene.add(sidewalkBack);
+
+// ============================================
+// BUILDING DATA
+// ============================================
+interface BuildingData {
+  x: number;
+  floors: number;
+  width: number;
+  side: 'front' | 'back';
+  doorX: number;
+  doorZ: number;
 }
 
-// Vertical pipes
-for (let i = 0; i < 12; i++) {
-  const pipeGeo = new THREE.CylinderGeometry(0.12, 0.12, 15, 6);
-  const pipeMat = new THREE.MeshStandardMaterial({
-    color: 0x444444,
-    metalness: 0.7,
-    roughness: 0.7
-  });
-  const pipe = new THREE.Mesh(pipeGeo, pipeMat);
-  pipe.position.set(-25 + i * 5 + Math.random(), 7.5, -3 + Math.random() * 2);
-  pipe.castShadow = true;
-  scene.add(pipe);
-  allMeshes.push(pipe);
-}
+const buildingsData: BuildingData[] = [];
 
-// Hanging wires (lots of them - iconic Kowloon)
-for (let i = 0; i < 25; i++) {
-  const wireGeo = new THREE.CylinderGeometry(0.03, 0.03, 10 + Math.random() * 5, 4);
-  const wireMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
-  const wire = new THREE.Mesh(wireGeo, wireMat);
-  wire.position.set(-25 + i * 3, 14, -3 + Math.random() * 6);
-  wire.rotation.z = (Math.random() - 0.5) * 0.3;
-  scene.add(wire);
-  allMeshes.push(wire);
-}
-
-// Air conditioner units (everywhere - Kowloon hallmark)
-for (let i = 0; i < 15; i++) {
-  const acGeo = new THREE.BoxGeometry(1.2, 0.8, 0.6);
-  const acMat = new THREE.MeshStandardMaterial({
-    color: 0x666666,
-    metalness: 0.4,
-    roughness: 0.6
-  });
-  const ac = new THREE.Mesh(acGeo, acMat);
-  ac.position.set(-25 + i * 4, 8 + Math.random() * 4, 4.2);
-  ac.castShadow = true;
-  scene.add(ac);
-  allMeshes.push(ac);
-
-  // AC exhaust vents
-  const ventGeo = new THREE.BoxGeometry(0.3, 0.6, 0.1);
-  const ventMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
-  const vent = new THREE.Mesh(ventGeo, ventMat);
-  vent.position.copy(ac.position);
-  vent.position.z += 0.35;
-  scene.add(vent);
-  allMeshes.push(vent);
-}
-
-// Ventilation ducts
-for (let i = 0; i < 8; i++) {
-  const ductGeo = new THREE.BoxGeometry(0.8, 0.6, 3);
-  const ductMat = new THREE.MeshStandardMaterial({
-    color: 0x555555,
-    metalness: 0.5
-  });
-  const duct = new THREE.Mesh(ductGeo, ductMat);
-  duct.position.set(-22 + i * 6, 13, 2);
-  duct.castShadow = true;
-  scene.add(duct);
-  allMeshes.push(duct);
-}
-
-// Small neon signs
-const neonSignGeo = new THREE.PlaneGeometry(2, 0.8);
-const neonMat1 = new THREE.MeshStandardMaterial({
-  color: 0xff1a66,
-  emissive: 0xff1a66,
-  emissiveIntensity: 1.2,
-  side: THREE.DoubleSide
-});
-const neonSign1 = new THREE.Mesh(neonSignGeo, neonMat1);
-neonSign1.position.set(-15, 7, 7.5);
-neonSign1.rotation.y = -0.3;
-scene.add(neonSign1);
-allMeshes.push(neonSign1);
-
-const neonMat2 = new THREE.MeshStandardMaterial({
-  color: 0x00ddff,
-  emissive: 0x00ddff,
-  emissiveIntensity: 1.2,
-  side: THREE.DoubleSide
-});
-const neonSign2 = new THREE.Mesh(neonSignGeo, neonMat2);
-neonSign2.position.set(30, 6, 7.5);
-neonSign2.rotation.y = -0.3;
-scene.add(neonSign2);
-allMeshes.push(neonSign2);
-
-// Random debris boxes
-for (let i = 0; i < 10; i++) {
-  const size = 0.3 + Math.random() * 0.5;
-  const debris = createBox(
-    -25 + Math.random() * 60,
-    -0.5 + size / 2,
-    -2 + Math.random() * 4,
-    size,
-    size,
-    size,
-    0x2a2a2a
+function createKowloonBuilding(x: number, floors: number, width: number, side: 'front' | 'back'): number {
+  const height = floors * 2.8;
+  const depth = 6;
+  const z = side === 'front' ? 13 : -13;
+  const faceZ = side === 'front' ? z - depth / 2 : z + depth / 2;
+  
+  // Main building
+  const building = new THREE.Mesh(
+    new THREE.BoxGeometry(width, height, depth),
+    new THREE.MeshStandardMaterial({ color: COLORS.building })
   );
-}
+  building.position.set(x, height / 2, z);
+  outdoorScene.add(building);
 
-// ============================================
-// SCROLLS (COLLECTIBLES)
-// ============================================
-interface Scroll {
-  mesh: THREE.Mesh;
-  collected: boolean;
-  text: string;
-  id: number;
-}
+  // Add grime/texture layers
+  const grime = new THREE.Mesh(
+    new THREE.BoxGeometry(width + 0.1, height + 0.1, depth + 0.1),
+    new THREE.MeshStandardMaterial({ 
+      color: 0x1a1a1a, 
+      transparent: true, 
+      opacity: 0.3 
+    })
+  );
+  grime.position.copy(building.position);
+  outdoorScene.add(grime);
 
-const scrolls: Scroll[] = [];
-let scrollsCollected = 0;
-const totalScrolls = 7;
+  // Windows with random lighting
+  for (let f = 0; f < floors; f++) {
+    const floorY = f * 2.8 + 1.8;
+    const windowsPerFloor = Math.floor(width / 2.5);
+    
+    for (let w = 0; w < windowsPerFloor; w++) {
+      const wx = x - width / 2 + 1.5 + w * 2.5;
+      const isLit = Math.random() > 0.3;
+      const litColor = [COLORS.windowLit, COLORS.windowBlue, COLORS.windowGreen][Math.floor(Math.random() * 3)];
+      
+      const win = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.2, 1.6),
+        new THREE.MeshStandardMaterial({
+          color: isLit ? litColor : COLORS.window,
+          emissive: isLit ? litColor : 0,
+          emissiveIntensity: isLit ? 0.6 : 0
+        })
+      );
+      win.position.set(wx, floorY, faceZ + (side === 'front' ? -0.01 : 0.01));
+      if (side === 'back') win.rotation.y = Math.PI;
+      outdoorScene.add(win);
 
-function createScroll(x: number, y: number, z: number, id: number, text: string): Scroll {
-  const geometry = new THREE.PlaneGeometry(0.6, 0.9);
-  const material = new THREE.MeshStandardMaterial({
-    map: scrollTexture,
-    emissive: 0xffdd88,
-    emissiveIntensity: 0.4,
-    transparent: true,
-    side: THREE.DoubleSide
+      // Window glow
+      if (isLit && Math.random() > 0.7) {
+        const glow = new THREE.PointLight(litColor, 0.3, 4);
+        glow.position.set(wx, floorY, faceZ + (side === 'front' ? -0.5 : 0.5));
+        outdoorScene.add(glow);
+      }
+    }
+  }
+
+  // AC units scattered on facade
+  for (let i = 0; i < floors * 2; i++) {
+    const ac = new THREE.Mesh(
+      new THREE.BoxGeometry(0.8, 0.5, 0.4),
+      new THREE.MeshStandardMaterial({ color: 0x555555 })
+    );
+    ac.position.set(
+      x - width / 2 + Math.random() * width,
+      1 + Math.random() * (height - 2),
+      faceZ + (side === 'front' ? -0.3 : 0.3)
+    );
+    outdoorScene.add(ac);
+  }
+
+  // Pipes running down
+  for (let p = 0; p < 2; p++) {
+    const pipe = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.08, 0.08, height, 6),
+      new THREE.MeshStandardMaterial({ color: 0x333333 })
+    );
+    pipe.position.set(
+      x - width / 2 + 0.5 + p * (width - 1),
+      height / 2,
+      faceZ + (side === 'front' ? -0.15 : 0.15)
+    );
+    outdoorScene.add(pipe);
+  }
+
+  // DOOR - clearly visible with glow
+  const doorZ2 = side === 'front' ? z - depth / 2 - 0.1 : z + depth / 2 + 0.1;
+  
+  // Door frame
+  const doorFrame = new THREE.Mesh(
+    new THREE.BoxGeometry(3, 3.5, 0.3),
+    new THREE.MeshStandardMaterial({ color: 0x332211 })
+  );
+  doorFrame.position.set(x, 1.75, doorZ2);
+  outdoorScene.add(doorFrame);
+
+  // Door
+  const door = new THREE.Mesh(
+    new THREE.PlaneGeometry(2.2, 3),
+    new THREE.MeshStandardMaterial({ color: COLORS.door })
+  );
+  door.position.set(x, 1.5, doorZ2 + (side === 'front' ? -0.2 : 0.2));
+  if (side === 'back') door.rotation.y = Math.PI;
+  outdoorScene.add(door);
+
+  // Door light (warm glow)
+  const doorLight = new THREE.PointLight(0xffaa55, 1, 6);
+  doorLight.position.set(x, 3, doorZ2 + (side === 'front' ? -1 : 1));
+  outdoorScene.add(doorLight);
+
+  // "ENTER" indicator above door
+  const enterSign = new THREE.Mesh(
+    new THREE.PlaneGeometry(2, 0.5),
+    new THREE.MeshStandardMaterial({ 
+      color: 0x00ff00, 
+      emissive: 0x00ff00, 
+      emissiveIntensity: 0.8 
+    })
+  );
+  enterSign.position.set(x, 3.8, doorZ2 + (side === 'front' ? -0.3 : 0.3));
+  if (side === 'back') enterSign.rotation.y = Math.PI;
+  outdoorScene.add(enterSign);
+
+  const idx = buildingsData.length;
+  buildingsData.push({
+    x,
+    floors,
+    width,
+    side,
+    doorX: x,
+    doorZ: side === 'front' ? 8 : -8  // Position on sidewalk
   });
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.position.set(x, y, z);
-  mesh.rotation.y = -0.5;
-  scene.add(mesh);
-  allMeshes.push(mesh);
 
-  const scroll: Scroll = { mesh, collected: false, text, id };
-  scrolls.push(scroll);
-  return scroll;
+  return idx;
 }
 
-// Place scrolls throughout the level
-createScroll(-18, 2.5, 0, 1,
-  "SCROLL 1: The Walled City existed outside law. Neither Britain nor China claimed it. In the gaps between empires, 33,000 people built their own world.");
+// Add neon sign to building
+function addNeonSign(x: number, y: number, z: number, color: number, width: number, height: number, vertical: boolean = false) {
+  const sign = new THREE.Mesh(
+    new THREE.BoxGeometry(vertical ? 0.8 : width, vertical ? height : 0.8, 0.3),
+    new THREE.MeshStandardMaterial({ 
+      color, 
+      emissive: color, 
+      emissiveIntensity: 1.5 
+    })
+  );
+  sign.position.set(x, y, z);
+  outdoorScene.add(sign);
+  
+  // Strong glow
+  const glow = new THREE.PointLight(color, 2, 12);
+  glow.position.set(x, y, z + 0.5);
+  outdoorScene.add(glow);
 
-createScroll(-11, 4, 0, 2,
-  "SCROLL 2: Judge Bao represents justice, but in a place without jurisdiction, who has the right to judge? The law is a fiction we agree to believe.");
+  // Reflection on ground
+  const reflection = new THREE.PointLight(color, 0.5, 8);
+  reflection.position.set(x, 0.1, z > 0 ? 5 : -5);
+  outdoorScene.add(reflection);
+}
 
-createScroll(-4, 5.5, 0, 3,
-  "SCROLL 3: Fox spirits—huli jing—shift between forms. In Kowloon, identity itself was fluid. Human, ghost, citizen, refugee... all the same.");
+// Create buildings - FRONT SIDE
+createKowloonBuilding(-40, 14, 12, 'front');
+createKowloonBuilding(-25, 18, 10, 'front');
+createKowloonBuilding(-12, 12, 11, 'front');
+createKowloonBuilding(2, 20, 12, 'front');
+createKowloonBuilding(16, 15, 10, 'front');
+createKowloonBuilding(30, 17, 12, 'front');
+createKowloonBuilding(45, 13, 11, 'front');
 
-createScroll(3, 7, 0, 4,
-  "SCROLL 4: They built upward, inward, through each other's rooms. Corridors narrowed to 1 meter. The self dissolves in density.");
+// Create buildings - BACK SIDE
+createKowloonBuilding(-35, 16, 11, 'back');
+createKowloonBuilding(-20, 14, 10, 'back');
+createKowloonBuilding(-5, 19, 12, 'back');
+createKowloonBuilding(10, 11, 10, 'back');
+createKowloonBuilding(25, 18, 12, 'back');
+createKowloonBuilding(40, 15, 11, 'back');
 
-createScroll(10, 8.5, 0, 5,
-  "SCROLL 5: The Backrooms are infinite but empty. Kowloon was finite but infinitely full. Both are labyrinths. Which is the nightmare?");
+// NEON SIGNS - Lots of them!
+// Front buildings
+addNeonSign(-40, 10, 9.5, COLORS.neonPink, 4, 1);
+addNeonSign(-40, 18, 9.5, COLORS.neonCyan, 1, 6, true);
+addNeonSign(-25, 14, 9.5, COLORS.neonGreen, 3, 1);
+addNeonSign(-25, 8, 9.5, COLORS.neonOrange, 1, 4, true);
+addNeonSign(-12, 7, 9.5, COLORS.neonPurple, 4, 1);
+addNeonSign(2, 16, 9.5, COLORS.neonRed, 5, 1);
+addNeonSign(2, 10, 9.5, COLORS.neonCyan, 1, 8, true);
+addNeonSign(2, 6, 9.5, COLORS.neonYellow, 3, 1);
+addNeonSign(16, 12, 9.5, COLORS.neonPink, 4, 1);
+addNeonSign(30, 9, 9.5, COLORS.neonGreen, 1, 5, true);
+addNeonSign(30, 15, 9.5, COLORS.neonOrange, 4, 1);
+addNeonSign(45, 8, 9.5, COLORS.neonPurple, 3, 1);
 
-createScroll(24, 8.5, 0, 6,
-  "SCROLL 6: Demolition: 1993. Residents scattered. But the ghost persists—in memory, in photographs, in games like this. A place that never fully existed.");
+// Back buildings
+addNeonSign(-35, 12, -9.5, COLORS.neonCyan, 4, 1);
+addNeonSign(-20, 9, -9.5, COLORS.neonPink, 1, 5, true);
+addNeonSign(-5, 15, -9.5, COLORS.neonGreen, 5, 1);
+addNeonSign(-5, 8, -9.5, COLORS.neonRed, 1, 6, true);
+addNeonSign(10, 7, -9.5, COLORS.neonYellow, 3, 1);
+addNeonSign(25, 14, -9.5, COLORS.neonPurple, 4, 1);
+addNeonSign(25, 8, -9.5, COLORS.neonOrange, 1, 5, true);
+addNeonSign(40, 11, -9.5, COLORS.neonCyan, 4, 1);
 
-createScroll(38, 5.5, 0, 7,
-  "SCROLL 7: You are exploring a memory of a memory. Each scroll is a fragment of something lost. This is digital archaeology. Congratulations.");
+// Hanging wires between buildings
+for (let i = 0; i < 20; i++) {
+  const wire = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.02, 0.02, 8 + Math.random() * 6, 4),
+    new THREE.MeshStandardMaterial({ color: 0x111111 })
+  );
+  wire.position.set(-50 + i * 5, 10 + Math.random() * 15, 0);
+  wire.rotation.z = Math.PI / 2;
+  wire.rotation.y = (Math.random() - 0.5) * 0.3;
+  outdoorScene.add(wire);
+}
+
+// Street lamps with flickering
+for (let i = -5; i <= 5; i++) {
+  const pole = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.08, 0.08, 4),
+    new THREE.MeshStandardMaterial({ color: 0x222222 })
+  );
+  pole.position.set(i * 12, 2, 5);
+  outdoorScene.add(pole);
+
+  const lamp = new THREE.Mesh(
+    new THREE.SphereGeometry(0.3, 8, 8),
+    new THREE.MeshStandardMaterial({ 
+      color: 0xffdd88, 
+      emissive: 0xffdd88, 
+      emissiveIntensity: 0.5 
+    })
+  );
+  lamp.position.set(i * 12, 4.2, 5);
+  outdoorScene.add(lamp);
+
+  const light = new THREE.PointLight(0xffdd88, 0.6, 10);
+  light.position.set(i * 12, 4, 5);
+  outdoorScene.add(light);
+}
+
+// Trash, debris
+for (let i = 0; i < 15; i++) {
+  const trash = new THREE.Mesh(
+    new THREE.BoxGeometry(0.3 + Math.random() * 0.3, 0.2, 0.3 + Math.random() * 0.3),
+    new THREE.MeshStandardMaterial({ color: 0x333322 })
+  );
+  trash.position.set(-50 + Math.random() * 100, 0.1, -6 + Math.random() * 12);
+  trash.rotation.y = Math.random() * Math.PI;
+  outdoorScene.add(trash);
+}
+
+// ============================================
+// INDOOR SCENE
+// ============================================
+
+const indoorAmbient = new THREE.AmbientLight(0x222222, 0.3);
+indoorScene.add(indoorAmbient);
+
+let currentFloorGroup: THREE.Group | null = null;
+
+function createFloorView(buildingIdx: number, floor: number) {
+  if (currentFloorGroup) {
+    indoorScene.remove(currentFloorGroup);
+  }
+
+  const bd = buildingsData[buildingIdx];
+  if (!bd) return { floorWidth: 28, floorDepth: 18, isTopFloor: false, isGroundFloor: true };
+  
+  const floorGroup = new THREE.Group();
+  
+  const floorWidth = 28;
+  const floorDepth = 18;
+  const isTopFloor = floor === bd.floors - 1;
+  const isGroundFloor = floor === 0;
+
+  // Floor tiles (checkered, grimy)
+  for (let tx = -7; tx <= 7; tx++) {
+    for (let tz = -4; tz <= 4; tz++) {
+      const isDark = (tx + tz) % 2 === 0;
+      const tile = new THREE.Mesh(
+        new THREE.BoxGeometry(1.9, 0.15, 1.9),
+        new THREE.MeshStandardMaterial({ 
+          color: isDark ? COLORS.floor : COLORS.floorAlt,
+          roughness: 0.9
+        })
+      );
+      tile.position.set(tx * 2, 0, tz * 2);
+      floorGroup.add(tile);
+    }
+  }
+
+  // Walls
+  const wallMat = new THREE.MeshStandardMaterial({ 
+    color: COLORS.wall, 
+    roughness: 0.95
+  });
+  const wallHeight = 3.5;
+
+  // Back wall
+  const backWall = new THREE.Mesh(
+    new THREE.BoxGeometry(floorWidth, wallHeight, 0.4), wallMat
+  );
+  backWall.position.set(0, wallHeight / 2, -floorDepth / 2);
+  floorGroup.add(backWall);
+
+  // Side walls
+  const leftWall = new THREE.Mesh(
+    new THREE.BoxGeometry(0.4, wallHeight, floorDepth), wallMat
+  );
+  leftWall.position.set(-floorWidth / 2, wallHeight / 2, 0);
+  floorGroup.add(leftWall);
+
+  const rightWall = new THREE.Mesh(
+    new THREE.BoxGeometry(0.4, wallHeight, floorDepth), wallMat
+  );
+  rightWall.position.set(floorWidth / 2, wallHeight / 2, 0);
+  floorGroup.add(rightWall);
+
+  // Front wall
+  if (isGroundFloor) {
+    // With door hole
+    const frontLeft = new THREE.Mesh(
+      new THREE.BoxGeometry(floorWidth / 2 - 2.5, wallHeight, 0.4), wallMat
+    );
+    frontLeft.position.set(-floorWidth / 4 - 1.25, wallHeight / 2, floorDepth / 2);
+    floorGroup.add(frontLeft);
+
+    const frontRight = new THREE.Mesh(
+      new THREE.BoxGeometry(floorWidth / 2 - 2.5, wallHeight, 0.4), wallMat
+    );
+    frontRight.position.set(floorWidth / 4 + 1.25, wallHeight / 2, floorDepth / 2);
+    floorGroup.add(frontRight);
+
+    // Door header
+    const doorHeader = new THREE.Mesh(
+      new THREE.BoxGeometry(5, wallHeight - 2.8, 0.4), wallMat
+    );
+    doorHeader.position.set(0, wallHeight - 0.35, floorDepth / 2);
+    floorGroup.add(doorHeader);
+
+    // EXIT sign
+    const exitSign = new THREE.Mesh(
+      new THREE.BoxGeometry(2, 0.5, 0.1),
+      new THREE.MeshStandardMaterial({ color: 0x00ff00, emissive: 0x00ff00, emissiveIntensity: 1 })
+    );
+    exitSign.position.set(0, 3, floorDepth / 2 - 0.3);
+    floorGroup.add(exitSign);
+
+    const exitLight = new THREE.PointLight(0x00ff00, 0.8, 5);
+    exitLight.position.set(0, 3, floorDepth / 2 - 1);
+    floorGroup.add(exitLight);
+  } else {
+    const frontWall = new THREE.Mesh(
+      new THREE.BoxGeometry(floorWidth, wallHeight, 0.4), wallMat
+    );
+    frontWall.position.set(0, wallHeight / 2, floorDepth / 2);
+    floorGroup.add(frontWall);
+  }
+
+  // Grimy windows (show outside)
+  for (let i = -2; i <= 2; i++) {
+    const window1 = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.8, 2),
+      new THREE.MeshStandardMaterial({ 
+        color: 0x1a2030, 
+        emissive: 0x1a2030, 
+        emissiveIntensity: 0.1,
+        transparent: true,
+        opacity: 0.6
+      })
+    );
+    window1.position.set(i * 4, 2, -floorDepth / 2 + 0.25);
+    floorGroup.add(window1);
+  }
+
+  // STAIRS UP (back-right) - green
+  if (!isTopFloor) {
+    const stairsUp = new THREE.Mesh(
+      new THREE.BoxGeometry(3.5, 0.4, 3.5),
+      new THREE.MeshStandardMaterial({ color: COLORS.stairs })
+    );
+    stairsUp.position.set(floorWidth / 2 - 3, 0.25, -floorDepth / 2 + 3);
+    floorGroup.add(stairsUp);
+
+    const arrowUp = new THREE.Mesh(
+      new THREE.ConeGeometry(0.6, 1.2, 4),
+      new THREE.MeshStandardMaterial({ color: 0x00ff00, emissive: 0x00ff00, emissiveIntensity: 1 })
+    );
+    arrowUp.position.set(floorWidth / 2 - 3, 1.5, -floorDepth / 2 + 3);
+    floorGroup.add(arrowUp);
+
+    const upLight = new THREE.PointLight(0x00ff00, 1.5, 6);
+    upLight.position.set(floorWidth / 2 - 3, 1.5, -floorDepth / 2 + 3);
+    floorGroup.add(upLight);
+  }
+
+  // STAIRS DOWN (back-left) - orange
+  if (!isGroundFloor) {
+    const stairsDown = new THREE.Mesh(
+      new THREE.BoxGeometry(3.5, 0.4, 3.5),
+      new THREE.MeshStandardMaterial({ color: 0x886633 })
+    );
+    stairsDown.position.set(-floorWidth / 2 + 3, 0.25, -floorDepth / 2 + 3);
+    floorGroup.add(stairsDown);
+
+    const arrowDown = new THREE.Mesh(
+      new THREE.ConeGeometry(0.6, 1.2, 4),
+      new THREE.MeshStandardMaterial({ color: 0xff8800, emissive: 0xff8800, emissiveIntensity: 1 })
+    );
+    arrowDown.position.set(-floorWidth / 2 + 3, 1.5, -floorDepth / 2 + 3);
+    arrowDown.rotation.z = Math.PI;
+    floorGroup.add(arrowDown);
+
+    const downLight = new THREE.PointLight(0xff8800, 1.5, 6);
+    downLight.position.set(-floorWidth / 2 + 3, 1.5, -floorDepth / 2 + 3);
+    floorGroup.add(downLight);
+  }
+
+  // ROOF ACCESS (top floor) - blue
+  if (isTopFloor) {
+    const roofAccess = new THREE.Mesh(
+      new THREE.BoxGeometry(3.5, 0.4, 3.5),
+      new THREE.MeshStandardMaterial({ color: 0x335588 })
+    );
+    roofAccess.position.set(floorWidth / 2 - 3, 0.25, floorDepth / 2 - 3);
+    floorGroup.add(roofAccess);
+
+    const roofArrow = new THREE.Mesh(
+      new THREE.ConeGeometry(0.6, 1.2, 4),
+      new THREE.MeshStandardMaterial({ color: 0x4488ff, emissive: 0x4488ff, emissiveIntensity: 1 })
+    );
+    roofArrow.position.set(floorWidth / 2 - 3, 1.5, floorDepth / 2 - 3);
+    floorGroup.add(roofArrow);
+
+    const roofLight = new THREE.PointLight(0x4488ff, 1.5, 6);
+    roofLight.position.set(floorWidth / 2 - 3, 1.5, floorDepth / 2 - 3);
+    floorGroup.add(roofLight);
+  }
+
+  // Random eerie furniture
+  for (let i = 0; i < 6; i++) {
+    const furn = new THREE.Mesh(
+      new THREE.BoxGeometry(1 + Math.random(), 0.5 + Math.random() * 0.8, 1 + Math.random()),
+      new THREE.MeshStandardMaterial({ color: 0x3a2a1a })
+    );
+    furn.position.set(
+      -9 + Math.random() * 18,
+      0.4,
+      -5 + Math.random() * 10
+    );
+    floorGroup.add(furn);
+  }
+
+  // Flickering ceiling light
+  const ceilingLight = new THREE.PointLight(0xffffcc, 0.4, 20);
+  ceilingLight.position.set(0, 3, 0);
+  floorGroup.add(ceilingLight);
+
+  indoorScene.add(floorGroup);
+  currentFloorGroup = floorGroup;
+
+  return { floorWidth, floorDepth, isTopFloor, isGroundFloor };
+}
+
+// ============================================
+// PLAYER WITH FLASHLIGHT
+// ============================================
+const playerGroup = new THREE.Group();
+
+const playerBody = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.35, 0.35, 1.1, 12),
+  new THREE.MeshStandardMaterial({ color: 0x1a1a1a })
+);
+playerBody.position.y = 0.55;
+playerGroup.add(playerBody);
+
+const playerHead = new THREE.Mesh(
+  new THREE.SphereGeometry(0.3, 12, 12),
+  new THREE.MeshStandardMaterial({ color: 0xeeddcc })
+);
+playerHead.position.y = 1.3;
+playerGroup.add(playerHead);
+
+// Direction cone
+const dirMarker = new THREE.Mesh(
+  new THREE.ConeGeometry(0.15, 0.3, 4),
+  new THREE.MeshStandardMaterial({ color: 0xff0066, emissive: 0xff0066, emissiveIntensity: 0.8 })
+);
+dirMarker.position.set(0, 1.3, 0.4);
+dirMarker.rotation.x = Math.PI / 2;
+playerGroup.add(dirMarker);
+
+// Shadow
+const shadow = new THREE.Mesh(
+  new THREE.CircleGeometry(0.45, 16),
+  new THREE.MeshStandardMaterial({ color: 0x000000, transparent: true, opacity: 0.4 })
+);
+shadow.rotation.x = -Math.PI / 2;
+shadow.position.y = 0.02;
+playerGroup.add(shadow);
+
+// FLASHLIGHT
+const flashlight = new THREE.SpotLight(0xffffee, 3, 15, Math.PI / 6, 0.3, 1);
+flashlight.position.set(0, 1, 0.3);
+flashlight.target.position.set(0, 0, 5);
+playerGroup.add(flashlight);
+playerGroup.add(flashlight.target);
+
+// Flashlight beam visual
+const beamGeo = new THREE.ConeGeometry(0.08, 0.3, 8);
+const beamMat = new THREE.MeshStandardMaterial({ 
+  color: 0xffffaa, 
+  emissive: 0xffffaa, 
+  emissiveIntensity: 0.5 
+});
+const flashlightMesh = new THREE.Mesh(beamGeo, beamMat);
+flashlightMesh.position.set(0.25, 0.8, 0.3);
+flashlightMesh.rotation.x = Math.PI / 2;
+playerGroup.add(flashlightMesh);
+
+playerGroup.position.set(0, 0.1, 0);
+outdoorScene.add(playerGroup);
+
+const player = {
+  x: 0,
+  z: 0,
+  facing: 0,
+  speed: 0.22
+};
 
 // ============================================
 // INPUT
 // ============================================
-const keys = {
-  left: false,
-  right: false,
-  jump: false
-};
+const keys = { left: false, right: false, forward: false, backward: false, interact: false };
 
 window.addEventListener('keydown', (e) => {
   if (e.code === 'KeyA' || e.code === 'ArrowLeft') keys.left = true;
   if (e.code === 'KeyD' || e.code === 'ArrowRight') keys.right = true;
-  if (e.code === 'KeyW' || e.code === 'ArrowUp' || e.code === 'Space') {
-    if (player.onGround) keys.jump = true;
-  }
+  if (e.code === 'KeyW' || e.code === 'ArrowUp') keys.forward = true;
+  if (e.code === 'KeyS' || e.code === 'ArrowDown') keys.backward = true;
+  if (e.code === 'KeyE' || e.code === 'Space') keys.interact = true;
 });
 
 window.addEventListener('keyup', (e) => {
   if (e.code === 'KeyA' || e.code === 'ArrowLeft') keys.left = false;
   if (e.code === 'KeyD' || e.code === 'ArrowRight') keys.right = false;
+  if (e.code === 'KeyW' || e.code === 'ArrowUp') keys.forward = false;
+  if (e.code === 'KeyS' || e.code === 'ArrowDown') keys.backward = false;
+  if (e.code === 'KeyE' || e.code === 'Space') keys.interact = false;
 });
 
 // ============================================
@@ -540,27 +705,21 @@ const popupText = document.getElementById('popup-text') as HTMLDivElement;
 const popupClose = document.getElementById('popup-close') as HTMLButtonElement;
 
 let hasStarted = false;
+let interactCooldown = 0;
 
-function startGame(): void {
+canvas.addEventListener('click', () => {
   if (!hasStarted && instructions) {
     instructions.classList.add('hidden');
     hasStarted = true;
   }
-}
-
-canvas.addEventListener('click', startGame);
-
-if (instructions) {
-  instructions.addEventListener('click', startGame);
-}
-
-if (popupClose) {
-  popupClose.addEventListener('click', () => {
-    if (popup) {
-      popup.style.display = 'none';
-    }
-  });
-}
+});
+instructions?.addEventListener('click', () => {
+  if (!hasStarted && instructions) {
+    instructions.classList.add('hidden');
+    hasStarted = true;
+  }
+});
+popupClose?.addEventListener('click', () => { if (popup) popup.style.display = 'none'; });
 
 function showPopup(text: string): void {
   if (popup && popupText) {
@@ -569,124 +728,190 @@ function showPopup(text: string): void {
   }
 }
 
-function updateScrollCounter(): void {
+function updateUI(): void {
   if (scrollCounter) {
-    scrollCounter.textContent = `SCROLLS: ${scrollsCollected}/${totalScrolls}`;
+    if (state.mode === 'indoor' && state.currentBuilding >= 0) {
+      const bd = buildingsData[state.currentBuilding];
+      scrollCounter.textContent = `FLOOR ${state.currentFloor + 1} / ${bd?.floors ?? '?'}`;
+    } else {
+      scrollCounter.textContent = 'KOWLOON STREETS';
+    }
   }
 }
 
 // ============================================
-// PHYSICS
+// GAME LOGIC
 // ============================================
-const GRAVITY = -0.6;
-const MOVE_SPEED = 0.25;
-const JUMP_FORCE = 12;
-const MAX_FALL_SPEED = -1.2;
+let floorInfo = { floorWidth: 28, floorDepth: 18, isTopFloor: false, isGroundFloor: true };
 
-function checkAABBCollision(
-  aMin: THREE.Vector3,
-  aMax: THREE.Vector3,
-  bMin: THREE.Vector3,
-  bMax: THREE.Vector3
-): boolean {
-  return (
-    aMin.x <= bMax.x &&
-    aMax.x >= bMin.x &&
-    aMin.y <= bMax.y &&
-    aMax.y >= bMin.y &&
-    aMin.z <= bMax.z &&
-    aMax.z >= bMin.z
-  );
+function enterBuilding(buildingIdx: number) {
+  state.mode = 'indoor';
+  state.currentBuilding = buildingIdx;
+  state.currentFloor = 0;
+
+  outdoorScene.visible = false;
+  indoorScene.visible = true;
+
+  outdoorScene.remove(playerGroup);
+  indoorScene.add(playerGroup);
+
+  floorInfo = createFloorView(buildingIdx, 0);
+  player.x = 0;
+  player.z = 6;
+  playerGroup.position.set(0, 0.1, 6);
+
+  updateUI();
 }
 
-function updatePhysics(): void {
-  // Apply gravity
-  player.velocity.y += GRAVITY * 0.016;
-  if (player.velocity.y < MAX_FALL_SPEED) {
-    player.velocity.y = MAX_FALL_SPEED;
+function exitBuilding() {
+  state.mode = 'outdoor';
+  const bd = buildingsData[state.currentBuilding];
+
+  outdoorScene.visible = true;
+  indoorScene.visible = false;
+
+  indoorScene.remove(playerGroup);
+  outdoorScene.add(playerGroup);
+
+  player.x = bd?.doorX ?? 0;
+  player.z = bd?.doorZ ?? 0;
+  playerGroup.position.set(player.x, 0.1, player.z);
+
+  state.currentBuilding = -1;
+  state.currentFloor = 0;
+
+  updateUI();
+}
+
+function goUpFloor() {
+  const bd = buildingsData[state.currentBuilding];
+  if (!bd) return;
+  if (state.currentFloor < bd.floors - 1) {
+    state.currentFloor++;
+    floorInfo = createFloorView(state.currentBuilding, state.currentFloor);
+    player.x = floorInfo.floorWidth / 2 - 3;
+    player.z = -floorInfo.floorDepth / 2 + 5;
+    playerGroup.position.set(player.x, 0.1, player.z);
+    updateUI();
+  }
+}
+
+function goDownFloor() {
+  if (state.currentFloor > 0) {
+    state.currentFloor--;
+    floorInfo = createFloorView(state.currentBuilding, state.currentFloor);
+    player.x = -floorInfo.floorWidth / 2 + 3;
+    player.z = -floorInfo.floorDepth / 2 + 5;
+    playerGroup.position.set(player.x, 0.1, player.z);
+    updateUI();
+  }
+}
+
+function jumpOffRoof() {
+  exitBuilding();
+  showPopup("You jumped from the roof and landed on the street below!");
+}
+
+function update() {
+  if (interactCooldown > 0) interactCooldown--;
+
+  let moveX = 0;
+  let moveZ = 0;
+  if (keys.left) moveX -= player.speed;
+  if (keys.right) moveX += player.speed;
+  if (keys.forward) moveZ -= player.speed;
+  if (keys.backward) moveZ += player.speed;
+
+  // Update facing
+  if (moveX !== 0 || moveZ !== 0) {
+    player.facing = Math.atan2(moveX, -moveZ);
+    dirMarker.rotation.y = player.facing;
+    dirMarker.position.x = Math.sin(player.facing) * 0.35;
+    dirMarker.position.z = -Math.cos(player.facing) * 0.35;
+    
+    // Update flashlight direction
+    flashlight.target.position.x = Math.sin(player.facing) * 10;
+    flashlight.target.position.z = -Math.cos(player.facing) * 10;
+    flashlightMesh.rotation.y = player.facing;
+    flashlightMesh.position.x = Math.sin(player.facing) * 0.35 + 0.1;
+    flashlightMesh.position.z = -Math.cos(player.facing) * 0.35;
   }
 
-  // Horizontal movement
-  if (keys.left) player.velocity.x = -MOVE_SPEED;
-  else if (keys.right) player.velocity.x = MOVE_SPEED;
-  else player.velocity.x *= 0.85;
+  if (state.mode === 'outdoor') {
+    player.x += moveX;
+    player.z += moveZ;
 
-  // Jump
-  if (keys.jump && player.onGround) {
-    player.velocity.y = JUMP_FORCE * 0.016;
-    player.onGround = false;
-    keys.jump = false;
-  }
+    // Stay on sidewalks/street
+    player.x = Math.max(-55, Math.min(55, player.x));
+    player.z = Math.max(-6, Math.min(6, player.z));
 
-  // Try to move horizontally
-  const testX = player.mesh.position.x + player.velocity.x;
-  let canMoveX = true;
+    playerGroup.position.set(player.x, 0.1, player.z);
 
-  for (const platform of platforms) {
-    const b = platform.bounds;
-    if (
-      testX + player.width / 2 > b.minX &&
-      testX - player.width / 2 < b.maxX &&
-      player.mesh.position.y + player.height / 2 > b.minY &&
-      player.mesh.position.y - player.height / 2 < b.maxY &&
-      player.mesh.position.z + player.depth / 2 > b.minZ &&
-      player.mesh.position.z - player.depth / 2 < b.maxZ
-    ) {
-      canMoveX = false;
-      player.velocity.x = 0;
-      break;
+    // Check building entry
+    if (keys.interact && interactCooldown === 0) {
+      for (let i = 0; i < buildingsData.length; i++) {
+        const bd = buildingsData[i];
+        if (!bd) continue;
+        const dist = Math.abs(player.x - bd.doorX) + Math.abs(player.z - bd.doorZ);
+        if (dist < 4) {
+          enterBuilding(i);
+          interactCooldown = 15;
+          return;
+        }
+      }
     }
-  }
 
-  if (canMoveX) {
-    player.mesh.position.x = testX;
-  }
+  } else {
+    player.x += moveX;
+    player.z += moveZ;
 
-  // Try to move vertically
-  const testY = player.mesh.position.y + player.velocity.y;
-  player.onGround = false;
+    const halfW = floorInfo.floorWidth / 2 - 1;
+    const halfD = floorInfo.floorDepth / 2 - 1;
+    player.x = Math.max(-halfW, Math.min(halfW, player.x));
+    player.z = Math.max(-halfD, Math.min(halfD, player.z));
 
-  for (const platform of platforms) {
-    const b = platform.bounds;
-    if (
-      player.mesh.position.x + player.width / 2 > b.minX &&
-      player.mesh.position.x - player.width / 2 < b.maxX &&
-      testY + player.height / 2 > b.minY &&
-      testY - player.height / 2 < b.maxY &&
-      player.mesh.position.z + player.depth / 2 > b.minZ &&
-      player.mesh.position.z - player.depth / 2 < b.maxZ
-    ) {
-      // Landing on top
-      if (player.velocity.y < 0 && player.mesh.position.y > b.maxY) {
-        player.mesh.position.y = b.maxY + player.height / 2;
-        player.velocity.y = 0;
-        player.onGround = true;
-      }
-      // Hitting from below
-      else if (player.velocity.y > 0 && player.mesh.position.y < b.minY) {
-        player.mesh.position.y = b.minY - player.height / 2;
-        player.velocity.y = 0;
-      }
-      return;
-    }
-  }
+    playerGroup.position.set(player.x, 0.1, player.z);
 
-  player.mesh.position.y = testY;
-
-  // Scroll collection
-  for (const scroll of scrolls) {
-    if (!scroll.collected) {
-      const distance = player.mesh.position.distanceTo(scroll.mesh.position);
-      if (distance < 1.5) {
-        scroll.collected = true;
-        scroll.mesh.visible = false;
-        scrollsCollected++;
-        updateScrollCounter();
-        showPopup(scroll.text);
+    if (keys.interact && interactCooldown === 0) {
+      // STAIRS UP
+      if (!floorInfo.isTopFloor) {
+        const stairX = halfW - 1;
+        const stairZ = -halfD + 1;
+        if (Math.abs(player.x - stairX) < 2.5 && Math.abs(player.z - stairZ) < 2.5) {
+          goUpFloor();
+          interactCooldown = 15;
+          return;
+        }
       }
 
-      scroll.mesh.rotation.y += 0.015;
-      scroll.mesh.position.y += Math.sin(Date.now() * 0.001 + scroll.id) * 0.008;
+      // STAIRS DOWN
+      if (!floorInfo.isGroundFloor) {
+        const stairX = -halfW + 1;
+        const stairZ = -halfD + 1;
+        if (Math.abs(player.x - stairX) < 2.5 && Math.abs(player.z - stairZ) < 2.5) {
+          goDownFloor();
+          interactCooldown = 15;
+          return;
+        }
+      }
+
+      // DOOR EXIT (ground floor)
+      if (floorInfo.isGroundFloor && Math.abs(player.x) < 3 && player.z > halfD - 2) {
+        exitBuilding();
+        interactCooldown = 15;
+        return;
+      }
+
+      // ROOF EXIT (top floor)
+      if (floorInfo.isTopFloor) {
+        const roofX = halfW - 1;
+        const roofZ = halfD - 1;
+        if (Math.abs(player.x - roofX) < 2.5 && Math.abs(player.z - roofZ) < 2.5) {
+          jumpOffRoof();
+          interactCooldown = 15;
+          return;
+        }
+      }
     }
   }
 }
@@ -694,69 +919,39 @@ function updatePhysics(): void {
 // ============================================
 // CAMERA
 // ============================================
-function updateCamera(): void {
-  const targetX = player.mesh.position.x;
-  const targetY = player.mesh.position.y;
-
-  camera.position.x += (targetX + 20 - camera.position.x) * 0.08;
-  camera.position.y += (targetY + 7 - camera.position.y) * 0.08;
-
-  camera.lookAt(targetX, targetY + 2, 0);
-}
-
-// ============================================
-// ATMOSPHERE
-// ============================================
-let time = 0;
-function updateAtmosphere(): void {
-  time += 0.016;
-
-  if (Math.random() > 0.96) {
-    light1.intensity = 0.6 + Math.random() * 0.4;
-  }
-  if (Math.random() > 0.97) {
-    light2.intensity = 0.4 + Math.random() * 0.4;
+function updateCamera() {
+  if (state.mode === 'outdoor') {
+    viewSize = 14;
+    camera.position.set(player.x + 12, 10, player.z + 22);
+    camera.lookAt(player.x, 4, player.z);
+  } else {
+    viewSize = 16;
+    camera.position.set(0, 28, 12);
+    camera.lookAt(0, 0, 0);
   }
 
-  (neonSign1.material as THREE.MeshStandardMaterial).emissiveIntensity =
-    1.0 + Math.sin(time * 2) * 0.2;
-  (neonSign2.material as THREE.MeshStandardMaterial).emissiveIntensity =
-    1.0 + Math.sin(time * 2.3) * 0.2;
+  const a = window.innerWidth / window.innerHeight;
+  camera.left = -viewSize * a;
+  camera.right = viewSize * a;
+  camera.top = viewSize;
+  camera.bottom = -viewSize;
+  camera.updateProjectionMatrix();
 }
 
 // ============================================
 // GAME LOOP
 // ============================================
-function animate(): void {
+function animate() {
   requestAnimationFrame(animate);
-
-  updatePhysics();
+  update();
   updateCamera();
-  updateAtmosphere();
-
   renderer.render(scene, camera);
 }
 
-// ============================================
-// RESIZE
-// ============================================
 window.addEventListener('resize', () => {
-  const { innerWidth, innerHeight } = window;
-  const aspect = innerWidth / innerHeight;
-  const viewSize = 12;
-
-  camera.left = -viewSize * aspect;
-  camera.right = viewSize * aspect;
-  camera.top = viewSize;
-  camera.bottom = -viewSize;
-  camera.updateProjectionMatrix();
-
-  renderer.setSize(innerWidth, innerHeight);
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  updateCamera();
 });
 
-// ============================================
-// START
-// ============================================
-updateScrollCounter();
-renderer.render(scene, camera);
+updateUI();
 animate();
