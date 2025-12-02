@@ -38,9 +38,11 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 // STATE
 // ============================================
 const state = {
-  mode: 'outdoor' as 'outdoor' | 'indoor',
+  mode: 'outdoor' as 'outdoor' | 'indoor' | 'underground',
   currentBuilding: -1,
-  currentFloor: 0
+  currentFloor: 0,
+  currentDrain: -1,  // Which drain was entered
+  undergroundDepth: 0  // How deep underground (0 = main tunnel)
 };
 
 // ============================================
@@ -1461,6 +1463,110 @@ alleyZPositions.forEach((alleyZ, rowIndex) => {
   }
 });
 
+// ============================================
+// UNDERGROUND ENTRANCES - Secret passages throughout city
+// ============================================
+interface UndergroundEntrance {
+  x: number;
+  z: number;
+  mesh: THREE.Group;
+}
+
+const undergroundEntrances: UndergroundEntrance[] = [];
+
+// Create underground entrance - secret passage style
+function createUndergroundEntrance(x: number, z: number): THREE.Group {
+  const group = new THREE.Group();
+  
+  // Broken concrete hole (irregular shape)
+  const holeW = 1.2 + Math.random() * 0.4;
+  const holeD = 1.0 + Math.random() * 0.3;
+  const hole = new THREE.Mesh(
+    new THREE.BoxGeometry(holeW, 0.3, holeD),
+    new THREE.MeshBasicMaterial({ color: 0x030303 })
+  );
+  hole.position.y = -0.1;
+  group.add(hole);
+  
+  // Crumbling concrete edges (irregular)
+  const edgeColors = [0x3a3530, 0x2f2a25, 0x353028];
+  for (let i = 0; i < 8; i++) {
+    const angle = (i / 8) * Math.PI * 2;
+    const dist = 0.5 + Math.random() * 0.3;
+    const edgeW = 0.2 + Math.random() * 0.3;
+    const edgeH = 0.1 + Math.random() * 0.15;
+    const edge = new THREE.Mesh(
+      new THREE.BoxGeometry(edgeW, edgeH, edgeW),
+      new THREE.MeshLambertMaterial({ color: edgeColors[Math.floor(Math.random() * 3)] })
+    );
+    edge.position.set(
+      Math.cos(angle) * dist,
+      edgeH / 2,
+      Math.sin(angle) * dist
+    );
+    edge.rotation.y = Math.random() * Math.PI;
+    group.add(edge);
+  }
+  
+  // Rusty metal ladder rungs visible in hole
+  for (let i = 0; i < 3; i++) {
+    const rung = new THREE.Mesh(
+      new THREE.BoxGeometry(0.6, 0.05, 0.05),
+      new THREE.MeshLambertMaterial({ color: 0x4a4035 })
+    );
+    rung.position.set(0, -0.1 - i * 0.25, 0);
+    group.add(rung);
+  }
+  
+  // Dark stains around entrance
+  const stain = new THREE.Mesh(
+    new THREE.CircleGeometry(1.5 + Math.random() * 0.5, 8),
+    new THREE.MeshBasicMaterial({ color: 0x1a1815, transparent: true, opacity: 0.3 })
+  );
+  stain.rotation.x = -Math.PI / 2;
+  stain.position.y = 0.01;
+  group.add(stain);
+  
+  // Debris around entrance
+  for (let i = 0; i < 4; i++) {
+    const debris = new THREE.Mesh(
+      new THREE.BoxGeometry(0.1 + Math.random() * 0.2, 0.05, 0.1 + Math.random() * 0.2),
+      new THREE.MeshLambertMaterial({ color: 0x3a3530 })
+    );
+    debris.position.set(
+      (Math.random() - 0.5) * 2,
+      0.03,
+      (Math.random() - 0.5) * 2
+    );
+    debris.rotation.y = Math.random() * Math.PI;
+    group.add(debris);
+  }
+  
+  group.position.set(x, 0, z);
+  return group;
+}
+
+// Place underground entrances throughout the city in alleyways
+const drainPositions = [
+  // FRONT - near player spawn for quick access
+  { x: 0, z: 2 },
+  // Main alleyways between building rows
+  { x: -25, z: -16 }, { x: -5, z: -16 }, { x: 15, z: -16 },
+  { x: -15, z: -28 }, { x: 5, z: -28 }, { x: 25, z: -28 },
+  { x: -25, z: -40 }, { x: -5, z: -40 }, { x: 15, z: -40 },
+  { x: -15, z: -52 }, { x: 5, z: -52 }, { x: 25, z: -52 },
+  { x: -25, z: -64 }, { x: -5, z: -64 }, { x: 15, z: -64 },
+  // Some in vertical alleyways
+  { x: -25, z: -22 }, { x: 25, z: -34 }, { x: -25, z: -46 },
+  { x: 25, z: -58 }, { x: 0, z: -70 },
+];
+
+drainPositions.forEach(pos => {
+  const drain = createUndergroundEntrance(pos.x, pos.z);
+  outdoorScene.add(drain);
+  undergroundEntrances.push({ x: pos.x, z: pos.z, mesh: drain });
+});
+
 // Function to update building transparency - simple distance-based for nearby buildings
 function updateBuildingTransparency() {
   for (const mesh of allBuildingMeshes) {
@@ -1538,16 +1644,16 @@ function createPersonMesh(): THREE.Group {
   );
   torso.position.y = 0.75;
   group.add(torso);
-  
-  // Left leg
+
+// Left leg
   const leftLeg = new THREE.Mesh(
     new THREE.BoxGeometry(0.14, 0.5, 0.16),
     new THREE.MeshLambertMaterial({ color: pantsColor })
   );
   leftLeg.position.set(-0.1, 0.25, 0);
   group.add(leftLeg);
-  
-  // Right leg
+
+// Right leg
   const rightLeg = new THREE.Mesh(
     new THREE.BoxGeometry(0.14, 0.5, 0.16),
     new THREE.MeshLambertMaterial({ color: pantsColor })
@@ -1585,16 +1691,16 @@ function createPersonMesh(): THREE.Group {
   );
   rightEye.position.set(0.08, 1.22, 0.14);
   group.add(rightEye);
-  
-  // Left arm
+
+// Left arm
   const leftArm = new THREE.Mesh(
     new THREE.BoxGeometry(0.1, 0.4, 0.1),
     new THREE.MeshLambertMaterial({ color: shirtColor })
   );
   leftArm.position.set(-0.28, 0.7, 0);
   group.add(leftArm);
-  
-  // Right arm
+
+// Right arm
   const rightArm = new THREE.Mesh(
     new THREE.BoxGeometry(0.1, 0.4, 0.1),
     new THREE.MeshLambertMaterial({ color: shirtColor })
@@ -2114,7 +2220,8 @@ function spawnIndoorNPCs(buildingIdx: number, floorIdx: number, floorW: number, 
 
 // Update NPC positions with wall collision
 function updateNPCs() {
-  const npcsToUpdate = state.mode === 'outdoor' ? outdoorNPCs : indoorNPCs;
+  const npcsToUpdate = state.mode === 'outdoor' ? outdoorNPCs : 
+                       state.mode === 'underground' ? undergroundNPCs : indoorNPCs;
   
   // Room definitions for indoor collision (same as player)
   const doorW = 1.6;
@@ -2232,12 +2339,22 @@ function updateNPCs() {
     const dist = Math.sqrt(dx * dx + dz * dz);
     
     if (dist < 0.5) {
-      // Pick new target
-      if (npc.indoor) {
+      // Pick new target - wander locally, not across the whole map
+      if (state.mode === 'underground') {
+        // Underground - large area (100x120), stay dispersed locally
+        npc.targetX = npc.x + (Math.random() - 0.5) * 25;
+        npc.targetZ = npc.z + (Math.random() - 0.5) * 25;
+        // Clamp to underground bounds
+        npc.targetX = Math.max(-45, Math.min(45, npc.targetX));
+        npc.targetZ = Math.max(-55, Math.min(55, npc.targetZ));
+      } else if (npc.indoor) {
+        // Indoor building - use floor dimensions
         const hw = floor.w / 2 - 3;
         const hd = floor.d / 2 - 3;
-        npc.targetX = -hw + Math.random() * hw * 2;
-        npc.targetZ = -hd + Math.random() * hd * 2;
+        npc.targetX = npc.x + (Math.random() - 0.5) * 15;
+        npc.targetZ = npc.z + (Math.random() - 0.5) * 15;
+        npc.targetX = Math.max(-hw, Math.min(hw, npc.targetX));
+        npc.targetZ = Math.max(-hd, Math.min(hd, npc.targetZ));
       } else {
         // Outdoor - wander in alleyways between buildings
         npc.targetX = npc.x + (Math.random() - 0.5) * 15;
@@ -2253,8 +2370,86 @@ function updateNPCs() {
       npc.x += moveX;
       npc.z += moveZ;
       
-      // Apply indoor room collision for NPCs
-      if (npc.indoor && indoorRooms.length > 0) {
+      // Apply collision for NPCs
+      if (state.mode === 'underground') {
+        // Underground collision for NPCs - walls and pillars
+        const npcR = 0.4;
+        let hitObstacle = false;
+        
+        // Internal walls (same as player collision)
+        const internalWalls = [
+          { x: -30, z: -45, w: 18, d: 0.6 },
+          { x: 10, z: -40, w: 22, d: 0.6 },
+          { x: -20, z: -25, w: 16, d: 0.6 },
+          { x: 25, z: -20, w: 20, d: 0.6 },
+          { x: -35, z: -5, w: 14, d: 0.6 },
+          { x: 5, z: 0, w: 24, d: 0.6 },
+          { x: 35, z: 5, w: 12, d: 0.6 },
+          { x: -25, z: 20, w: 18, d: 0.6 },
+          { x: 15, z: 25, w: 16, d: 0.6 },
+          { x: -10, z: 40, w: 20, d: 0.6 },
+          { x: 30, z: 35, w: 14, d: 0.6 },
+          { x: -35, z: 50, w: 16, d: 0.6 },
+          { x: -40, z: -30, w: 0.6, d: 20 },
+          { x: -25, z: -35, w: 0.6, d: 16 },
+          { x: -10, z: -15, w: 0.6, d: 22 },
+          { x: 5, z: -30, w: 0.6, d: 18 },
+          { x: 20, z: -10, w: 0.6, d: 24 },
+          { x: 35, z: -35, w: 0.6, d: 14 },
+          { x: -38, z: 15, w: 0.6, d: 20 },
+          { x: -20, z: 30, w: 0.6, d: 18 },
+          { x: 0, z: 20, w: 0.6, d: 16 },
+          { x: 18, z: 45, w: 0.6, d: 22 },
+          { x: 38, z: 25, w: 0.6, d: 18 },
+          { x: -30, z: 45, w: 0.6, d: 14 },
+        ];
+        
+        // Check wall collision
+        for (const wall of internalWalls) {
+          const halfW = wall.w / 2 + npcR;
+          const halfD = wall.d / 2 + npcR;
+          
+          if (npc.x > wall.x - halfW && npc.x < wall.x + halfW && 
+              npc.z > wall.z - halfD && npc.z < wall.z + halfD) {
+            npc.x = oldX;
+            npc.z = oldZ;
+            hitObstacle = true;
+            break;
+          }
+        }
+        
+        // Check pillar collision
+        if (!hitObstacle) {
+          const pillarSize = 1.2;
+          for (let px = -35; px <= 35; px += 20) {
+            for (let pz = -50; pz <= 50; pz += 25) {
+              const halfP = pillarSize / 2 + npcR;
+              
+              if (npc.x > px - halfP && npc.x < px + halfP && 
+                  npc.z > pz - halfP && npc.z < pz + halfP) {
+                npc.x = oldX;
+                npc.z = oldZ;
+                hitObstacle = true;
+                break;
+              }
+            }
+            if (hitObstacle) break;
+          }
+        }
+        
+        // Clamp to bounds
+        npc.x = Math.max(-45, Math.min(45, npc.x));
+        npc.z = Math.max(-55, Math.min(55, npc.z));
+        
+        if (hitObstacle) {
+          // Pick a new random direction
+          npc.targetX = npc.x + (Math.random() - 0.5) * 20;
+          npc.targetZ = npc.z + (Math.random() - 0.5) * 20;
+          npc.targetX = Math.max(-45, Math.min(45, npc.targetX));
+          npc.targetZ = Math.max(-55, Math.min(55, npc.targetZ));
+        }
+      } else if (npc.indoor && indoorRooms.length > 0) {
+        // Indoor building room collision
         const collision = checkRoomCollision(npc.x, npc.z, oldX, oldZ, indoorRooms);
         npc.x = collision.x;
         npc.z = collision.z;
@@ -2263,8 +2458,10 @@ function updateNPCs() {
         if (npc.x !== oldX + moveX || npc.z !== oldZ + moveZ) {
           const hw = floor.w / 2 - 3;
           const hd = floor.d / 2 - 3;
-          npc.targetX = -hw + Math.random() * hw * 2;
-          npc.targetZ = -hd + Math.random() * hd * 2;
+          npc.targetX = npc.x + (Math.random() - 0.5) * 10;
+          npc.targetZ = npc.z + (Math.random() - 0.5) * 10;
+          npc.targetX = Math.max(-hw, Math.min(hw, npc.targetX));
+          npc.targetZ = Math.max(-hd, Math.min(hd, npc.targetZ));
         }
       }
       
@@ -2370,7 +2567,7 @@ function createFloorView(buildingIdx: number, floor: number) {
   if (currentFloorGroup) indoorScene.remove(currentFloorGroup);
 
   const bd = buildingsData[buildingIdx];
-  if (!bd) return { w: 28, d: 20, top: false, ground: true, leftRoof: false, rightRoof: false };
+  if (!bd) return { w: 28, d: 20, top: false, ground: true, leftRoof: false, rightRoof: false, northRoof: false, southRoof: false, northIdx: -1, southIdx: -1 };
   
   const group = new THREE.Group();
   const w = 50, d = 36, wallH = 4;
@@ -2378,27 +2575,55 @@ function createFloorView(buildingIdx: number, floor: number) {
   const isGround = floor === 0;
   const hasLeftBuilding = buildingIdx > 0;
   const hasRightBuilding = buildingIdx < buildingsData.length - 1;
+  
+  // Find buildings to the north (z - 12) and south (z + 12) at similar x position
+  let northBuildingIdx = -1;
+  let southBuildingIdx = -1;
+  for (let i = 0; i < buildingsData.length; i++) {
+    const otherBd = buildingsData[i];
+    if (!otherBd || i === buildingIdx) continue;
+    const xDiff = Math.abs(otherBd.x - bd.x);
+    const zDiff = otherBd.z - bd.z;
+    // Must be within 5 units x-wise and exactly one row apart (12 units z)
+    if (xDiff < 5) {
+      if (zDiff > 10 && zDiff < 14) southBuildingIdx = i; // South is positive Z
+      if (zDiff < -10 && zDiff > -14) northBuildingIdx = i; // North is negative Z
+    }
+  }
+  const hasNorthBuilding = northBuildingIdx >= 0;
+  const hasSouthBuilding = southBuildingIdx >= 0;
 
-  // ====== ROOF (Top Floor) ======
+  // ====== ROOF (Top Floor) - KWC Style: Antenna forest, debris, chaos ======
   if (isTop) {
-    // Concrete roof floor
+    // Weathered concrete roof floor with stains
     const roofFloor = new THREE.Mesh(
       new THREE.PlaneGeometry(w, d),
-      new THREE.MeshLambertMaterial({ color: 0x555555 })
+      new THREE.MeshLambertMaterial({ color: 0x4a4a48 })
     );
     roofFloor.rotation.x = -Math.PI / 2;
     roofFloor.position.y = 0.01;
     group.add(roofFloor);
 
-    // Roof texture - cracks
-    for (let i = 0; i < 8; i++) {
+    // Water stains and damage patches
+    for (let i = 0; i < 12; i++) {
+      const stain = new THREE.Mesh(
+        new THREE.CircleGeometry(0.5 + Math.random() * 1.5, 8),
+        new THREE.MeshBasicMaterial({ color: Math.random() > 0.5 ? 0x3a3a38 : 0x404038 })
+      );
+      stain.rotation.x = -Math.PI / 2;
+      stain.position.set((Math.random() - 0.5) * w * 0.9, 0.02, (Math.random() - 0.5) * d * 0.9);
+      group.add(stain);
+    }
+
+    // Cracks
+    for (let i = 0; i < 15; i++) {
       const crack = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.1, 2 + Math.random() * 3),
-        new THREE.MeshBasicMaterial({ color: 0x333333 })
+        new THREE.PlaneGeometry(0.08, 1.5 + Math.random() * 4),
+        new THREE.MeshBasicMaterial({ color: 0x2a2a2a })
       );
       crack.rotation.x = -Math.PI / 2;
       crack.rotation.z = Math.random() * Math.PI;
-      crack.position.set((Math.random() - 0.5) * w * 0.8, 0.02, (Math.random() - 0.5) * d * 0.8);
+      crack.position.set((Math.random() - 0.5) * w * 0.85, 0.025, (Math.random() - 0.5) * d * 0.85);
       group.add(crack);
     }
 
@@ -2408,72 +2633,248 @@ function createFloorView(buildingIdx: number, floor: number) {
     const backEdge = new THREE.Mesh(new THREE.BoxGeometry(w, edgeH, 0.4), edgeMat);
     backEdge.position.set(0, edgeH/2, -d/2 + 0.2);
     group.add(backEdge);
+
+    // ========== ANTENNA FOREST (KWC signature) ==========
+    const antennaMat = new THREE.MeshLambertMaterial({ color: 0x555555 });
+    const antennaRustMat = new THREE.MeshLambertMaterial({ color: 0x6a4a3a });
     
-    // AC Units
-    for (let i = 0; i < 3; i++) {
-      const ac = new THREE.Mesh(
-        new THREE.BoxGeometry(2.5, 1.5, 2),
-        new THREE.MeshLambertMaterial({ color: 0x666666 })
+    // Create multiple antenna clusters
+    for (let cluster = 0; cluster < 6; cluster++) {
+      const cx = (Math.random() - 0.5) * w * 0.7;
+      const cz = (Math.random() - 0.5) * d * 0.6;
+      
+      // Main pole
+      const poleH = 3 + Math.random() * 2;
+      const pole = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.08, 0.1, poleH, 6),
+        Math.random() > 0.5 ? antennaMat : antennaRustMat
       );
-      ac.position.set(-8 + i * 6, 0.75, -d/2 + 3);
+      pole.position.set(cx, poleH/2, cz);
+      group.add(pole);
+      
+      // TV antenna arms (the horizontal bars)
+      const numArms = 3 + Math.floor(Math.random() * 4);
+      for (let a = 0; a < numArms; a++) {
+        const armLen = 1 + Math.random() * 1.5;
+        const arm = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.03, 0.03, armLen, 4),
+          antennaMat
+        );
+        arm.rotation.z = Math.PI / 2;
+        arm.position.set(cx, poleH * 0.5 + a * 0.4, cz);
+        group.add(arm);
+        
+        // Vertical elements on arm
+        for (let v = 0; v < 5; v++) {
+          const el = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.015, 0.015, 0.3 + Math.random() * 0.3, 4),
+            antennaMat
+          );
+          el.position.set(cx - armLen/2 + v * armLen/4, poleH * 0.5 + a * 0.4 + 0.15, cz);
+          group.add(el);
+        }
+      }
+      
+      // Cross bars and diagonal supports
+      const crossBar = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.04, 0.04, 2, 4),
+        antennaMat
+      );
+      crossBar.rotation.x = Math.PI / 4;
+      crossBar.position.set(cx, poleH * 0.3, cz);
+      group.add(crossBar);
+    }
+    
+    // Standalone thin antennas scattered around
+    for (let i = 0; i < 12; i++) {
+      const ax = (Math.random() - 0.5) * w * 0.8;
+      const az = (Math.random() - 0.5) * d * 0.7;
+      const ah = 2 + Math.random() * 3;
+      const thinAnt = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.02, 0.04, ah, 4),
+        Math.random() > 0.3 ? antennaMat : antennaRustMat
+      );
+      thinAnt.position.set(ax, ah/2, az);
+      // Slight tilt
+      thinAnt.rotation.x = (Math.random() - 0.5) * 0.2;
+      thinAnt.rotation.z = (Math.random() - 0.5) * 0.2;
+      group.add(thinAnt);
+    }
+
+    // ========== SATELLITE DISHES (multiple) ==========
+    for (let i = 0; i < 3; i++) {
+      const dishX = (Math.random() - 0.5) * w * 0.6;
+      const dishZ = (Math.random() - 0.5) * d * 0.5;
+      const dishSize = 0.8 + Math.random() * 0.8;
+      const dish = new THREE.Mesh(
+        new THREE.SphereGeometry(dishSize, 10, 6, 0, Math.PI),
+        new THREE.MeshLambertMaterial({ color: 0xaaaaaa, side: THREE.DoubleSide })
+      );
+      dish.rotation.x = -Math.PI / 3 - Math.random() * 0.3;
+      dish.rotation.y = Math.random() * Math.PI * 2;
+      dish.position.set(dishX, 1 + Math.random(), dishZ);
+      group.add(dish);
+      
+      // Dish mount
+      const mount = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.06, 0.08, 1.2, 6),
+        new THREE.MeshLambertMaterial({ color: 0x555555 })
+      );
+      mount.position.set(dishX, 0.6, dishZ);
+      group.add(mount);
+    }
+
+    // ========== MAKESHIFT SHED/STRUCTURE ==========
+    const shedX = w/2 - 5;
+    const shedZ = -d/2 + 5;
+    // Corrugated metal walls
+    const shedMat = new THREE.MeshLambertMaterial({ color: 0x5a6a5a });
+    const shedBack = new THREE.Mesh(new THREE.BoxGeometry(4, 2.5, 0.1), shedMat);
+    shedBack.position.set(shedX, 1.25, shedZ - 2);
+    group.add(shedBack);
+    const shedLeft = new THREE.Mesh(new THREE.BoxGeometry(0.1, 2.5, 4), shedMat);
+    shedLeft.position.set(shedX - 2, 1.25, shedZ);
+    group.add(shedLeft);
+    const shedRight = new THREE.Mesh(new THREE.BoxGeometry(0.1, 2.5, 4), shedMat);
+    shedRight.position.set(shedX + 2, 1.25, shedZ);
+    group.add(shedRight);
+    // Roof
+    const shedRoof = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.1, 4.5), shedMat);
+    shedRoof.position.set(shedX, 2.6, shedZ);
+    shedRoof.rotation.x = 0.1;
+    group.add(shedRoof);
+
+    // ========== WATER TANKS (multiple) ==========
+    const tankMat = new THREE.MeshLambertMaterial({ color: 0x3a5060 });
+    const tank1 = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.5, 3, 10), tankMat);
+    tank1.position.set(-w/2 + 4, 1.5, 2);
+    group.add(tank1);
+    
+    const tank2 = new THREE.Mesh(new THREE.BoxGeometry(2.5, 2, 2), tankMat);
+    tank2.position.set(-w/2 + 5, 1, -d/2 + 5);
+    group.add(tank2);
+
+    // ========== AC UNITS (more of them) ==========
+    for (let i = 0; i < 5; i++) {
+      const acX = -w/2 + 3 + i * 4 + Math.random() * 2;
+      const acZ = -d/2 + 2.5 + Math.random() * 2;
+      const ac = new THREE.Mesh(
+        new THREE.BoxGeometry(1.8 + Math.random(), 1.2, 1.5),
+        new THREE.MeshLambertMaterial({ color: 0x5a5a5a + Math.floor(Math.random() * 0x101010) })
+      );
+      ac.position.set(acX, 0.6, acZ);
       group.add(ac);
       
+      // Fan grill
       const fan = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.5, 0.5, 0.1, 12),
+        new THREE.CircleGeometry(0.4, 8),
         new THREE.MeshBasicMaterial({ color: 0x333333 })
       );
       fan.rotation.x = Math.PI / 2;
-      fan.position.set(-8 + i * 6, 1.2, -d/2 + 2);
+      fan.position.set(acX, 1, acZ - 0.76);
       group.add(fan);
     }
 
-    // Water tank
-    const tank = new THREE.Mesh(
-      new THREE.CylinderGeometry(2, 2, 4, 12),
-      new THREE.MeshLambertMaterial({ color: 0x4a6080 })
-    );
-    tank.position.set(-w/2 + 4, 2, 2);
-    group.add(tank);
-
-    // Pipes
-    for (let i = 0; i < 3; i++) {
-      const pipe = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.15, 0.15, d * 0.6, 6),
-        new THREE.MeshLambertMaterial({ color: 0x885533 })
-      );
-      pipe.rotation.x = Math.PI / 2;
-      pipe.position.set(-w/2 + 2 + i * 0.5, 0.5, 0);
-      group.add(pipe);
+    // ========== DEBRIS AND JUNK ==========
+    const debrisColors = [0x6a5a4a, 0x5a5a5a, 0x4a4a4a, 0x7a6a5a, 0x555045];
+    
+    // Random debris pile
+    for (let i = 0; i < 25; i++) {
+      const debrisType = Math.random();
+      const dx = (Math.random() - 0.5) * w * 0.8;
+      const dz = (Math.random() - 0.5) * d * 0.7;
+      
+      if (debrisType < 0.3) {
+        // Box/crate
+        const box = new THREE.Mesh(
+          new THREE.BoxGeometry(0.4 + Math.random() * 0.6, 0.3 + Math.random() * 0.5, 0.4 + Math.random() * 0.6),
+          new THREE.MeshLambertMaterial({ color: debrisColors[Math.floor(Math.random() * debrisColors.length)] })
+        );
+        box.position.set(dx, 0.2, dz);
+        box.rotation.y = Math.random() * Math.PI;
+        group.add(box);
+      } else if (debrisType < 0.5) {
+        // Barrel/cylinder
+        const barrel = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.2 + Math.random() * 0.2, 0.2 + Math.random() * 0.2, 0.5 + Math.random() * 0.5, 8),
+          new THREE.MeshLambertMaterial({ color: debrisColors[Math.floor(Math.random() * debrisColors.length)] })
+        );
+        barrel.position.set(dx, 0.25, dz);
+        if (Math.random() > 0.7) barrel.rotation.x = Math.PI / 2; // Fallen over
+        group.add(barrel);
+      } else if (debrisType < 0.7) {
+        // Flat panel (old door, board, etc)
+        const panel = new THREE.Mesh(
+          new THREE.BoxGeometry(0.8 + Math.random() * 0.8, 0.05, 1.5 + Math.random()),
+          new THREE.MeshLambertMaterial({ color: debrisColors[Math.floor(Math.random() * debrisColors.length)] })
+        );
+        panel.position.set(dx, 0.05 + Math.random() * 0.3, dz);
+        panel.rotation.y = Math.random() * Math.PI;
+        if (Math.random() > 0.5) panel.rotation.x = Math.random() * 0.3;
+        group.add(panel);
+      } else {
+        // Plastic bag / garbage
+        const bag = new THREE.Mesh(
+          new THREE.SphereGeometry(0.15 + Math.random() * 0.2, 6, 4),
+          new THREE.MeshLambertMaterial({ color: Math.random() > 0.5 ? 0x888888 : 0x4a4a4a })
+        );
+        bag.position.set(dx, 0.15, dz);
+        bag.scale.y = 0.6;
+        group.add(bag);
+      }
     }
 
-    // Satellite dish
-    const dish = new THREE.Mesh(
-      new THREE.SphereGeometry(1.2, 12, 8, 0, Math.PI),
-      new THREE.MeshLambertMaterial({ color: 0xcccccc, side: THREE.DoubleSide })
-    );
-    dish.rotation.x = -Math.PI / 3;
-    dish.position.set(w/2 - 4, 1.5, 3);
-    group.add(dish);
-
-    // Clothesline
-    const line = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.02, 0.02, 10, 4),
-      new THREE.MeshBasicMaterial({ color: 0x888888 })
-    );
-    line.rotation.z = Math.PI / 2;
-    line.position.set(0, 2, 0);
-    group.add(line);
-    
-    // Clothes on line - muted colors
-    const clothColors = [0x8a7060, 0x606878, 0x807870, 0x607060];
-    for (let i = 0; i < 4; i++) {
-      const cloth = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.7, 1),
-        new THREE.MeshLambertMaterial({ color: clothColors[i], side: THREE.DoubleSide })
+    // ========== WIRES AND CABLES ==========
+    for (let i = 0; i < 8; i++) {
+      const wireLen = 3 + Math.random() * 6;
+      const wire = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.02, 0.02, wireLen, 4),
+        new THREE.MeshBasicMaterial({ color: 0x222222 })
       );
-      cloth.position.set(-3 + i * 2, 1.4, 0);
-      cloth.rotation.y = 0.1 * (i - 1.5);
-      group.add(cloth);
+      wire.rotation.z = Math.PI / 2;
+      wire.rotation.y = Math.random() * Math.PI;
+      wire.position.set((Math.random() - 0.5) * w * 0.6, 0.5 + Math.random() * 2, (Math.random() - 0.5) * d * 0.5);
+      group.add(wire);
+    }
+
+    // ========== CLOTHESLINES (multiple) ==========
+    for (let lineNum = 0; lineNum < 3; lineNum++) {
+      const lineZ = -d/4 + lineNum * d/4;
+      const line = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.015, 0.015, 12, 4),
+        new THREE.MeshBasicMaterial({ color: 0x666666 })
+      );
+      line.rotation.z = Math.PI / 2;
+      line.position.set(0, 1.8 + lineNum * 0.3, lineZ);
+      group.add(line);
+      
+      // Clothes hanging
+      const clothColors = [0x8a7060, 0x606878, 0x807870, 0x607060, 0x9a8070, 0x708080];
+      for (let c = 0; c < 5 + Math.floor(Math.random() * 3); c++) {
+        const cloth = new THREE.Mesh(
+          new THREE.PlaneGeometry(0.5 + Math.random() * 0.4, 0.7 + Math.random() * 0.5),
+          new THREE.MeshLambertMaterial({ 
+            color: clothColors[Math.floor(Math.random() * clothColors.length)], 
+            side: THREE.DoubleSide 
+          })
+        );
+        cloth.position.set(-5 + c * 2 + Math.random(), 1.3 + lineNum * 0.3, lineZ);
+        cloth.rotation.y = (Math.random() - 0.5) * 0.3;
+        group.add(cloth);
+      }
+    }
+
+    // ========== PIPES RUNNING ACROSS ==========
+    const pipeMat = new THREE.MeshLambertMaterial({ color: 0x6a5040 });
+    for (let i = 0; i < 6; i++) {
+      const pipeLen = 5 + Math.random() * 10;
+      const pipe = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.1 + Math.random() * 0.1, 0.1 + Math.random() * 0.1, pipeLen, 6),
+        pipeMat
+      );
+      pipe.rotation.x = Math.PI / 2;
+      pipe.position.set(-w/2 + 2 + i * 3, 0.3 + Math.random() * 0.3, (Math.random() - 0.5) * d * 0.5);
+      group.add(pipe);
     }
 
     // Front edge - low wall with gap to look/jump down
@@ -2705,17 +3106,50 @@ function createFloorView(buildingIdx: number, floor: number) {
         group.add(rightB);
       }
       
-      // BED
-      const bed = new THREE.Mesh(new THREE.BoxGeometry(2, 0.4, 1.3), new THREE.MeshLambertMaterial({ color: 0x5a4a3a }));
-      bed.position.set(x, 0.2, z - rd/4);
-      group.add(bed);
+      // BED with legs (more 3D)
+      const bedX = x;
+      const bedZ = z - rd/4;
+      const bedW = 2, bedD = 1.3;
+      
+      // Bed frame (raised)
+      const bedFrame = new THREE.Mesh(
+        new THREE.BoxGeometry(bedW, 0.25, bedD),
+        new THREE.MeshLambertMaterial({ color: 0x4a3a2a })
+      );
+      bedFrame.position.set(bedX, 0.35, bedZ);
+      group.add(bedFrame);
+      
+      // Bed legs
+      const legMat = new THREE.MeshLambertMaterial({ color: 0x3a2a1a });
+      const legH = 0.22;
+      [[-bedW/2+0.1, -bedD/2+0.1], [bedW/2-0.1, -bedD/2+0.1], [-bedW/2+0.1, bedD/2-0.1], [bedW/2-0.1, bedD/2-0.1]].forEach(([lx, lz]) => {
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.1, legH, 0.1), legMat);
+        leg.position.set(bedX + lx, legH/2, bedZ + lz);
+        group.add(leg);
+      });
+      
+      // Mattress
+      const mattress = new THREE.Mesh(new THREE.BoxGeometry(bedW - 0.1, 0.2, bedD - 0.1), new THREE.MeshLambertMaterial({ color: 0x887766 }));
+      mattress.position.set(bedX, 0.57, bedZ);
+      group.add(mattress);
+      
+      // Blanket (puffy)
       const blanketColors = [0x7a6555, 0x665544, 0x887766, 0x556655, 0x775566];
-      const blanket = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.15, 1.1), new THREE.MeshLambertMaterial({ color: blanketColors[colorIdx % 5] }));
-      blanket.position.set(x, 0.45, z - rd/4);
+      const blanket = new THREE.Mesh(new THREE.BoxGeometry(bedW - 0.2, 0.2, bedD * 0.65), new THREE.MeshLambertMaterial({ color: blanketColors[colorIdx % 5] }));
+      blanket.position.set(bedX, 0.75, bedZ + bedD * 0.15);
       group.add(blanket);
-      const pillow = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.2, 0.7), new THREE.MeshLambertMaterial({ color: 0xccbbaa }));
-      pillow.position.set(x - 0.6, 0.5, z - rd/4);
+      
+      // Pillow (fluffy)
+      const pillow = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.25, 0.8), new THREE.MeshLambertMaterial({ color: 0xddccbb }));
+      pillow.position.set(bedX - bedW/2 + 0.45, 0.75, bedZ);
       group.add(pillow);
+      
+      // Small stool/table beside bed (30%)
+      if (Math.random() > 0.7) {
+        const stool = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.5, 0.4), new THREE.MeshLambertMaterial({ color: 0x4a3a2a }));
+        stool.position.set(bedX + bedW/2 + 0.3, 0.25, bedZ);
+        group.add(stool);
+      }
       
       // Wall lamp - 95% of lobby rooms have a warm orange wall lamp
       if (Math.random() < 0.95) {
@@ -2804,16 +3238,73 @@ function createFloorView(buildingIdx: number, floor: number) {
     doorMat.position.set(0, 0.03, d/2 - 1.5);
     group.add(doorMat);
 
-    // UP STAIRS (back right corner)
-    const upColors = [0xaaaaaa, 0x999999, 0x888888, 0x777777, 0x666666, 0x555555, 0x444444];
-    for (let s = 0; s < 7; s++) {
-      const step = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.3, 1.2), new THREE.MeshLambertMaterial({ color: upColors[s] }));
-      step.position.set(w/2 - 4, 0.15, -d/2 + 1 + s * 1.0);
-      group.add(step);
+    // UP STAIRS (back right corner) - ROTATED 180°, extends to ceiling
+    const lobbyStairX = w/2 - 4;
+    const railMat = new THREE.MeshLambertMaterial({ color: 0x444433 });
+    const numLobbySteps = 12;
+    const lobbyStepRise = wallH / numLobbySteps;
+    
+    for (let s = 0; s < numLobbySteps; s++) {
+      const stepY = s * lobbyStepRise;
+      
+      // Gradient: light at bottom (front), dark at top (back)
+      const gradientVal = Math.floor(0x99 - (s / numLobbySteps) * 0x66);
+      const stepColor = (gradientVal << 16) | (gradientVal << 8) | (gradientVal - 0x11);
+      
+      // Step tread - facing FORWARD
+      const tread = new THREE.Mesh(
+        new THREE.BoxGeometry(3.5, 0.12, 0.8),
+        new THREE.MeshLambertMaterial({ color: stepColor })
+      );
+      tread.position.set(lobbyStairX, stepY + 0.06, -d/2 + 8 - s * 0.6);
+      group.add(tread);
+      
+      // Step riser
+      const riser = new THREE.Mesh(
+        new THREE.BoxGeometry(3.5, lobbyStepRise, 0.08),
+        new THREE.MeshLambertMaterial({ color: stepColor - 0x222222 })
+      );
+      riser.position.set(lobbyStairX, stepY + lobbyStepRise/2, -d/2 + 8.4 - s * 0.6);
+      group.add(riser);
     }
-    const upLabel = new THREE.Mesh(new THREE.PlaneGeometry(3, 0.8), new THREE.MeshBasicMaterial({ color: 0x558855 }));
-    upLabel.position.set(w/2 - 4, 2.5, -d/2 + 0.15);
-    group.add(upLabel);
+    
+    
+    // Lobby stairs handrails - longer, steeper
+    const lobbyRailLen = 9;
+    const lobbyRailAngle = Math.atan2(wallH, 7);
+    const lobbyRail1 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.8, lobbyRailLen), railMat);
+    lobbyRail1.position.set(lobbyStairX - 1.8, wallH/2, -d/2 + 4);
+    lobbyRail1.rotation.x = lobbyRailAngle;
+    group.add(lobbyRail1);
+    const lobbyRail2 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.8, lobbyRailLen), railMat);
+    lobbyRail2.position.set(lobbyStairX + 1.8, wallH/2, -d/2 + 4);
+    lobbyRail2.rotation.x = lobbyRailAngle;
+    group.add(lobbyRail2);
+    
+    // Support posts
+    for (let p = 0; p < 4; p++) {
+      const postH = 0.8 + p * 0.8;
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.1, postH, 0.1), railMat);
+      post.position.set(lobbyStairX - 1.8, postH/2, -d/2 + 7.5 - p * 2);
+      group.add(post);
+      const post2 = new THREE.Mesh(new THREE.BoxGeometry(0.1, postH, 0.1), railMat);
+      post2.position.set(lobbyStairX + 1.8, postH/2, -d/2 + 7.5 - p * 2);
+      group.add(post2);
+    }
+    
+    // UP arrow sign on side
+    const upSign = new THREE.Mesh(
+      new THREE.BoxGeometry(0.1, 1.0, 1.5),
+      new THREE.MeshLambertMaterial({ color: 0x336633 })
+    );
+    upSign.position.set(lobbyStairX + 1.9, 1.5, -d/2 + 7);
+    group.add(upSign);
+    const upArrow = new THREE.Mesh(
+      new THREE.ConeGeometry(0.25, 0.5, 3),
+      new THREE.MeshBasicMaterial({ color: 0x88ff88 })
+    );
+    upArrow.position.set(lobbyStairX + 2.0, 1.5, -d/2 + 7);
+    group.add(upArrow);
 
     // Lights
     const mainLight = new THREE.PointLight(0xffffee, 0.8, 30);
@@ -2828,8 +3319,8 @@ function createFloorView(buildingIdx: number, floor: number) {
     const hallW = 2.5;      // Corridor width
     const wallThick = 0.15; // Wall thickness
     const roomSize = 5;     // Room size
-    
-    // Main floor
+
+// Main floor
     const mainFloor = new THREE.Mesh(
       new THREE.PlaneGeometry(w, d),
       new THREE.MeshLambertMaterial({ color: 0x4a4540 })
@@ -2935,36 +3426,109 @@ function createFloorView(buildingIdx: number, floor: number) {
       doorFrame.position.set(x, 1.25, z + rd/2 - wallThick/2);
       group.add(doorFrame);
       
-      // BED
+      // BED with legs (more 3D)
       const bedW = rotated ? 1.4 : 2.2;
       const bedD = rotated ? 2.2 : 1.4;
-      const bed = new THREE.Mesh(
-        new THREE.BoxGeometry(bedW, 0.4, bedD),
-        new THREE.MeshLambertMaterial({ color: 0x5a4a3a })
-      );
-      bed.position.set(x - rw/2 + bedW/2 + 0.5, 0.2, z - rd/2 + bedD/2 + 0.5);
-      group.add(bed);
+      const bedX = x - rw/2 + bedW/2 + 0.5;
+      const bedZ = z - rd/2 + bedD/2 + 0.5;
       
-      // Blanket
+      // Bed frame (raised)
+      const bedFrame = new THREE.Mesh(
+        new THREE.BoxGeometry(bedW, 0.25, bedD),
+        new THREE.MeshLambertMaterial({ color: 0x4a3a2a })
+      );
+      bedFrame.position.set(bedX, 0.35, bedZ);
+      group.add(bedFrame);
+      
+      // Bed legs (visible from 2.5D angle)
+      const legH = 0.22;
+      const legMat = new THREE.MeshLambertMaterial({ color: 0x3a2a1a });
+      const legPositions = [
+        [bedX - bedW/2 + 0.1, legH/2, bedZ - bedD/2 + 0.1],
+        [bedX + bedW/2 - 0.1, legH/2, bedZ - bedD/2 + 0.1],
+        [bedX - bedW/2 + 0.1, legH/2, bedZ + bedD/2 - 0.1],
+        [bedX + bedW/2 - 0.1, legH/2, bedZ + bedD/2 - 0.1],
+      ];
+      legPositions.forEach(pos => {
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.1, legH, 0.1), legMat);
+        leg.position.set(pos[0], pos[1], pos[2]);
+        group.add(leg);
+      });
+      
+      // Mattress
+      const mattress = new THREE.Mesh(
+        new THREE.BoxGeometry(bedW - 0.1, 0.2, bedD - 0.1),
+        new THREE.MeshLambertMaterial({ color: 0x887766 })
+      );
+      mattress.position.set(bedX, 0.57, bedZ);
+      group.add(mattress);
+      
+      // Blanket (puffy)
       const blanketColors = [0x7a6555, 0x665544, 0x887766, 0x556655, 0x775566, 0x667755];
       const blanket = new THREE.Mesh(
-        new THREE.BoxGeometry(bedW - 0.2, 0.15, bedD - 0.2),
+        new THREE.BoxGeometry(bedW - 0.2, 0.2, bedD * 0.65),
         new THREE.MeshLambertMaterial({ color: blanketColors[colorIdx % 6] })
       );
-      blanket.position.set(bed.position.x, 0.45, bed.position.z);
+      blanket.position.set(bedX, 0.75, bedZ + bedD * 0.15);
       group.add(blanket);
       
-      // Pillow
+      // Pillow (fluffy)
       const pillow = new THREE.Mesh(
-        new THREE.BoxGeometry(rotated ? 0.8 : 0.5, 0.2, rotated ? 0.5 : 0.8),
-        new THREE.MeshLambertMaterial({ color: 0xccbbaa })
+        new THREE.BoxGeometry(rotated ? 0.9 : 0.6, 0.25, rotated ? 0.5 : 0.9),
+        new THREE.MeshLambertMaterial({ color: 0xddccbb })
       );
       pillow.position.set(
-        bed.position.x - (rotated ? 0 : bedW/2 - 0.4),
-        0.5,
-        bed.position.z - (rotated ? bedD/2 - 0.4 : 0)
+        bedX - (rotated ? 0 : bedW/2 - 0.45),
+        0.75,
+        bedZ - (rotated ? bedD/2 - 0.35 : 0)
       );
       group.add(pillow);
+      
+      // Small nightstand/dresser beside bed
+      const dresserX = bedX + bedW/2 + 0.4;
+      const dresserZ = bedZ - bedD/2 + 0.4;
+      const dresser = new THREE.Mesh(
+        new THREE.BoxGeometry(0.5, 0.7, 0.4),
+        new THREE.MeshLambertMaterial({ color: 0x4a3a2a })
+      );
+      dresser.position.set(dresserX, 0.35, dresserZ);
+      group.add(dresser);
+      
+      // Dresser drawers (detail)
+      const drawer = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.4, 0.25),
+        new THREE.MeshBasicMaterial({ color: 0x3a2a1a })
+      );
+      drawer.position.set(dresserX, 0.3, dresserZ + 0.21);
+      group.add(drawer);
+      
+      // Item on dresser (50% chance)
+      if (Math.random() > 0.5) {
+        const item = new THREE.Mesh(
+          new THREE.BoxGeometry(0.15, 0.2, 0.15),
+          new THREE.MeshLambertMaterial({ color: Math.random() > 0.5 ? 0x666666 : 0x445566 })
+        );
+        item.position.set(dresserX, 0.8, dresserZ);
+        group.add(item);
+      }
+      
+      // Small TV on wall (30% of rooms)
+      if (Math.random() > 0.7) {
+        const tv = new THREE.Mesh(
+          new THREE.BoxGeometry(0.8, 0.5, 0.08),
+          new THREE.MeshLambertMaterial({ color: 0x222222 })
+        );
+        tv.position.set(x + rw/2 - 0.6, 1.5, z - rd/2 + 0.08);
+        group.add(tv);
+        
+        // TV screen glow
+        const screen = new THREE.Mesh(
+          new THREE.PlaneGeometry(0.7, 0.4),
+          new THREE.MeshBasicMaterial({ color: Math.random() > 0.5 ? 0x3366aa : 0x334455 })
+        );
+        screen.position.set(x + rw/2 - 0.6, 1.5, z - rd/2 + 0.12);
+        group.add(screen);
+      }
       
       // Wall lamp - 95% of rooms have a warm orange wall lamp
       if (Math.random() < 0.95) {
@@ -3078,7 +3642,74 @@ function createFloorView(buildingIdx: number, floor: number) {
       );
       bulbWire.position.set(pos.x, 3.85, pos.z);
       group.add(bulbWire);
+      
+      // Hanging shade/cone around bulb (more 3D)
+      const shade = new THREE.Mesh(
+        new THREE.ConeGeometry(0.2, 0.15, 6, 1, true),
+        new THREE.MeshLambertMaterial({ color: 0x334433, side: THREE.DoubleSide })
+      );
+      shade.rotation.x = Math.PI;
+      shade.position.set(pos.x, 3.55, pos.z);
+      group.add(shade);
     }
+    
+    // ========== CEILING BEAMS (more 2.5D depth) ==========
+    const beamMat = new THREE.MeshLambertMaterial({ color: 0x3a3530 });
+    // Horizontal beams across ceiling
+    for (let bx = -w/2 + 8; bx < w/2; bx += 12) {
+      const beam = new THREE.Mesh(
+        new THREE.BoxGeometry(0.3, 0.4, d - 4),
+        beamMat
+      );
+      beam.position.set(bx, wallH - 0.2, 0);
+      group.add(beam);
+    }
+    // Cross beams
+    for (let bz = -d/2 + 8; bz < d/2; bz += 12) {
+      const beam = new THREE.Mesh(
+        new THREE.BoxGeometry(w - 4, 0.4, 0.3),
+        beamMat
+      );
+      beam.position.set(0, wallH - 0.2, bz);
+      group.add(beam);
+    }
+    
+    // ========== HANGING SIGNS (more depth) ==========
+    const signTexts = ['階段', '出口', '注意', '禁煙'];
+    for (let i = 0; i < 4; i++) {
+      const sign = new THREE.Mesh(
+        new THREE.BoxGeometry(0.8, 0.4, 0.05),
+        new THREE.MeshLambertMaterial({ color: 0x226622 })
+      );
+      const signX = -15 + i * 10 + Math.random() * 5;
+      const signZ = -d/2 + 10 + Math.random() * (d - 20);
+      sign.position.set(signX, 3.0, signZ);
+      group.add(sign);
+      
+      // Sign chain
+      const chain = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.015, 0.015, 0.8, 4),
+        new THREE.MeshBasicMaterial({ color: 0x444444 })
+      );
+      chain.position.set(signX, 3.4, signZ);
+      group.add(chain);
+    }
+    
+    // ========== POSTS/COLUMNS (vertical depth cues) ==========
+    const postMat = new THREE.MeshLambertMaterial({ color: 0x4a4540 });
+    const postPositions = [
+      { x: -w/2 + 5, z: -d/2 + 5 },
+      { x: w/2 - 8, z: -d/2 + 5 },
+      { x: -w/2 + 5, z: d/2 - 8 },
+    ];
+    postPositions.forEach(pos => {
+      const post = new THREE.Mesh(
+        new THREE.BoxGeometry(0.4, wallH, 0.4),
+        postMat
+      );
+      post.position.set(pos.x, wallH/2, pos.z);
+      group.add(post);
+    });
 
     // ========== SPORADIC WIRES (natural look, no grid) ==========
     
@@ -3211,7 +3842,7 @@ function createFloorView(buildingIdx: number, floor: number) {
     
     // Shoes/slippers scattered outside doors
     const shoeColors = [0x222222, 0x443322, 0x223344, 0x884433, 0x555555];
-    for (let i = 0; i < 25; i++) {
+for (let i = 0; i < 25; i++) {
       const shoe = new THREE.Mesh(
         new THREE.BoxGeometry(0.22, 0.06, 0.1),
         new THREE.MeshLambertMaterial({ color: shoeColors[Math.floor(Math.random() * 5)] })
@@ -3319,41 +3950,146 @@ function createFloorView(buildingIdx: number, floor: number) {
     }
 
     // ========== STAIRWELL (back right corner - clear area) ==========
-    // UP STAIRS (right side) - light to dark gradient (going up into darkness)
-    const upColors = [0xaaaaaa, 0x999999, 0x888888, 0x777777, 0x666666, 0x555555, 0x444444];
-    for (let s = 0; s < 7; s++) {
-      const step = new THREE.Mesh(
-        new THREE.BoxGeometry(4.5, 0.3, 1.2),
-        new THREE.MeshLambertMaterial({ color: upColors[s] })
+    const stairMat = new THREE.MeshLambertMaterial({ color: 0x666655 });
+    const railMat = new THREE.MeshLambertMaterial({ color: 0x444433 });
+    
+    // UP STAIRS (right side) - ROTATED 180°, extends to ceiling
+    // Stairs go from front (low, light) to back (high, dark) - player approaches from front
+    const upStairX = w/2 - 3;
+    const numSteps = 12; // More steps to reach ceiling
+    const stepRise = wallH / numSteps; // Height per step
+    
+    for (let s = 0; s < numSteps; s++) {
+      const stepY = s * stepRise; // Step height
+      
+      // Gradient: light at bottom (front), dark at top (back)
+      const gradientVal = Math.floor(0x99 - (s / numSteps) * 0x66);
+      const stepColor = (gradientVal << 16) | (gradientVal << 8) | (gradientVal - 0x11);
+      
+      // Step tread (horizontal surface) - facing FORWARD (positive Z)
+      const tread = new THREE.Mesh(
+        new THREE.BoxGeometry(3.5, 0.12, 0.8),
+        new THREE.MeshLambertMaterial({ color: stepColor })
       );
-      step.position.set(w/2 - 3, 0.15, -d/2 + 1 + s * 1.0);
-      group.add(step);
+      // Steps go from front (high Z) to back (low Z), rising as they go back
+      tread.position.set(upStairX, stepY + 0.06, -d/2 + 8 - s * 0.6);
+      group.add(tread);
+      
+      // Step riser (vertical face) - visible from front
+      const riser = new THREE.Mesh(
+        new THREE.BoxGeometry(3.5, stepRise, 0.08),
+        new THREE.MeshLambertMaterial({ color: stepColor - 0x222222 })
+      );
+      riser.position.set(upStairX, stepY + stepRise/2, -d/2 + 8.4 - s * 0.6);
+      group.add(riser);
     }
-    // UP label
-    const upLabel = new THREE.Mesh(
-      new THREE.PlaneGeometry(3, 0.8),
-      new THREE.MeshBasicMaterial({ color: 0x558855 })
+    
+    
+    // UP stairs handrails - longer, steeper angle
+    const railLen = 9;
+    const railAngle = Math.atan2(wallH, 7); // Angle based on rise/run
+    const upRail1 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.8, railLen), railMat);
+    upRail1.position.set(upStairX - 1.8, wallH/2, -d/2 + 4);
+    upRail1.rotation.x = railAngle;
+    group.add(upRail1);
+    const upRail2 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.8, railLen), railMat);
+    upRail2.position.set(upStairX + 1.8, wallH/2, -d/2 + 4);
+    upRail2.rotation.x = railAngle;
+    group.add(upRail2);
+    
+    // UP stairs support posts - taller
+    for (let p = 0; p < 4; p++) {
+      const postH = 0.8 + p * 0.8;
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.1, postH, 0.1), railMat);
+      post.position.set(upStairX - 1.8, postH/2, -d/2 + 7.5 - p * 2);
+      group.add(post);
+      const post2 = new THREE.Mesh(new THREE.BoxGeometry(0.1, postH, 0.1), railMat);
+      post2.position.set(upStairX + 1.8, postH/2, -d/2 + 7.5 - p * 2);
+      group.add(post2);
+    }
+    
+    // UP arrow sign on side wall (visible from approach)
+    const upSign = new THREE.Mesh(
+      new THREE.BoxGeometry(0.1, 1.0, 1.5),
+      new THREE.MeshLambertMaterial({ color: 0x336633 })
     );
-    upLabel.position.set(w/2 - 3, 2.5, -d/2 + 0.2);
-    group.add(upLabel);
+    upSign.position.set(upStairX + 1.9, 1.5, -d/2 + 7);
+    group.add(upSign);
+    // Arrow pointing up
+    const upArrow = new THREE.Mesh(
+      new THREE.ConeGeometry(0.25, 0.5, 3),
+      new THREE.MeshBasicMaterial({ color: 0x88ff88 })
+    );
+    upArrow.position.set(upStairX + 2.0, 1.5, -d/2 + 7);
+    group.add(upArrow);
 
-    // DOWN STAIRS (left side) - dark to light gradient (coming from darkness)
-    const downColors = [0x333333, 0x444444, 0x555555, 0x666666, 0x777777, 0x888888, 0x999999];
+    // DOWN STAIRS (left side) - actual 3D steps going down
+    const downStairX = w/2 - 8;
     for (let s = 0; s < 7; s++) {
-      const step = new THREE.Mesh(
-        new THREE.BoxGeometry(4.5, 0.3, 1.2),
-        new THREE.MeshLambertMaterial({ color: downColors[s] })
+      // Each step gets lower (going DOWN into darkness)
+      const stepH = 0.8 - s * 0.1; // Gets lower
+      const stepY = -s * 0.12; // Base drops
+      
+      // Step tread (horizontal surface)
+      const tread = new THREE.Mesh(
+        new THREE.BoxGeometry(3.5, 0.15, 1.0),
+        new THREE.MeshLambertMaterial({ color: 0x444433 + s * 0x111111 }) // Gets lighter coming out
       );
-      step.position.set(w/2 - 8, 0.15, -d/2 + 1 + s * 1.0);
-      group.add(step);
+      tread.position.set(downStairX, stepY + 0.4, -d/2 + 1.5 + s * 0.9);
+      group.add(tread);
+      
+      // Step riser (vertical face) - visible going down
+      if (s < 6) {
+        const riser = new THREE.Mesh(
+          new THREE.BoxGeometry(3.5, 0.15, 0.1),
+          new THREE.MeshLambertMaterial({ color: 0x333322 })
+        );
+        riser.position.set(downStairX, stepY + 0.32, -d/2 + 1 + s * 0.9);
+        group.add(riser);
+      }
     }
-    // DOWN label
-    const downLabel = new THREE.Mesh(
-      new THREE.PlaneGeometry(3, 0.8),
-      new THREE.MeshBasicMaterial({ color: 0x885555 })
+    
+    // Dark hole at bottom of down stairs (going into darkness)
+    const darkHole = new THREE.Mesh(
+      new THREE.BoxGeometry(3.5, 0.5, 2),
+      new THREE.MeshBasicMaterial({ color: 0x111108 })
     );
-    downLabel.position.set(w/2 - 8, 2.5, -d/2 + 0.2);
-    group.add(downLabel);
+    darkHole.position.set(downStairX, -0.5, -d/2 + 1);
+    group.add(darkHole);
+    
+    // DOWN stairs handrails
+    const downRail1 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.5, 6), railMat);
+    downRail1.position.set(downStairX - 1.8, 0.7, -d/2 + 4);
+    downRail1.rotation.x = 0.1; // Tilted down
+    group.add(downRail1);
+    const downRail2 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.5, 6), railMat);
+    downRail2.position.set(downStairX + 1.8, 0.7, -d/2 + 4);
+    downRail2.rotation.x = 0.1;
+    group.add(downRail2);
+    
+    // DOWN arrow sign on wall  
+    const downSign = new THREE.Mesh(
+      new THREE.BoxGeometry(1.5, 1.0, 0.1),
+      new THREE.MeshLambertMaterial({ color: 0x663333 })
+    );
+    downSign.position.set(downStairX, 2.2, -d/2 + 0.15);
+    group.add(downSign);
+    // Arrow pointing down
+    const downArrow = new THREE.Mesh(
+      new THREE.ConeGeometry(0.25, 0.5, 3),
+      new THREE.MeshBasicMaterial({ color: 0xff8888 })
+    );
+    downArrow.position.set(downStairX, 2.2, -d/2 + 0.25);
+    downArrow.rotation.x = Math.PI / 2;
+    group.add(downArrow);
+    
+    // Center divider between stairs
+    const divider = new THREE.Mesh(
+      new THREE.BoxGeometry(0.2, wallH, 7),
+      stairMat
+    );
+    divider.position.set(w/2 - 5.5, wallH/2, -d/2 + 4);
+    group.add(divider);
 
     // Stairwell light
     const stairLight = new THREE.PointLight(0xffffee, 0.6, 12);
@@ -3363,7 +4099,1028 @@ function createFloorView(buildingIdx: number, floor: number) {
 
   indoorScene.add(group);
   currentFloorGroup = group;
-  return { w, d, top: isTop, ground: isGround, leftRoof: isTop && hasLeftBuilding, rightRoof: isTop && hasRightBuilding };
+  return { 
+    w, d, top: isTop, ground: isGround, 
+    leftRoof: isTop && hasLeftBuilding, 
+    rightRoof: isTop && hasRightBuilding,
+    northRoof: isTop && hasNorthBuilding,
+    southRoof: isTop && hasSouthBuilding,
+    northIdx: northBuildingIdx,
+    southIdx: southBuildingIdx
+  };
+}
+
+// ============================================
+// UNDERGROUND - Cramped tunnels beneath KWC (NOT a clean sewer!)
+// Hand-dug passages, military bunkers, gang hideouts, chaotic pipes
+// ============================================
+let currentUndergroundGroup: THREE.Group | null = null;
+const undergroundNPCs: NPC[] = [];
+
+// Track which ladder player is near for exit
+let nearestLadderIdx = -1;
+
+function createUndergroundView(drainIdx: number) {
+  if (currentUndergroundGroup) indoorScene.remove(currentUndergroundGroup);
+  if (currentFloorGroup) indoorScene.remove(currentFloorGroup);
+  
+  const group = new THREE.Group();
+  // Sprawling underground network beneath KWC
+  const w = 100, d = 120, wallH = 3.5; // Lower ceiling - cramped!
+  
+  // ========== FLOOR - Visible concrete ==========
+  // Base floor (lighter concrete so it's visible)
+  const floorMat = new THREE.MeshLambertMaterial({ color: 0x4a4540 });
+  const mainFloor = new THREE.Mesh(new THREE.PlaneGeometry(w, d), floorMat);
+  mainFloor.rotation.x = -Math.PI / 2;
+  mainFloor.position.y = 0.01;
+  group.add(mainFloor);
+  
+  // Uneven floor patches (different heights, materials)
+  for (let i = 0; i < 100; i++) {
+    const patchW = 2 + Math.random() * 5;
+    const patchD = 2 + Math.random() * 5;
+    const patchH = Math.random() * 0.15;
+    const patch = new THREE.Mesh(
+      new THREE.BoxGeometry(patchW, patchH, patchD),
+      new THREE.MeshLambertMaterial({ 
+        color: [0x2a2520, 0x1f1a18, 0x302820, 0x252018, 0x1a1815][Math.floor(Math.random() * 5)]
+      })
+    );
+    patch.position.set(
+      -w/2 + 5 + Math.random() * (w - 10),
+      patchH / 2,
+      -d/2 + 5 + Math.random() * (d - 10)
+    );
+    group.add(patch);
+  }
+  
+  // ========== BLACK-WATER CHANNELS - Trickling dirty water ==========
+  const blackWaterMat = new THREE.MeshBasicMaterial({ color: 0x0a0808, transparent: true, opacity: 0.8 });
+  
+  // Irregular channels (not a grid - organic paths)
+  const channelPaths = [
+    { startX: -40, startZ: -55, endX: 35, endZ: -50, width: 1.5 },
+    { startX: -30, startZ: -30, endX: 40, endZ: -25, width: 2 },
+    { startX: -35, startZ: 0, endX: 30, endZ: 5, width: 1.8 },
+    { startX: -25, startZ: 25, endX: 45, endZ: 30, width: 1.5 },
+    { startX: -10, startZ: -55, endX: -5, endZ: 50, width: 2.5 }, // Main N-S
+    { startX: 20, startZ: -50, endX: 25, endZ: 45, width: 2 },
+  ];
+  
+  channelPaths.forEach(path => {
+    const len = Math.sqrt(Math.pow(path.endX - path.startX, 2) + Math.pow(path.endZ - path.startZ, 2));
+    const angle = Math.atan2(path.endZ - path.startZ, path.endX - path.startX);
+    
+    const channel = new THREE.Mesh(
+      new THREE.BoxGeometry(len, 0.3, path.width),
+      new THREE.MeshLambertMaterial({ color: 0x151210 })
+    );
+    channel.position.set((path.startX + path.endX) / 2, -0.15, (path.startZ + path.endZ) / 2);
+    channel.rotation.y = -angle + Math.PI / 2;
+    group.add(channel);
+    
+    // Black water surface
+    const water = new THREE.Mesh(
+      new THREE.PlaneGeometry(len - 0.5, path.width - 0.3),
+      blackWaterMat
+    );
+    water.rotation.x = -Math.PI / 2;
+    water.rotation.z = -angle + Math.PI / 2;
+    water.position.set((path.startX + path.endX) / 2, -0.05, (path.startZ + path.endZ) / 2);
+    group.add(water);
+  });
+  
+  // ========== CRAMPED TUNNEL WALLS - Irregular, hand-dug feel ==========
+  // ========== IRREGULAR WALLS - Hand-dug, crumbling concrete ==========
+  const wallMats = [
+    new THREE.MeshLambertMaterial({ color: 0x5a5550 }),
+    new THREE.MeshLambertMaterial({ color: 0x504a45 }),
+    new THREE.MeshLambertMaterial({ color: 0x555048 }),
+  ];
+  
+  // Outer boundary walls (rough, irregular)
+  for (let i = 0; i < 30; i++) {
+    const segW = 3 + Math.random() * 5;
+    const segH = wallH - 0.5 + Math.random() * 1;
+    const wall = new THREE.Mesh(
+      new THREE.BoxGeometry(segW, segH, 0.4 + Math.random() * 0.3),
+      wallMats[Math.floor(Math.random() * 3)]
+    );
+    wall.position.set(-w/2 + i * 3.5, segH/2, -d/2 + Math.random() * 0.5);
+    group.add(wall);
+  }
+  for (let i = 0; i < 30; i++) {
+    const segW = 3 + Math.random() * 5;
+    const segH = wallH - 0.5 + Math.random() * 1;
+    const wall = new THREE.Mesh(
+      new THREE.BoxGeometry(segW, segH, 0.4 + Math.random() * 0.3),
+      wallMats[Math.floor(Math.random() * 3)]
+    );
+    wall.position.set(-w/2 + i * 3.5, segH/2, d/2 - Math.random() * 0.5);
+    group.add(wall);
+  }
+  for (let i = 0; i < 35; i++) {
+    const segD = 3 + Math.random() * 5;
+    const segH = wallH - 0.5 + Math.random() * 1;
+    const wall = new THREE.Mesh(
+      new THREE.BoxGeometry(0.4 + Math.random() * 0.3, segH, segD),
+      wallMats[Math.floor(Math.random() * 3)]
+    );
+    wall.position.set(-w/2 + Math.random() * 0.5, segH/2, -d/2 + i * 3.5);
+    group.add(wall);
+  }
+  for (let i = 0; i < 35; i++) {
+    const segD = 3 + Math.random() * 5;
+    const segH = wallH - 0.5 + Math.random() * 1;
+    const wall = new THREE.Mesh(
+      new THREE.BoxGeometry(0.4 + Math.random() * 0.3, segH, segD),
+      wallMats[Math.floor(Math.random() * 3)]
+    );
+    wall.position.set(w/2 - Math.random() * 0.5, segH/2, -d/2 + i * 3.5);
+    group.add(wall);
+  }
+  
+  // ========== INTERNAL WALLS - Creates cramped passages ==========
+  // Fixed wall positions for consistent collision detection
+  // Format: { x, z, w (width in X), d (depth in Z) }
+  const internalWalls = [
+    // Horizontal walls (wide in X, thin in Z)
+    { x: -30, z: -45, w: 18, d: 0.6 },
+    { x: 10, z: -40, w: 22, d: 0.6 },
+    { x: -20, z: -25, w: 16, d: 0.6 },
+    { x: 25, z: -20, w: 20, d: 0.6 },
+    { x: -35, z: -5, w: 14, d: 0.6 },
+    { x: 5, z: 0, w: 24, d: 0.6 },
+    { x: 35, z: 5, w: 12, d: 0.6 },
+    { x: -25, z: 20, w: 18, d: 0.6 },
+    { x: 15, z: 25, w: 16, d: 0.6 },
+    { x: -10, z: 40, w: 20, d: 0.6 },
+    { x: 30, z: 35, w: 14, d: 0.6 },
+    { x: -35, z: 50, w: 16, d: 0.6 },
+    // Vertical walls (thin in X, deep in Z)
+    { x: -40, z: -30, w: 0.6, d: 20 },
+    { x: -25, z: -35, w: 0.6, d: 16 },
+    { x: -10, z: -15, w: 0.6, d: 22 },
+    { x: 5, z: -30, w: 0.6, d: 18 },
+    { x: 20, z: -10, w: 0.6, d: 24 },
+    { x: 35, z: -35, w: 0.6, d: 14 },
+    { x: -38, z: 15, w: 0.6, d: 20 },
+    { x: -20, z: 30, w: 0.6, d: 18 },
+    { x: 0, z: 20, w: 0.6, d: 16 },
+    { x: 18, z: 45, w: 0.6, d: 22 },
+    { x: 38, z: 25, w: 0.6, d: 18 },
+    { x: -30, z: 45, w: 0.6, d: 14 },
+  ];
+  
+  // Render the internal walls
+  for (const wallDef of internalWalls) {
+    const segH = 3 + Math.random() * 0.5;
+    const wall = new THREE.Mesh(
+      new THREE.BoxGeometry(wallDef.w, segH, wallDef.d),
+      wallMats[Math.floor(Math.random() * 3)]
+    );
+    wall.position.set(wallDef.x, segH/2, wallDef.z);
+    group.add(wall);
+  }
+  
+  // NO CEILING - Open top so player can see everything from above (2.5D view)
+  
+  // ========== LEAKING PIPES EVERYWHERE - Chaotic angles ==========
+  const pipeColors = [0x4a4540, 0x5a4535, 0x3a3530, 0x555045, 0x443830, 0x3a3028];
+  
+  // Pipes along walls at random heights
+  for (let i = 0; i < 80; i++) {
+    const pipeLen = 3 + Math.random() * 15;
+    const pipeR = 0.08 + Math.random() * 0.2;
+    const pipe = new THREE.Mesh(
+      new THREE.CylinderGeometry(pipeR, pipeR, pipeLen, 6),
+      new THREE.MeshLambertMaterial({ color: pipeColors[Math.floor(Math.random() * pipeColors.length)] })
+    );
+    // Random orientation
+    pipe.rotation.x = Math.random() * Math.PI;
+    pipe.rotation.z = Math.random() * Math.PI;
+    pipe.position.set(
+      -w/2 + 5 + Math.random() * (w - 10),
+      0.5 + Math.random() * (wallH - 1),
+      -d/2 + 5 + Math.random() * (d - 10)
+    );
+    group.add(pipe);
+    
+    // Dripping water/leak from many pipes
+    if (Math.random() > 0.6) {
+      const dripLen = 0.5 + Math.random() * 2;
+      const drip = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.03, 0.01, dripLen, 4),
+        new THREE.MeshBasicMaterial({ color: 0x1a2a1a, transparent: true, opacity: 0.5 })
+      );
+      drip.position.set(pipe.position.x, pipe.position.y - dripLen/2 - 0.2, pipe.position.z);
+      group.add(drip);
+      
+      // Puddle below drip
+      if (pipe.position.y < 2) {
+        const puddle = new THREE.Mesh(
+          new THREE.CircleGeometry(0.3 + Math.random() * 0.5, 6),
+          new THREE.MeshBasicMaterial({ color: 0x151a15, transparent: true, opacity: 0.6 })
+        );
+        puddle.rotation.x = -Math.PI / 2;
+        puddle.position.set(pipe.position.x, 0.02, pipe.position.z);
+        group.add(puddle);
+      }
+    }
+  }
+  
+  // ========== CHAOTIC WIRING - Crossing at random angles ==========
+  const wireColors = [0x111111, 0x1a1a1a, 0x0f0f0f, 0x151515, 0x222222];
+  
+  for (let i = 0; i < 150; i++) {
+    const wireLen = 2 + Math.random() * 12;
+    const wire = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.015 + Math.random() * 0.025, 0.015 + Math.random() * 0.025, wireLen, 4),
+      new THREE.MeshBasicMaterial({ color: wireColors[Math.floor(Math.random() * wireColors.length)] })
+    );
+    wire.rotation.x = Math.random() * Math.PI;
+    wire.rotation.y = Math.random() * Math.PI;
+    wire.rotation.z = Math.random() * Math.PI;
+    wire.position.set(
+      -w/2 + 8 + Math.random() * (w - 16),
+      1 + Math.random() * (wallH - 1.5),
+      -d/2 + 8 + Math.random() * (d - 16)
+    );
+    group.add(wire);
+  }
+  
+  // Wire bundles (clusters of wires)
+  for (let i = 0; i < 30; i++) {
+    const bundleX = -w/2 + 10 + Math.random() * (w - 20);
+    const bundleZ = -d/2 + 10 + Math.random() * (d - 20);
+    const bundleY = 1.5 + Math.random() * 2;
+    for (let j = 0; j < 5 + Math.floor(Math.random() * 8); j++) {
+      const wire = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.02, 0.02, 3 + Math.random() * 6, 4),
+        new THREE.MeshBasicMaterial({ color: wireColors[Math.floor(Math.random() * wireColors.length)] })
+      );
+      wire.rotation.x = Math.random() * 0.5;
+      wire.rotation.z = Math.random() * 0.5;
+      wire.position.set(bundleX + Math.random() * 0.5, bundleY, bundleZ + Math.random() * 0.5);
+      group.add(wire);
+    }
+  }
+  
+  // ========== BROKEN CONCRETE VOIDS - Dark gaps ==========
+  for (let i = 0; i < 25; i++) {
+    const voidW = 1 + Math.random() * 3;
+    const voidD = 1 + Math.random() * 3;
+    const voidH = 0.5 + Math.random() * 1;
+    const concreteVoid = new THREE.Mesh(
+      new THREE.BoxGeometry(voidW, voidH, voidD),
+      new THREE.MeshBasicMaterial({ color: 0x050505 })
+    );
+    concreteVoid.position.set(
+      -w/2 + 10 + Math.random() * (w - 20),
+      -voidH/2,
+      -d/2 + 10 + Math.random() * (d - 20)
+    );
+    group.add(concreteVoid);
+  }
+  
+  // ========== OLD MILITARY BUNKER ELEMENTS ==========
+  // Rusty metal doors (sealed passages)
+  for (let i = 0; i < 8; i++) {
+    const door = new THREE.Mesh(
+      new THREE.BoxGeometry(2, 2.5, 0.15),
+      new THREE.MeshLambertMaterial({ color: 0x4a3a2a })
+    );
+    const onWall = Math.random() > 0.5;
+    door.position.set(
+      onWall ? (-w/2 + 1 + Math.random() * 0.3) : (-w/2 + 15 + Math.random() * (w - 30)),
+      1.25,
+      onWall ? (-d/2 + 15 + Math.random() * (d - 30)) : (-d/2 + 1 + Math.random() * 0.3)
+    );
+    if (!onWall) door.rotation.y = Math.PI / 2;
+    group.add(door);
+    
+    // Rust streaks
+    const rust = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.3, 1.5),
+      new THREE.MeshBasicMaterial({ color: 0x3a2a1a, transparent: true, opacity: 0.5 })
+    );
+    rust.position.set(door.position.x + (onWall ? 0.1 : 0), door.position.y - 0.5, door.position.z + (onWall ? 0 : 0.1));
+    rust.rotation.y = onWall ? 0 : Math.PI / 2;
+    group.add(rust);
+  }
+  
+  // ========== SECRET GANG PASSAGE MARKERS ==========
+  // Graffiti/markings
+  const graffiti = [0x881111, 0x118811, 0x111188, 0x888811, 0xffffff];
+  for (let i = 0; i < 15; i++) {
+    const mark = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.5 + Math.random() * 1.5, 0.3 + Math.random() * 0.8),
+      new THREE.MeshBasicMaterial({ color: graffiti[Math.floor(Math.random() * graffiti.length)], transparent: true, opacity: 0.7 })
+    );
+    const onLeftWall = Math.random() > 0.5;
+    mark.position.set(
+      onLeftWall ? -w/2 + 0.3 : (w/2 - 0.3),
+      1 + Math.random() * 2,
+      -d/2 + 10 + Math.random() * (d - 20)
+    );
+    mark.rotation.y = onLeftWall ? Math.PI / 2 : -Math.PI / 2;
+    group.add(mark);
+  }
+  
+  // ========== EXIT LADDERS AT EACH DRAIN POSITION ==========
+  // Create ladder at each drain location so player can exit anywhere
+  const ladderMat = new THREE.MeshLambertMaterial({ color: 0x666655 });
+  
+  drainPositions.forEach((drain, idx) => {
+    // Convert city coordinates to sewer coordinates
+    // City: x from -40 to 40, z from -80 to 5
+    // Sewer: x from -50 to 50, z from -60 to 60
+    const sewerX = drain.x * 1.1;
+    const sewerZ = (drain.z + 35) * 1.1; // Shift and scale
+    
+    const ladderGroup = new THREE.Group();
+    
+    // Ladder hole in ceiling (light shaft)
+    const holeLight = new THREE.SpotLight(0x889988, 0.5, 12, Math.PI / 5);
+    holeLight.position.set(sewerX, wallH + 2, sewerZ);
+    holeLight.target.position.set(sewerX, 0, sewerZ);
+    ladderGroup.add(holeLight);
+    ladderGroup.add(holeLight.target);
+    
+    // Manhole circle on ceiling
+    const manholeRing = new THREE.Mesh(
+      new THREE.TorusGeometry(1.2, 0.15, 8, 16),
+      new THREE.MeshLambertMaterial({ color: 0x444444 })
+    );
+    manholeRing.rotation.x = Math.PI / 2;
+    manholeRing.position.set(sewerX, wallH - 0.1, sewerZ);
+    ladderGroup.add(manholeRing);
+    
+    // Ladder rails
+    const rail1 = new THREE.Mesh(new THREE.BoxGeometry(0.1, wallH + 1, 0.1), ladderMat);
+    rail1.position.set(sewerX - 0.5, wallH/2, sewerZ);
+    ladderGroup.add(rail1);
+    const rail2 = new THREE.Mesh(new THREE.BoxGeometry(0.1, wallH + 1, 0.1), ladderMat);
+    rail2.position.set(sewerX + 0.5, wallH/2, sewerZ);
+    ladderGroup.add(rail2);
+    
+    // Rungs
+    for (let r = 0; r < 9; r++) {
+      const rung = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.08, 0.08), ladderMat);
+      rung.position.set(sewerX, 0.5 + r * 0.7, sewerZ);
+      ladderGroup.add(rung);
+    }
+    
+    // Floor marking (glow ring to show exit point)
+    const exitRing = new THREE.Mesh(
+      new THREE.TorusGeometry(1.5, 0.1, 8, 16),
+      new THREE.MeshBasicMaterial({ color: 0x446644 })
+    );
+    exitRing.rotation.x = -Math.PI / 2;
+    exitRing.position.set(sewerX, 0.02, sewerZ);
+    ladderGroup.add(exitRing);
+    
+    // Number marker
+    const markerColor = idx === 0 ? 0x66aa66 : 0x447744; // Brighter for spawn point
+    const marker = new THREE.Mesh(
+      new THREE.CircleGeometry(0.8, 8),
+      new THREE.MeshBasicMaterial({ color: markerColor })
+    );
+    marker.rotation.x = -Math.PI / 2;
+    marker.position.set(sewerX, 0.03, sewerZ);
+    ladderGroup.add(marker);
+    
+    group.add(ladderGroup);
+  });
+  
+  // ========== TUNNEL PILLARS/SUPPORTS ==========
+  const pillarMat = new THREE.MeshLambertMaterial({ color: 0x4a4540 });
+  for (let x = -35; x <= 35; x += 20) {
+    for (let z = -50; z <= 50; z += 25) {
+      // Skip if too close to a drain
+      const tooClose = drainPositions.some(dr => {
+        const sx = dr.x * 1.1;
+        const sz = (dr.z + 35) * 1.1;
+        return Math.abs(x - sx) < 5 && Math.abs(z - sz) < 5;
+      });
+      if (tooClose) continue;
+      
+      const pillar = new THREE.Mesh(
+        new THREE.BoxGeometry(1.2, wallH, 1.2),
+        pillarMat
+      );
+      pillar.position.set(x, wallH/2, z);
+      group.add(pillar);
+    }
+  }
+  
+  // ========== DEBRIS AND DETAILS ==========
+  // Puddles
+  for (let i = 0; i < 50; i++) {
+    const puddle = new THREE.Mesh(
+      new THREE.CircleGeometry(0.6 + Math.random() * 1.5, 8),
+      new THREE.MeshBasicMaterial({ color: 0x1a2a18, transparent: true, opacity: 0.4 })
+    );
+    puddle.rotation.x = -Math.PI / 2;
+    puddle.position.set(
+      -w/2 + 8 + Math.random() * (w - 16),
+      0.02,
+      -d/2 + 8 + Math.random() * (d - 16)
+    );
+    group.add(puddle);
+  }
+  
+  // Debris
+  for (let i = 0; i < 80; i++) {
+    const debris = new THREE.Mesh(
+      new THREE.BoxGeometry(0.2 + Math.random() * 0.4, 0.1 + Math.random() * 0.3, 0.2 + Math.random() * 0.4),
+      new THREE.MeshLambertMaterial({ color: [0x3a3530, 0x4a4035, 0x2a2520, 0x353025][Math.floor(Math.random() * 4)] })
+    );
+    debris.position.set(
+      -w/2 + 5 + Math.random() * (w - 10),
+      0.15,
+      -d/2 + 5 + Math.random() * (d - 10)
+    );
+    debris.rotation.y = Math.random() * Math.PI;
+    group.add(debris);
+  }
+  
+  // ========== KWC-STYLE WARNING SIGNS ==========
+  const signMat = new THREE.MeshBasicMaterial({ color: 0xddddcc });
+  const dangerMat = new THREE.MeshBasicMaterial({ color: 0xcc4444 });
+  
+  for (let i = 0; i < 20; i++) {
+    const signX = -w/2 + 8 + Math.random() * (w - 16);
+    const signZ = -d/2 + 8 + Math.random() * (d - 16);
+    const signY = 1.5 + Math.random() * 1.5;
+    
+    // Sign board
+    const signW = 0.8 + Math.random() * 0.6;
+    const signH = 0.5 + Math.random() * 0.4;
+    const sign = new THREE.Mesh(
+      new THREE.BoxGeometry(signW, signH, 0.05),
+      Math.random() > 0.7 ? dangerMat : signMat
+    );
+    sign.position.set(signX, signY, signZ);
+    sign.rotation.y = Math.random() * Math.PI * 2;
+    group.add(sign);
+    
+    // Some signs have red border
+    if (Math.random() > 0.5) {
+      const border = new THREE.Mesh(
+        new THREE.BoxGeometry(signW + 0.1, signH + 0.1, 0.03),
+        new THREE.MeshBasicMaterial({ color: 0x883333 })
+      );
+      border.position.copy(sign.position);
+      border.position.z -= 0.02;
+      border.rotation.y = sign.rotation.y;
+      group.add(border);
+    }
+  }
+  
+  // ========== TRASH BAGS AND GARBAGE ==========
+  for (let i = 0; i < 40; i++) {
+    const bagX = -w/2 + 6 + Math.random() * (w - 12);
+    const bagZ = -d/2 + 6 + Math.random() * (d - 12);
+    
+    // White/grey plastic bags
+    const bag = new THREE.Mesh(
+      new THREE.SphereGeometry(0.25 + Math.random() * 0.3, 6, 5),
+      new THREE.MeshLambertMaterial({ color: Math.random() > 0.4 ? 0xcccccc : 0x888888 })
+    );
+    bag.position.set(bagX, 0.2 + Math.random() * 0.2, bagZ);
+    bag.scale.set(1, 0.7 + Math.random() * 0.3, 1);
+    group.add(bag);
+  }
+  
+  // Piles of garbage against walls
+  for (let i = 0; i < 15; i++) {
+    const pileX = Math.random() > 0.5 ? -w/2 + 3 + Math.random() * 5 : w/2 - 3 - Math.random() * 5;
+    const pileZ = -d/2 + 10 + Math.random() * (d - 20);
+    
+    for (let j = 0; j < 4 + Math.floor(Math.random() * 4); j++) {
+      const junk = new THREE.Mesh(
+        new THREE.BoxGeometry(0.3 + Math.random() * 0.4, 0.2 + Math.random() * 0.3, 0.3 + Math.random() * 0.4),
+        new THREE.MeshLambertMaterial({ color: [0x5a5550, 0x4a4540, 0x6a6560, 0x3a3530][Math.floor(Math.random() * 4)] })
+      );
+      junk.position.set(pileX + (Math.random() - 0.5) * 1.5, 0.15 + j * 0.15, pileZ + (Math.random() - 0.5) * 1.5);
+      junk.rotation.set(Math.random() * 0.3, Math.random() * Math.PI, Math.random() * 0.3);
+      group.add(junk);
+    }
+  }
+  
+  // ========== BUCKETS AND CONTAINERS ==========
+  for (let i = 0; i < 25; i++) {
+    const bucketX = -w/2 + 8 + Math.random() * (w - 16);
+    const bucketZ = -d/2 + 8 + Math.random() * (d - 16);
+    
+    const bucket = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.2, 0.15, 0.4, 8),
+      new THREE.MeshLambertMaterial({ color: [0x335577, 0x553322, 0x555555, 0x774433][Math.floor(Math.random() * 4)] })
+    );
+    bucket.position.set(bucketX, 0.2, bucketZ);
+    group.add(bucket);
+  }
+  
+  // ========== CARDBOARD BOXES ==========
+  for (let i = 0; i < 30; i++) {
+    const boxX = -w/2 + 6 + Math.random() * (w - 12);
+    const boxZ = -d/2 + 6 + Math.random() * (d - 12);
+    const boxW = 0.4 + Math.random() * 0.5;
+    const boxH = 0.3 + Math.random() * 0.4;
+    const boxD = 0.4 + Math.random() * 0.5;
+    
+    const box = new THREE.Mesh(
+      new THREE.BoxGeometry(boxW, boxH, boxD),
+      new THREE.MeshLambertMaterial({ color: 0x8a7560 + Math.floor(Math.random() * 0x101010) })
+    );
+    box.position.set(boxX, boxH/2, boxZ);
+    box.rotation.y = Math.random() * Math.PI;
+    group.add(box);
+  }
+  
+  // ========== CRATES AND STORAGE ==========
+  for (let i = 0; i < 12; i++) {
+    const crateX = -w/2 + 10 + Math.random() * (w - 20);
+    const crateZ = -d/2 + 10 + Math.random() * (d - 20);
+    
+    // Wooden crate
+    const crate = new THREE.Mesh(
+      new THREE.BoxGeometry(1 + Math.random() * 0.5, 0.8, 1 + Math.random() * 0.5),
+      new THREE.MeshLambertMaterial({ color: 0x6a5a4a })
+    );
+    crate.position.set(crateX, 0.4, crateZ);
+    group.add(crate);
+    
+    // Slats detail
+    for (let s = 0; s < 3; s++) {
+      const slat = new THREE.Mesh(
+        new THREE.BoxGeometry(1.05, 0.05, 0.08),
+        new THREE.MeshLambertMaterial({ color: 0x5a4a3a })
+      );
+      slat.position.set(crateX, 0.2 + s * 0.3, crateZ + 0.5);
+      group.add(slat);
+    }
+  }
+  
+  // ========== METAL BARRELS ==========
+  for (let i = 0; i < 15; i++) {
+    const barrelX = -w/2 + 8 + Math.random() * (w - 16);
+    const barrelZ = -d/2 + 8 + Math.random() * (d - 16);
+    
+    const barrel = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.4, 0.35, 1, 10),
+      new THREE.MeshLambertMaterial({ color: [0x3a5a3a, 0x5a5a5a, 0x4a3a2a, 0x2a4a5a][Math.floor(Math.random() * 4)] })
+    );
+    barrel.position.set(barrelX, 0.5, barrelZ);
+    if (Math.random() > 0.8) {
+      barrel.rotation.x = Math.PI / 2; // Fallen over
+      barrel.position.y = 0.35;
+    }
+    group.add(barrel);
+  }
+  
+  // ========== OLD FURNITURE ==========
+  // Broken chairs
+  for (let i = 0; i < 8; i++) {
+    const chairX = -w/2 + 10 + Math.random() * (w - 20);
+    const chairZ = -d/2 + 10 + Math.random() * (d - 20);
+    
+    // Seat
+    const seat = new THREE.Mesh(
+      new THREE.BoxGeometry(0.5, 0.08, 0.5),
+      new THREE.MeshLambertMaterial({ color: 0x5a4a3a })
+    );
+    seat.position.set(chairX, 0.45, chairZ);
+    group.add(seat);
+    
+    // Legs (some missing)
+    const numLegs = 2 + Math.floor(Math.random() * 3);
+    for (let l = 0; l < numLegs; l++) {
+      const leg = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.03, 0.03, 0.4, 4),
+        new THREE.MeshLambertMaterial({ color: 0x4a3a2a })
+      );
+      leg.position.set(
+        chairX + (l < 2 ? -0.2 : 0.2),
+        0.2,
+        chairZ + (l % 2 === 0 ? -0.2 : 0.2)
+      );
+      group.add(leg);
+    }
+  }
+  
+  // ========== HANGING ITEMS FROM PIPES ==========
+  for (let i = 0; i < 20; i++) {
+    const hangX = -w/2 + 10 + Math.random() * (w - 20);
+    const hangZ = -d/2 + 10 + Math.random() * (d - 20);
+    const hangY = 2.5 + Math.random();
+    
+    // String/wire
+    const string = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.01, 0.01, 0.8 + Math.random() * 0.5, 4),
+      new THREE.MeshBasicMaterial({ color: 0x333333 })
+    );
+    string.position.set(hangX, hangY - 0.4, hangZ);
+    group.add(string);
+    
+    // Hanging item (bag, clothes, bucket)
+    const itemType = Math.random();
+    if (itemType < 0.4) {
+      // Bag
+      const bag = new THREE.Mesh(
+        new THREE.SphereGeometry(0.15, 6, 4),
+        new THREE.MeshLambertMaterial({ color: Math.random() > 0.5 ? 0xaaaaaa : 0x666666 })
+      );
+      bag.position.set(hangX, hangY - 0.9, hangZ);
+      bag.scale.y = 1.3;
+      group.add(bag);
+    } else if (itemType < 0.7) {
+      // Cloth
+      const cloth = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.4, 0.6),
+        new THREE.MeshLambertMaterial({ color: [0x8a7a6a, 0x6a6a7a, 0x7a8a7a][Math.floor(Math.random() * 3)], side: THREE.DoubleSide })
+      );
+      cloth.position.set(hangX, hangY - 0.9, hangZ);
+      cloth.rotation.y = Math.random() * Math.PI;
+      group.add(cloth);
+    } else {
+      // Container
+      const container = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.1, 0.08, 0.2, 6),
+        new THREE.MeshLambertMaterial({ color: 0x555555 })
+      );
+      container.position.set(hangX, hangY - 0.9, hangZ);
+      group.add(container);
+    }
+  }
+  
+  // ========== STACKED ITEMS AGAINST WALLS ==========
+  // Stacked metal dim sum containers (like in the photo)
+  for (let stack = 0; stack < 6; stack++) {
+    const stackX = -w/2 + 4 + Math.random() * 8;
+    const stackZ = -d/2 + 10 + Math.random() * (d - 20);
+    const numContainers = 3 + Math.floor(Math.random() * 5);
+    
+    for (let c = 0; c < numContainers; c++) {
+      const container = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.25, 0.25, 0.15, 12),
+        new THREE.MeshLambertMaterial({ color: 0x888888 })
+      );
+      container.position.set(stackX, 0.1 + c * 0.15, stackZ);
+      group.add(container);
+    }
+  }
+  
+  // ========== BRIGHT LIGHTING - Full visibility like outdoors ==========
+  // Strong ambient light so everything is clearly visible
+  const undergroundAmbient = new THREE.AmbientLight(0xffffff, 0.8);
+  group.add(undergroundAmbient);
+  
+  // Strong directional light from above
+  const undergroundSun = new THREE.DirectionalLight(0xffffff, 0.6);
+  undergroundSun.position.set(20, 50, 20);
+  group.add(undergroundSun);
+  
+  // Additional fill light
+  const fillLight = new THREE.DirectionalLight(0xaabbaa, 0.4);
+  fillLight.position.set(-20, 40, -20);
+  group.add(fillLight);
+  
+  // Sparse, flickering fluorescent tubes - not a grid, random placement
+  const fluorescentPositions: {x: number, z: number}[] = [];
+  for (let i = 0; i < 35; i++) {
+    fluorescentPositions.push({
+      x: -w/2 + 10 + Math.random() * (w - 20),
+      z: -d/2 + 10 + Math.random() * (d - 20)
+    });
+  }
+  
+  fluorescentPositions.forEach((pos, i) => {
+    // Some lights are dead (dark)
+    const isWorking = Math.random() > 0.25;
+    const isBroken = Math.random() > 0.7; // Dim/flickering
+    
+    // Fluorescent tube fixture
+    const tubeLen = 1 + Math.random() * 1.5;
+    const tube = new THREE.Mesh(
+      new THREE.BoxGeometry(tubeLen, 0.08, 0.15),
+      new THREE.MeshBasicMaterial({ 
+        color: isWorking ? (isBroken ? 0x556655 : 0x88aa88) : 0x222222 
+      })
+    );
+    tube.position.set(pos.x, wallH - 0.5 + Math.random() * 0.3, pos.z);
+    tube.rotation.y = Math.random() * Math.PI;
+    group.add(tube);
+    
+    // Metal housing
+    const housing = new THREE.Mesh(
+      new THREE.BoxGeometry(tubeLen + 0.2, 0.12, 0.2),
+      new THREE.MeshLambertMaterial({ color: 0x333333 })
+    );
+    housing.position.set(pos.x, wallH - 0.4, pos.z);
+    housing.rotation.y = tube.rotation.y;
+    group.add(housing);
+    
+    // Light source (only if working) - BRIGHTER for visibility
+    if (isWorking) {
+      const lightColor = isBroken ? 0x88aa77 : 0xaaddaa;
+      const lightIntensity = isBroken ? 0.4 : 0.7;
+      const light = new THREE.PointLight(lightColor, lightIntensity, 18);
+      light.position.set(pos.x, wallH - 0.6, pos.z);
+      group.add(light);
+    }
+  });
+  
+  // Some bare bulbs hanging from wires (gang hideout style)
+  for (let i = 0; i < 15; i++) {
+    const bulbX = -w/2 + 15 + Math.random() * (w - 30);
+    const bulbZ = -d/2 + 15 + Math.random() * (d - 30);
+    const wireLen = 0.5 + Math.random() * 1.5;
+    
+    // Hanging wire
+    const wire = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.01, 0.01, wireLen, 4),
+      new THREE.MeshBasicMaterial({ color: 0x111111 })
+    );
+    wire.position.set(bulbX, wallH - wireLen/2, bulbZ);
+    group.add(wire);
+    
+    // Bare bulb
+    const isLit = Math.random() > 0.3;
+    const bulb = new THREE.Mesh(
+      new THREE.SphereGeometry(0.08, 6, 6),
+      new THREE.MeshBasicMaterial({ color: isLit ? 0xffdd88 : 0x222211 })
+    );
+    bulb.position.set(bulbX, wallH - wireLen - 0.08, bulbZ);
+    group.add(bulb);
+    
+    if (isLit) {
+      const bulbLight = new THREE.PointLight(0xffcc66, 0.5, 12);
+      bulbLight.position.set(bulbX, wallH - wireLen - 0.1, bulbZ);
+      group.add(bulbLight);
+    }
+  }
+  
+  indoorScene.add(group);
+  currentUndergroundGroup = group;
+  currentFloorGroup = null;
+  
+  // Spawn underground NPCs (rats, foxes, and shady dealers)
+  spawnUndergroundNPCs(w, d);
+  
+  return { w, d };
+}
+
+function spawnUndergroundNPCs(w: number, d: number) {
+  // Clear old underground NPCs
+  undergroundNPCs.forEach(npc => indoorScene.remove(npc.mesh));
+  undergroundNPCs.length = 0;
+  
+  // GRID-BASED SPAWNING to ensure rats are dispersed across ENTIRE map
+  // Divide map into grid cells and spawn 1-3 rats per cell
+  const cellSize = 12;
+  const cellsX = Math.floor(w / cellSize);
+  const cellsZ = Math.floor(d / cellSize);
+  
+  for (let cx = 0; cx < cellsX; cx++) {
+    for (let cz = 0; cz < cellsZ; cz++) {
+      // 1-3 rats per cell
+      const ratsInCell = 1 + Math.floor(Math.random() * 3);
+      for (let r = 0; r < ratsInCell; r++) {
+        const rat = createMouseMesh();
+        // Underground rats are bigger and nastier
+        rat.scale.set(1.3 + Math.random() * 0.3, 1.3 + Math.random() * 0.3, 1.3 + Math.random() * 0.3);
+        
+        // Random position within this grid cell
+        const x = -w/2 + cx * cellSize + 2 + Math.random() * (cellSize - 4);
+        const z = -d/2 + cz * cellSize + 2 + Math.random() * (cellSize - 4);
+        rat.position.set(x, 0.1, z);
+        indoorScene.add(rat);
+        
+        // Random target in nearby area (not across the whole map)
+        const targetX = x + (Math.random() - 0.5) * 20;
+        const targetZ = z + (Math.random() - 0.5) * 20;
+        
+        undergroundNPCs.push({
+          mesh: rat,
+          x, z,
+          targetX, targetZ,
+          speed: 0.04 + Math.random() * 0.04, // Fast rats!
+          type: 'mouse',
+          indoor: true
+        });
+      }
+    }
+  }
+  
+  // Foxes also grid-distributed but sparser (every 3rd cell)
+  for (let cx = 0; cx < cellsX; cx += 3) {
+    for (let cz = 0; cz < cellsZ; cz += 3) {
+      if (Math.random() > 0.4) { // 60% chance per cell
+        const fox = createFoxMesh();
+        const x = -w/2 + cx * cellSize + cellSize/2 + (Math.random() - 0.5) * 8;
+        const z = -d/2 + cz * cellSize + cellSize/2 + (Math.random() - 0.5) * 8;
+        fox.position.set(x, 0.1, z);
+        indoorScene.add(fox);
+        
+        undergroundNPCs.push({
+          mesh: fox,
+          x, z,
+          targetX: x + (Math.random() - 0.5) * 15,
+          targetZ: z + (Math.random() - 0.5) * 15,
+          speed: 0.025 + Math.random() * 0.025,
+          type: 'fox',
+          indoor: true
+        });
+      }
+    }
+  }
+  
+  // ========== SHADY DRUG DEALERS prowling the underground ==========
+  // Spawn 15-25 dealers scattered throughout
+  const numDealers = 15 + Math.floor(Math.random() * 10);
+  for (let i = 0; i < numDealers; i++) {
+    const dealer = createDrugDealerMesh();
+    const x = -w/2 + 10 + Math.random() * (w - 20);
+    const z = -d/2 + 10 + Math.random() * (d - 20);
+    dealer.position.set(x, 0.1, z);
+    indoorScene.add(dealer);
+    
+    undergroundNPCs.push({
+      mesh: dealer,
+      x, z,
+      targetX: x + (Math.random() - 0.5) * 25,
+      targetZ: z + (Math.random() - 0.5) * 25,
+      speed: 0.015 + Math.random() * 0.015, // Slow, lurking movement
+      type: 'person', // Use person type for movement
+      indoor: true
+    });
+  }
+}
+
+// Create shady drug dealer mesh
+function createDrugDealerMesh(): THREE.Group {
+  const group = new THREE.Group();
+  
+  // Dark hoodie/jacket (body)
+  const hoodieColors = [0x1a1a1a, 0x222222, 0x151520, 0x201515, 0x2a2a2a];
+  const hoodieColor = hoodieColors[Math.floor(Math.random() * hoodieColors.length)];
+  
+  const torso = new THREE.Mesh(
+    new THREE.BoxGeometry(0.5, 0.7, 0.35),
+    new THREE.MeshLambertMaterial({ color: hoodieColor })
+  );
+  torso.position.y = 0.85;
+  group.add(torso);
+  
+  // Hood (pulled up, shady)
+  const hood = new THREE.Mesh(
+    new THREE.BoxGeometry(0.45, 0.35, 0.4),
+    new THREE.MeshLambertMaterial({ color: hoodieColor })
+  );
+  hood.position.set(0, 1.35, -0.05);
+  group.add(hood);
+  
+  // Face (barely visible in shadow)
+  const face = new THREE.Mesh(
+    new THREE.BoxGeometry(0.25, 0.25, 0.15),
+    new THREE.MeshLambertMaterial({ color: 0x8a7a6a })
+  );
+  face.position.set(0, 1.3, 0.15);
+  group.add(face);
+  
+  // Suspicious eyes (glinting)
+  const eyeColor = Math.random() > 0.5 ? 0xffffff : 0xffddaa;
+  const leftEye = new THREE.Mesh(
+    new THREE.BoxGeometry(0.05, 0.03, 0.02),
+    new THREE.MeshBasicMaterial({ color: eyeColor })
+  );
+  leftEye.position.set(-0.06, 1.33, 0.22);
+  group.add(leftEye);
+  const rightEye = new THREE.Mesh(
+    new THREE.BoxGeometry(0.05, 0.03, 0.02),
+    new THREE.MeshBasicMaterial({ color: eyeColor })
+  );
+  rightEye.position.set(0.06, 1.33, 0.22);
+  group.add(rightEye);
+  
+  // Dark pants
+  const pants = new THREE.Mesh(
+    new THREE.BoxGeometry(0.45, 0.5, 0.3),
+    new THREE.MeshLambertMaterial({ color: 0x111115 })
+  );
+  pants.position.y = 0.35;
+  group.add(pants);
+  
+  // Legs
+  const legMat = new THREE.MeshLambertMaterial({ color: 0x111115 });
+  const leftLeg = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.35, 0.18), legMat);
+  leftLeg.position.set(-0.12, 0.08, 0);
+  group.add(leftLeg);
+  const rightLeg = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.35, 0.18), legMat);
+  rightLeg.position.set(0.12, 0.08, 0);
+  group.add(rightLeg);
+  
+  // Bag/backpack (carrying "goods")
+  if (Math.random() > 0.3) {
+    const bag = new THREE.Mesh(
+      new THREE.BoxGeometry(0.3, 0.35, 0.2),
+      new THREE.MeshLambertMaterial({ color: 0x2a2520 })
+    );
+    bag.position.set(0, 0.7, -0.25);
+    group.add(bag);
+  }
+  
+  // Some have visible phone (checking deals)
+  if (Math.random() > 0.6) {
+    const phone = new THREE.Mesh(
+      new THREE.BoxGeometry(0.08, 0.15, 0.02),
+      new THREE.MeshBasicMaterial({ color: 0x333355 })
+    );
+    phone.position.set(0.3, 0.9, 0.15);
+    phone.rotation.z = -0.3;
+    group.add(phone);
+    
+    // Phone screen glow
+    const screen = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.06, 0.1),
+      new THREE.MeshBasicMaterial({ color: 0x6688ff })
+    );
+    screen.position.set(0.3, 0.9, 0.17);
+    screen.rotation.z = -0.3;
+    group.add(screen);
+  }
+  
+  return group;
+}
+
+// Convert drain position to underground coordinates
+function drainToUndergroundCoords(drainIdx: number): { x: number, z: number } {
+  const drain = drainPositions[drainIdx];
+  if (!drain) return { x: 0, z: 40 };
+  return {
+    x: drain.x * 1.1,
+    z: (drain.z + 35) * 1.1
+  };
+}
+
+// Find nearest ladder in underground
+function findNearestLadder(): { idx: number, dist: number, x: number, z: number } {
+  let nearest = { idx: -1, dist: 999, x: 0, z: 0 };
+  
+  for (let i = 0; i < drainPositions.length; i++) {
+    const coords = drainToUndergroundCoords(i);
+    const dist = Math.sqrt(Math.pow(player.x - coords.x, 2) + Math.pow(player.z - coords.z, 2));
+    if (dist < nearest.dist) {
+      nearest = { idx: i, dist, x: coords.x, z: coords.z };
+    }
+  }
+  return nearest;
+}
+
+function enterUnderground(drainIdx: number) {
+  state.mode = 'underground';
+  state.currentDrain = drainIdx;
+  state.sewerDepth = 0;
+  outdoorScene.visible = false;
+  indoorScene.visible = true;
+  outdoorScene.remove(playerGroup);
+  indoorScene.add(playerGroup);
+  
+  createUndergroundView(drainIdx);
+  
+  // Spawn at the ladder corresponding to entry drain
+  const coords = drainToUndergroundCoords(drainIdx);
+  player.x = coords.x;
+  player.z = coords.z + 2; // Slightly in front of ladder
+  playerGroup.position.set(player.x, 0.1, player.z);
+  updateUI();
+}
+
+function exitUnderground(exitDrainIdx: number) {
+  state.mode = 'outdoor';
+  const drain = undergroundEntrances[exitDrainIdx];
+  outdoorScene.visible = true;
+  indoorScene.visible = false;
+  indoorScene.remove(playerGroup);
+  outdoorScene.add(playerGroup);
+  
+  // Clear sewer NPCs
+  undergroundNPCs.forEach(npc => indoorScene.remove(npc.mesh));
+  undergroundNPCs.length = 0;
+  if (currentUndergroundGroup) {
+    indoorScene.remove(currentUndergroundGroup);
+    currentUndergroundGroup = null;
+  }
+  
+  // Spawn at the EXIT drain location (fast travel!)
+  player.x = drain?.x ?? 0;
+  player.z = drain?.z ?? 0;
+  playerGroup.position.set(player.x, 0.1, player.z);
+  state.currentDrain = -1;
+  updateUI();
 }
 
 // ============================================
@@ -3940,6 +5697,8 @@ function updateUI() {
                       state.currentFloor === (bd?.floors ?? 1) - 1 ? 'ROOFTOP' : 
                       `FLOOR ${state.currentFloor + 1}`;
     scrollCounter.textContent = `${floorName} • ${state.currentFloor + 1}/${bd?.floors ?? '?'}`;
+  } else if (state.mode === 'underground') {
+    scrollCounter.textContent = '地下 UNDERGROUND';
   } else {
     scrollCounter.textContent = 'KOWLOON CITY';
   }
@@ -4100,7 +5859,7 @@ function drawMinimap() {
 // ============================================
 // GAME LOGIC
 // ============================================
-let floor = { w: 28, d: 20, top: false, ground: true, leftRoof: false, rightRoof: false };
+let floor = { w: 28, d: 20, top: false, ground: true, leftRoof: false, rightRoof: false, northRoof: false, southRoof: false, northIdx: -1, southIdx: -1 };
 
 function enter(i: number) {
   state.mode = 'indoor';
@@ -4196,6 +5955,302 @@ function jumpToRightBuilding() {
   updateUI();
 }
 
+function jumpToNorthBuilding() {
+  const northIdx = floor.northIdx;
+  if (northIdx < 0) return;
+  const northBd = buildingsData[northIdx];
+  if (!northBd) return;
+  
+  state.currentBuilding = northIdx;
+  state.currentFloor = northBd.floors - 1; // Top floor of north building
+  floor = createFloorView(northIdx, state.currentFloor);
+  player.x = 0; // Arrive in center
+  player.z = floor.d / 2 - 4; // Arrive on south side (front)
+  playerGroup.position.set(player.x, 0.1, player.z);
+  spawnIndoorNPCs(northIdx, state.currentFloor, floor.w, floor.d);
+  updateUI();
+}
+
+function jumpToSouthBuilding() {
+  const southIdx = floor.southIdx;
+  if (southIdx < 0) return;
+  const southBd = buildingsData[southIdx];
+  if (!southBd) return;
+  
+  state.currentBuilding = southIdx;
+  state.currentFloor = southBd.floors - 1; // Top floor of south building
+  floor = createFloorView(southIdx, state.currentFloor);
+  player.x = 0; // Arrive in center
+  player.z = -floor.d / 2 + 4; // Arrive on north side (back)
+  playerGroup.position.set(player.x, 0.1, player.z);
+  spawnIndoorNPCs(southIdx, state.currentFloor, floor.w, floor.d);
+  updateUI();
+}
+
+// ============================================
+// JUMP ANIMATION SYSTEM
+// ============================================
+interface JumpAnimation {
+  active: boolean;
+  progress: number; // 0 to 1
+  duration: number; // in frames (60fps)
+  startPos: { x: number, y: number, z: number };
+  endPos: { x: number, y: number, z: number };
+  startHeight: number; // building height player jumps from
+  endHeight: number; // building/ground height player lands on
+  type: 'roof-to-roof' | 'roof-to-ground';
+  targetBuildingIdx: number;
+  callback: () => void;
+}
+
+const jumpAnim: JumpAnimation = {
+  active: false,
+  progress: 0,
+  duration: 90, // ~1.5 seconds at 60fps
+  startPos: { x: 0, y: 0, z: 0 },
+  endPos: { x: 0, y: 0, z: 0 },
+  startHeight: 0,
+  endHeight: 0,
+  type: 'roof-to-roof',
+  targetBuildingIdx: -1,
+  callback: () => {}
+};
+
+// Create a jumping player mesh for outdoor animation
+const jumpingPlayerGroup = new THREE.Group();
+const jumpPlayerBody = new THREE.Mesh(
+  new THREE.BoxGeometry(0.6, 1.0, 0.4),
+  new THREE.MeshLambertMaterial({ color: playerConfig.shirtColor })
+);
+jumpPlayerBody.position.y = 0.5;
+jumpingPlayerGroup.add(jumpPlayerBody);
+const jumpPlayerHead = new THREE.Mesh(
+  new THREE.BoxGeometry(0.35, 0.35, 0.35),
+  new THREE.MeshLambertMaterial({ color: playerConfig.skinColor })
+);
+jumpPlayerHead.position.y = 1.2;
+jumpingPlayerGroup.add(jumpPlayerHead);
+const jumpPlayerLegs = new THREE.Mesh(
+  new THREE.BoxGeometry(0.5, 0.5, 0.35),
+  new THREE.MeshLambertMaterial({ color: playerConfig.pantsColor })
+);
+jumpPlayerLegs.position.y = -0.1;
+jumpingPlayerGroup.add(jumpPlayerLegs);
+jumpingPlayerGroup.visible = false;
+outdoorScene.add(jumpingPlayerGroup);
+
+function startJumpAnimation(
+  fromBuildingIdx: number,
+  toBuildingIdx: number | 'ground',
+  type: 'roof-to-roof' | 'roof-to-ground',
+  callback: () => void
+) {
+  const fromBd = buildingsData[fromBuildingIdx];
+  if (!fromBd) return;
+  
+  const fromHeight = fromBd.floors * 2.2;
+  let toX: number, toZ: number, toHeight: number;
+  
+  if (toBuildingIdx === 'ground') {
+    // Jumping to ground in front of building
+    toX = fromBd.x;
+    toZ = fromBd.z + fromBd.depth / 2 + 3;
+    toHeight = 0;
+  } else {
+    const toBd = buildingsData[toBuildingIdx];
+    if (!toBd) return;
+    toX = toBd.x;
+    toZ = toBd.z;
+    toHeight = toBd.floors * 2.2;
+  }
+  
+  // Set up animation
+  jumpAnim.active = true;
+  jumpAnim.progress = 0;
+  jumpAnim.duration = type === 'roof-to-ground' ? 75 : 60; // Longer for falling
+  jumpAnim.startPos = { x: fromBd.x, y: fromHeight, z: fromBd.z };
+  jumpAnim.endPos = { x: toX, y: toHeight, z: toZ };
+  jumpAnim.startHeight = fromHeight;
+  jumpAnim.endHeight = toHeight;
+  jumpAnim.type = type;
+  jumpAnim.targetBuildingIdx = toBuildingIdx === 'ground' ? -1 : toBuildingIdx;
+  jumpAnim.callback = callback;
+  
+  // Show jumping player in outdoor scene
+  jumpingPlayerGroup.visible = true;
+  jumpingPlayerGroup.position.set(jumpAnim.startPos.x, jumpAnim.startPos.y, jumpAnim.startPos.z);
+  
+  // Update colors to match current player
+  (jumpPlayerBody.material as THREE.MeshLambertMaterial).color.setHex(playerConfig.shirtColor);
+  (jumpPlayerHead.material as THREE.MeshLambertMaterial).color.setHex(playerConfig.skinColor);
+  (jumpPlayerLegs.material as THREE.MeshLambertMaterial).color.setHex(playerConfig.pantsColor);
+  
+  // Switch to outdoor view for the animation
+  outdoorScene.visible = true;
+  indoorScene.visible = false;
+}
+
+function updateJumpAnimation() {
+  if (!jumpAnim.active) return false;
+  
+  jumpAnim.progress += 1 / jumpAnim.duration;
+  
+  if (jumpAnim.progress >= 1) {
+    // Animation complete
+    jumpAnim.active = false;
+    jumpingPlayerGroup.visible = false;
+    jumpAnim.callback();
+    return false;
+  }
+  
+  const t = jumpAnim.progress;
+  // Ease in-out for smoother motion
+  const easeT = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+  
+  // Parabolic arc for Y position (jump height)
+  const arcHeight = 8 + Math.abs(jumpAnim.startHeight - jumpAnim.endHeight) * 0.3;
+  const jumpY = 4 * arcHeight * t * (1 - t); // Parabola peaking at t=0.5
+  
+  // Linear interpolation for X and Z
+  const posX = jumpAnim.startPos.x + (jumpAnim.endPos.x - jumpAnim.startPos.x) * easeT;
+  const posZ = jumpAnim.startPos.z + (jumpAnim.endPos.z - jumpAnim.startPos.z) * easeT;
+  // Y goes from start height, up in an arc, then down to end height
+  const baseY = jumpAnim.startPos.y + (jumpAnim.endPos.y - jumpAnim.startPos.y) * easeT;
+  const posY = baseY + jumpY;
+  
+  // Update jumping player position
+  jumpingPlayerGroup.position.set(posX, posY, posZ);
+  
+  // Rotate player to face direction of travel
+  const angle = Math.atan2(jumpAnim.endPos.x - jumpAnim.startPos.x, jumpAnim.endPos.z - jumpAnim.startPos.z);
+  jumpingPlayerGroup.rotation.y = angle;
+  
+  // Slight tilt during jump
+  jumpingPlayerGroup.rotation.x = -Math.sin(t * Math.PI) * 0.3;
+  
+  return true;
+}
+
+function getJumpAnimationCamera() {
+  if (!jumpAnim.active) return null;
+  
+  const t = jumpAnim.progress;
+  
+  // Calculate midpoint of jump for camera focus
+  const midX = (jumpAnim.startPos.x + jumpAnim.endPos.x) / 2;
+  const midZ = (jumpAnim.startPos.z + jumpAnim.endPos.z) / 2;
+  const maxY = Math.max(jumpAnim.startPos.y, jumpAnim.endPos.y);
+  
+  // Camera zooms out then back in
+  const zoomOut = Math.sin(t * Math.PI); // 0 -> 1 -> 0
+  const camDist = 40 + zoomOut * 30; // Further during middle of jump
+  const camHeight = 50 + zoomOut * 25;
+  
+  return {
+    position: { x: midX + 15, y: camHeight, z: midZ + camDist },
+    lookAt: { x: jumpingPlayerGroup.position.x, y: jumpingPlayerGroup.position.y, z: jumpingPlayerGroup.position.z }
+  };
+}
+
+// Wrapper functions that start animations
+function animatedJumpToRoof() {
+  const fromIdx = state.currentBuilding;
+  const fromBd = buildingsData[fromIdx];
+  if (!fromBd) return;
+  
+  startJumpAnimation(fromIdx, 'ground', 'roof-to-ground', () => {
+    exit();
+  });
+}
+
+function animatedJumpToLeftBuilding() {
+  const fromIdx = state.currentBuilding;
+  const leftIdx = fromIdx - 1;
+  if (leftIdx < 0) return;
+  const leftBd = buildingsData[leftIdx];
+  if (!leftBd) return;
+  
+  startJumpAnimation(fromIdx, leftIdx, 'roof-to-roof', () => {
+    state.currentBuilding = leftIdx;
+    state.currentFloor = leftBd.floors - 1;
+    floor = createFloorView(leftIdx, state.currentFloor);
+    player.x = floor.w / 2 - 4;
+    player.z = floor.d / 2 - 4;
+    indoorScene.add(playerGroup);
+    playerGroup.position.set(player.x, 0.1, player.z);
+    spawnIndoorNPCs(leftIdx, state.currentFloor, floor.w, floor.d);
+    outdoorScene.visible = false;
+    indoorScene.visible = true;
+    updateUI();
+  });
+}
+
+function animatedJumpToRightBuilding() {
+  const fromIdx = state.currentBuilding;
+  const rightIdx = fromIdx + 1;
+  if (rightIdx >= buildingsData.length) return;
+  const rightBd = buildingsData[rightIdx];
+  if (!rightBd) return;
+  
+  startJumpAnimation(fromIdx, rightIdx, 'roof-to-roof', () => {
+    state.currentBuilding = rightIdx;
+    state.currentFloor = rightBd.floors - 1;
+    floor = createFloorView(rightIdx, state.currentFloor);
+    player.x = -floor.w / 2 + 4;
+    player.z = floor.d / 2 - 4;
+    indoorScene.add(playerGroup);
+    playerGroup.position.set(player.x, 0.1, player.z);
+    spawnIndoorNPCs(rightIdx, state.currentFloor, floor.w, floor.d);
+    outdoorScene.visible = false;
+    indoorScene.visible = true;
+    updateUI();
+  });
+}
+
+function animatedJumpToNorthBuilding() {
+  const fromIdx = state.currentBuilding;
+  const northIdx = floor.northIdx;
+  if (northIdx < 0) return;
+  const northBd = buildingsData[northIdx];
+  if (!northBd) return;
+  
+  startJumpAnimation(fromIdx, northIdx, 'roof-to-roof', () => {
+    state.currentBuilding = northIdx;
+    state.currentFloor = northBd.floors - 1;
+    floor = createFloorView(northIdx, state.currentFloor);
+    player.x = 0;
+    player.z = floor.d / 2 - 4;
+    indoorScene.add(playerGroup);
+    playerGroup.position.set(player.x, 0.1, player.z);
+    spawnIndoorNPCs(northIdx, state.currentFloor, floor.w, floor.d);
+    outdoorScene.visible = false;
+    indoorScene.visible = true;
+    updateUI();
+  });
+}
+
+function animatedJumpToSouthBuilding() {
+  const fromIdx = state.currentBuilding;
+  const southIdx = floor.southIdx;
+  if (southIdx < 0) return;
+  const southBd = buildingsData[southIdx];
+  if (!southBd) return;
+  
+  startJumpAnimation(fromIdx, southIdx, 'roof-to-roof', () => {
+    state.currentBuilding = southIdx;
+    state.currentFloor = southBd.floors - 1;
+    floor = createFloorView(southIdx, state.currentFloor);
+    player.x = 0;
+    player.z = -floor.d / 2 + 4;
+    indoorScene.add(playerGroup);
+    playerGroup.position.set(player.x, 0.1, player.z);
+    spawnIndoorNPCs(southIdx, state.currentFloor, floor.w, floor.d);
+    outdoorScene.visible = false;
+    indoorScene.visible = true;
+    updateUI();
+  });
+}
+
 // ============================================
 // UPDATE
 // ============================================
@@ -4204,8 +6259,9 @@ function update() {
   const acted = keys.actionPressed;
   keys.actionPressed = false;
 
-  // Slower movement indoors (cramped spaces)
-  const currentSpeed = state.mode === 'indoor' ? player.speed * 0.45 : player.speed;
+  // Slower movement indoors (cramped spaces), medium in sewers
+  const currentSpeed = state.mode === 'indoor' ? player.speed * 0.45 : 
+                       state.mode === 'underground' ? player.speed * 0.7 : player.speed;
 
   let mx = 0, mz = 0;
   if (keys.left) mx -= currentSpeed;
@@ -4300,12 +6356,147 @@ function update() {
 
     // Show prompt when near a building door
     if (nearestDist < 5) {
-      prompt = 'enter';
+      prompt = 'enter building';
+    }
+    
+    // Check for nearby sewer drains
+    let nearestDrainIdx = -1;
+    let nearestDrainDist = 999;
+    for (let i = 0; i < undergroundEntrances.length; i++) {
+      const drain = undergroundEntrances[i];
+      const dist = Math.sqrt(Math.pow(player.x - drain.x, 2) + Math.pow(player.z - drain.z, 2));
+      if (dist < nearestDrainDist) {
+        nearestDrainDist = dist;
+        nearestDrainIdx = i;
+      }
+    }
+    
+    // Sewer drain prompt takes priority if closer
+    if (nearestDrainDist < 2.5) {
+      prompt = 'go underground';
     }
 
-    // Press E/SPACE/ENTER to enter nearest building
-    if (acted && nearestBuildingIdx >= 0 && nearestDist < 6) {
-      enter(nearestBuildingIdx);
+    // Press E/SPACE/ENTER to enter nearest building or sewer
+    if (acted) {
+      // Sewer takes priority if very close
+      if (nearestDrainIdx >= 0 && nearestDrainDist < 2.5) {
+        enterUnderground(nearestDrainIdx);
+        showPrompt('');
+        return;
+      }
+      if (nearestBuildingIdx >= 0 && nearestDist < 6) {
+        enter(nearestBuildingIdx);
+        showPrompt('');
+        return;
+      }
+    }
+  } else if (state.mode === 'underground') {
+    // Underground movement - MASSIVE area (100x120)
+    const newX = player.x + mx;
+    const newZ = player.z + mz;
+    const playerR = 0.5;
+    
+    let finalX = newX;
+    let finalZ = newZ;
+    
+    // Internal walls (same positions as rendered walls)
+    const internalWalls = [
+      // Horizontal walls
+      { x: -30, z: -45, w: 18, d: 0.6 },
+      { x: 10, z: -40, w: 22, d: 0.6 },
+      { x: -20, z: -25, w: 16, d: 0.6 },
+      { x: 25, z: -20, w: 20, d: 0.6 },
+      { x: -35, z: -5, w: 14, d: 0.6 },
+      { x: 5, z: 0, w: 24, d: 0.6 },
+      { x: 35, z: 5, w: 12, d: 0.6 },
+      { x: -25, z: 20, w: 18, d: 0.6 },
+      { x: 15, z: 25, w: 16, d: 0.6 },
+      { x: -10, z: 40, w: 20, d: 0.6 },
+      { x: 30, z: 35, w: 14, d: 0.6 },
+      { x: -35, z: 50, w: 16, d: 0.6 },
+      // Vertical walls
+      { x: -40, z: -30, w: 0.6, d: 20 },
+      { x: -25, z: -35, w: 0.6, d: 16 },
+      { x: -10, z: -15, w: 0.6, d: 22 },
+      { x: 5, z: -30, w: 0.6, d: 18 },
+      { x: 20, z: -10, w: 0.6, d: 24 },
+      { x: 35, z: -35, w: 0.6, d: 14 },
+      { x: -38, z: 15, w: 0.6, d: 20 },
+      { x: -20, z: 30, w: 0.6, d: 18 },
+      { x: 0, z: 20, w: 0.6, d: 16 },
+      { x: 18, z: 45, w: 0.6, d: 22 },
+      { x: 38, z: 25, w: 0.6, d: 18 },
+      { x: -30, z: 45, w: 0.6, d: 14 },
+    ];
+    
+    // Check collision with internal walls
+    for (const wall of internalWalls) {
+      const halfW = wall.w / 2 + playerR;
+      const halfD = wall.d / 2 + playerR;
+      
+      if (finalX > wall.x - halfW && finalX < wall.x + halfW && 
+          finalZ > wall.z - halfD && finalZ < wall.z + halfD) {
+        // Push out to nearest edge
+        const distLeft = finalX - (wall.x - halfW);
+        const distRight = (wall.x + halfW) - finalX;
+        const distBack = finalZ - (wall.z - halfD);
+        const distFront = (wall.z + halfD) - finalZ;
+        
+        const minDist = Math.min(distLeft, distRight, distBack, distFront);
+        
+        if (minDist === distLeft) finalX = wall.x - halfW;
+        else if (minDist === distRight) finalX = wall.x + halfW;
+        else if (minDist === distBack) finalZ = wall.z - halfD;
+        else finalZ = wall.z + halfD;
+      }
+    }
+    
+    // Check collision with pillars
+    // Pillars are on a grid: x from -35 to 35 (step 20), z from -50 to 50 (step 25)
+    const pillarSize = 1.2;
+    for (let px = -35; px <= 35; px += 20) {
+      for (let pz = -50; pz <= 50; pz += 25) {
+        const halfP = pillarSize / 2 + playerR;
+        
+        if (finalX > px - halfP && finalX < px + halfP && 
+            finalZ > pz - halfP && finalZ < pz + halfP) {
+          const distLeft = finalX - (px - halfP);
+          const distRight = (px + halfP) - finalX;
+          const distBack = finalZ - (pz - halfP);
+          const distFront = (pz + halfP) - finalZ;
+          
+          const minDist = Math.min(distLeft, distRight, distBack, distFront);
+          
+          if (minDist === distLeft) finalX = px - halfP;
+          else if (minDist === distRight) finalX = px + halfP;
+          else if (minDist === distBack) finalZ = pz - halfP;
+          else finalZ = pz + halfP;
+        }
+      }
+    }
+    
+    // Outer boundary (the perimeter walls)
+    const sw = 48, sd = 58;
+    finalX = Math.max(-sw, Math.min(sw, finalX));
+    finalZ = Math.max(-sd, Math.min(sd, finalZ));
+    
+    player.x = finalX;
+    player.z = finalZ;
+    playerGroup.position.set(player.x, 0.1, player.z);
+    
+    // Find nearest ladder exit
+    const nearest = findNearestLadder();
+    nearestLadderIdx = nearest.idx;
+    
+    // Show exit prompt when near any ladder
+    if (nearest.dist < 3) {
+      // Show which exit this is
+      const exitName = nearest.idx === 0 ? 'SPAWN' : `EXIT ${nearest.idx}`;
+      prompt = `climb up (${exitName})`;
+    }
+    
+    if (acted && nearest.dist < 3) {
+      exitUnderground(nearest.idx);
       showPrompt('');
       return;
     }
@@ -4475,8 +6666,10 @@ function update() {
     const atDownStairs = !floor.ground && Math.abs(player.x - downStairX) < 3 && player.z > stairZEnd - 1 && player.z < stairZEnd + 2;
     const nearExit = floor.ground && Math.abs(player.x) < 4 && player.z > hd - 3;
     const nearJumpDown = floor.top && Math.abs(player.x) < 4 && player.z > hd - 5;
-    const nearJumpLeft = floor.leftRoof && player.x < -hw + 6 && player.z > hd - 5;
-    const nearJumpRight = floor.rightRoof && player.x > hw - 6 && player.z > hd - 5;
+    const nearJumpLeft = floor.leftRoof && player.x < -hw + 6;
+    const nearJumpRight = floor.rightRoof && player.x > hw - 6;
+    const nearJumpNorth = floor.northRoof && player.z < -hd + 6; // North is back (negative Z)
+    const nearJumpSouth = floor.southRoof && player.z > hd - 6 && Math.abs(player.x) > 6; // South is front, but not at center (where jump down is)
     const atDownStairsRoof = floor.top && Math.abs(player.x - downStairX) < 3 && player.z > stairZEnd - 1 && player.z < stairZEnd + 2;
 
     // Set prompt based on what player is near
@@ -4486,14 +6679,18 @@ function update() {
     else if (nearJumpDown) prompt = 'jump down';
     else if (nearJumpLeft) prompt = 'jump left';
     else if (nearJumpRight) prompt = 'jump right';
+    else if (nearJumpNorth) prompt = 'jump north';
+    else if (nearJumpSouth) prompt = 'jump south';
 
     if (acted) {
       if (atUpStairs) { goUp(); showPrompt(''); return; }
       if (atDownStairs || atDownStairsRoof) { goDown(); showPrompt(''); return; }
       if (nearExit) { exit(); showPrompt(''); return; }
-      if (nearJumpDown) { jumpRoof(); showPrompt(''); return; }
-      if (nearJumpLeft) { jumpToLeftBuilding(); showPrompt(''); return; }
-      if (nearJumpRight) { jumpToRightBuilding(); showPrompt(''); return; }
+      if (nearJumpDown) { animatedJumpToRoof(); showPrompt(''); return; }
+      if (nearJumpLeft) { animatedJumpToLeftBuilding(); showPrompt(''); return; }
+      if (nearJumpRight) { animatedJumpToRightBuilding(); showPrompt(''); return; }
+      if (nearJumpNorth) { animatedJumpToNorthBuilding(); showPrompt(''); return; }
+      if (nearJumpSouth) { animatedJumpToSouthBuilding(); showPrompt(''); return; }
     }
   }
 
@@ -4504,7 +6701,13 @@ function update() {
 // CAMERA
 // ============================================
 function updateCamera() {
-  if (state.mode === 'outdoor') {
+  // Check if jump animation is active - use cinematic camera
+  const jumpCam = getJumpAnimationCamera();
+  if (jumpCam) {
+    viewSize = 35; // Wider view for cinematic effect
+    camera.position.set(jumpCam.position.x, jumpCam.position.y, jumpCam.position.z);
+    camera.lookAt(jumpCam.lookAt.x, jumpCam.lookAt.y, jumpCam.lookAt.z);
+  } else if (state.mode === 'outdoor') {
     viewSize = 18;
     // Camera follows player directly from above/behind at a steeper angle
     // This keeps the player visible in alleyways without relying on transparency
@@ -4512,13 +6715,17 @@ function updateCamera() {
     camera.lookAt(player.x, 0, player.z - 5);
     // Still update transparency for buildings directly in front
     updateBuildingTransparency();
+  } else if (state.mode === 'underground') {
+    viewSize = 28;
+    // Follow player through massive sewer system
+    camera.position.set(player.x + 10, 35, player.z + 25);
+    camera.lookAt(player.x, 0, player.z);
   } else {
-    viewSize = 22;
-    // Bird's eye view - camera follows player across the larger floor
-    const camX = player.x * 0.5;
-    const camZ = player.z * 0.5;
-    camera.position.set(camX, 40, camZ + 25);
-    camera.lookAt(camX, 0, camZ);
+    viewSize = 20;
+    // Static 2.5D isometric view - fixed camera position looking at floor center
+    // Camera doesn't follow player to reduce motion sickness
+    camera.position.set(15, 30, 25);
+    camera.lookAt(0, 0, 0);
   }
   const a = window.innerWidth / window.innerHeight;
   camera.left = -viewSize * a;
@@ -4533,11 +6740,19 @@ function updateCamera() {
 // ============================================
 function animate() {
   requestAnimationFrame(animate);
-  update();
-  updateNPCs();
+  
+  // Check if jump animation is playing
+  const isJumping = updateJumpAnimation();
+  
+  // Only update normal game logic if not in jump animation
+  if (!isJumping) {
+    update();
+    updateNPCs();
+  }
+  
   updateCamera();
   drawMinimap();
-  renderer.render(scene, camera);
+renderer.render(scene, camera);
 }
 
 window.addEventListener('resize', () => {
