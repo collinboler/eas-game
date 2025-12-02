@@ -537,13 +537,17 @@ function createCityBuilding(config: typeof cityLayout[0], index: number) {
   const signColors = [0xdd2222, 0x22aa22, 0x2222dd, 0xdd8822, 0xaa22aa, 0x22aaaa, 0xdddd22, 0xffffff];
   const bgColors = [0x111144, 0x441111, 0x114411, 0x444411, 0x114444, 0x441144, 0x222222, 0x880000];
   
-  // Add 2-5 vertical hanging signs
+  // Add 2-5 vertical hanging signs (above door level)
   const numVerticalSigns = 2 + Math.floor(Math.random() * 4);
   for (let vs = 0; vs < numVerticalSigns; vs++) {
-    const signHeight = 3 + Math.random() * 5;
+    const signHeight = 3 + Math.random() * 4;
     const signWidth = 0.8 + Math.random() * 0.4;
-    const signY = 4 + Math.random() * (height - 8);
-    const signX = -w/2 + 1 + vs * (w / numVerticalSigns) + Math.random() * 1;
+    // Start at y=7 minimum to be well above the door (door top is at ~3.3)
+    const signY = 7 + Math.random() * Math.max(0, height - 12);
+    // Avoid center where door is (x = 0), place on sides
+    let signX = -w/2 + 1.5 + vs * (w / numVerticalSigns);
+    // Push signs away from center door area
+    if (Math.abs(signX) < 2) signX = signX < 0 ? -2.5 : 2.5;
     const signExtend = 1.5 + Math.random(); // How far it sticks out
     
     // Sign board (vertical rectangle)
@@ -609,13 +613,16 @@ function createCityBuilding(config: typeof cityLayout[0], index: number) {
   }
   
   // ========== HORIZONTAL SHOP SIGNS ==========
-  // Lower signs near ground floor (like shop names)
+  // Signs above door level on sides of building
   const numShopSigns = 1 + Math.floor(Math.random() * 2);
   for (let ss = 0; ss < numShopSigns; ss++) {
-    const shopSignW = 2 + Math.random() * 2;
-    const shopSignH = 0.6 + Math.random() * 0.4;
-    const shopSignX = -w/2 + 2 + ss * 3 + Math.random() * 1;
-    const shopSignY = 2.8 + ss * 0.5;
+    const shopSignW = 2 + Math.random() * 1.5;
+    const shopSignH = 0.6 + Math.random() * 0.3;
+    // Place on left or right side, avoiding door center
+    const side = ss % 2 === 0 ? -1 : 1;
+    const shopSignX = side * (w/4 + 1 + Math.random());
+    // Above door (door top is at ~3.3)
+    const shopSignY = 4.5 + ss * 1.5 + Math.random();
     
     const shopBg = bgColors[Math.floor(Math.random() * bgColors.length)];
     const shopSign = new THREE.Mesh(
