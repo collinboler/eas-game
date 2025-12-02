@@ -57,11 +57,11 @@ outdoorScene.add(sun);
 // KOWLOON CITY LAYOUT - Dense buildings with alleyways
 // ============================================
 const ground = new THREE.Mesh(
-  new THREE.PlaneGeometry(100, 100),
+  new THREE.PlaneGeometry(120, 150),
   new THREE.MeshLambertMaterial({ color: 0x1a1815 })
 );
 ground.rotation.x = -Math.PI / 2;
-ground.position.set(0, 0, 0);
+ground.position.set(0, 0, -35);  // Centered on the expanded city
 outdoorScene.add(ground);
 
 // ============================================
@@ -79,28 +79,58 @@ interface BuildingData {
 const buildingsData: BuildingData[] = [];
 const allBuildingMeshes: THREE.Mesh[] = [];
 
-// City layout - buildings arranged in dense blocks with alleyways
-// ALL buildings are enterable
+// City layout - DENSE buildings with NAVIGABLE alleyways (7 rows)
+// ALL buildings are enterable - consistent spacing for player access
+// Buildings are 7 units wide, spaced 10 units apart (3 unit alleyways)
 const cityLayout = [
-  // Row 1 (back) - z = -35
-  { x: -30, z: -35, w: 10, d: 8, floors: 16 },
-  { x: -18, z: -35, w: 8, d: 8, floors: 14 },
-  { x: -8, z: -35, w: 9, d: 8, floors: 18 },
-  { x: 4, z: -35, w: 10, d: 8, floors: 12 },
-  { x: 16, z: -35, w: 8, d: 8, floors: 15 },
-  { x: 28, z: -35, w: 10, d: 8, floors: 17 },
-  // Row 2 - z = -22
-  { x: -28, z: -22, w: 9, d: 7, floors: 13 },
-  { x: -16, z: -22, w: 10, d: 7, floors: 19 },
-  { x: -4, z: -22, w: 8, d: 7, floors: 11 },
-  { x: 8, z: -22, w: 9, d: 7, floors: 16 },
-  { x: 20, z: -22, w: 10, d: 7, floors: 14 },
-  // Row 3 - z = -10
-  { x: -25, z: -10, w: 8, d: 6, floors: 15 },
-  { x: -14, z: -10, w: 9, d: 6, floors: 12 },
-  { x: -2, z: -10, w: 10, d: 6, floors: 20 },
-  { x: 12, z: -10, w: 8, d: 6, floors: 13 },
-  { x: 24, z: -10, w: 9, d: 6, floors: 17 },
+  // Row 1 (far back) - z = -70
+  { x: -30, z: -70, w: 7, d: 6, floors: 14 },
+  { x: -20, z: -70, w: 7, d: 6, floors: 16 },
+  { x: -10, z: -70, w: 7, d: 6, floors: 12 },
+  { x: 0, z: -70, w: 7, d: 6, floors: 18 },
+  { x: 10, z: -70, w: 7, d: 6, floors: 13 },
+  { x: 20, z: -70, w: 7, d: 6, floors: 15 },
+  { x: 30, z: -70, w: 7, d: 6, floors: 17 },
+  // Row 2 - z = -58
+  { x: -30, z: -58, w: 7, d: 6, floors: 15 },
+  { x: -20, z: -58, w: 7, d: 6, floors: 11 },
+  { x: -10, z: -58, w: 7, d: 6, floors: 19 },
+  { x: 0, z: -58, w: 7, d: 6, floors: 13 },
+  { x: 10, z: -58, w: 7, d: 6, floors: 16 },
+  { x: 20, z: -58, w: 7, d: 6, floors: 14 },
+  { x: 30, z: -58, w: 7, d: 6, floors: 12 },
+  // Row 3 - z = -46
+  { x: -30, z: -46, w: 7, d: 6, floors: 17 },
+  { x: -20, z: -46, w: 7, d: 6, floors: 13 },
+  { x: -10, z: -46, w: 7, d: 6, floors: 20 },
+  { x: 0, z: -46, w: 7, d: 6, floors: 11 },
+  { x: 10, z: -46, w: 7, d: 6, floors: 18 },
+  { x: 20, z: -46, w: 7, d: 6, floors: 14 },
+  { x: 30, z: -46, w: 7, d: 6, floors: 16 },
+  // Row 4 - z = -34
+  { x: -30, z: -34, w: 7, d: 6, floors: 12 },
+  { x: -20, z: -34, w: 7, d: 6, floors: 16 },
+  { x: -10, z: -34, w: 7, d: 6, floors: 14 },
+  { x: 0, z: -34, w: 7, d: 6, floors: 19 },
+  { x: 10, z: -34, w: 7, d: 6, floors: 11 },
+  { x: 20, z: -34, w: 7, d: 6, floors: 17 },
+  { x: 30, z: -34, w: 7, d: 6, floors: 13 },
+  // Row 5 - z = -22
+  { x: -30, z: -22, w: 7, d: 6, floors: 18 },
+  { x: -20, z: -22, w: 7, d: 6, floors: 12 },
+  { x: -10, z: -22, w: 7, d: 6, floors: 15 },
+  { x: 0, z: -22, w: 7, d: 6, floors: 20 },
+  { x: 10, z: -22, w: 7, d: 6, floors: 13 },
+  { x: 20, z: -22, w: 7, d: 6, floors: 16 },
+  { x: 30, z: -22, w: 7, d: 6, floors: 14 },
+  // Row 6 - z = -10
+  { x: -30, z: -10, w: 7, d: 6, floors: 14 },
+  { x: -20, z: -10, w: 7, d: 6, floors: 17 },
+  { x: -10, z: -10, w: 7, d: 6, floors: 11 },
+  { x: 0, z: -10, w: 7, d: 6, floors: 19 },
+  { x: 10, z: -10, w: 7, d: 6, floors: 15 },
+  { x: 20, z: -10, w: 7, d: 6, floors: 12 },
+  { x: 30, z: -10, w: 7, d: 6, floors: 18 },
 ];
 
 function createCityBuilding(config: typeof cityLayout[0], index: number) {
@@ -108,63 +138,216 @@ function createCityBuilding(config: typeof cityLayout[0], index: number) {
   const height = floors * 2.2;
   const group = new THREE.Group();
   
-  const colors = [0x3a3540, 0x35303a, 0x403538, 0x383540, 0x353038];
+  const colors = [0x4a4540, 0x45404a, 0x504548, 0x484550, 0x454048];
   const color = colors[index % colors.length];
   
   // Main building mesh
-  const buildingMat = new THREE.MeshLambertMaterial({ 
-    color, 
-    transparent: true, 
-    opacity: 1 
-  });
-  const building = new THREE.Mesh(
-    new THREE.BoxGeometry(w, height, d),
-    buildingMat
-  );
+  const buildingMat = new THREE.MeshLambertMaterial({ color, transparent: true, opacity: 1 });
+  const building = new THREE.Mesh(new THREE.BoxGeometry(w, height, d), buildingMat);
   building.position.set(0, height / 2, 0);
   group.add(building);
   allBuildingMeshes.push(building);
 
-  // Windows
-  for (let f = 0; f < Math.min(floors, 10); f++) {
+  // ========== WINDOWS - Chaotic pattern ==========
+  for (let f = 0; f < floors; f++) {
     const y = f * 2.2 + 1.5;
-    for (let wx = 0; wx < Math.floor(w / 2.5); wx++) {
-      const isLit = Math.random() > 0.35;
-      const litColors = [0xffdd66, 0xffaa44, 0x66ddff, 0x88ffaa];
-      const win = new THREE.Mesh(
-        new THREE.PlaneGeometry(1, 1.4),
-        new THREE.MeshBasicMaterial({ 
-          color: isLit ? litColors[Math.floor(Math.random() * 4)] : 0x1a2030,
-          transparent: true, opacity: 1
-        })
-      );
-      win.position.set(-w/2 + 1.5 + wx * 2.5, y, d/2 + 0.01);
-      group.add(win);
-      allBuildingMeshes.push(win);
+    for (let wx = 0; wx < Math.floor(w / 2); wx++) {
+      if (Math.random() > 0.15) { // Some windows missing/blocked
+        const isLit = Math.random() > 0.4;
+        const litColors = [0xffdd66, 0xffaa44, 0x66ddff, 0x88ffaa, 0xffccaa, 0xaaffcc];
+        const winW = 0.6 + Math.random() * 0.5;
+        const winH = 0.8 + Math.random() * 0.8;
+        const win = new THREE.Mesh(
+          new THREE.PlaneGeometry(winW, winH),
+          new THREE.MeshBasicMaterial({ 
+            color: isLit ? litColors[Math.floor(Math.random() * 6)] : 0x1a2535,
+            transparent: true, opacity: 1
+          })
+        );
+        win.position.set(-w/2 + 1 + wx * 2 + Math.random() * 0.5, y, d/2 + 0.01);
+        group.add(win);
+        allBuildingMeshes.push(win);
+        
+        // Window frames (random styles)
+        if (Math.random() > 0.5) {
+          const frame = new THREE.Mesh(
+            new THREE.BoxGeometry(winW + 0.2, winH + 0.2, 0.05),
+            new THREE.MeshLambertMaterial({ color: 0x333333, transparent: true, opacity: 1 })
+          );
+          frame.position.copy(win.position);
+          frame.position.z -= 0.02;
+          group.add(frame);
+        }
+      }
     }
   }
 
-  // Neon signs (random)
-  if (Math.random() > 0.4) {
-    const neonColors = [0xff0066, 0x00ffff, 0xff6600, 0x00ff66, 0xff00ff, 0xffff00];
+  // ========== AC UNITS - Lots of them! ==========
+  for (let f = 0; f < floors; f++) {
+    if (Math.random() > 0.3) {
+      const acX = -w/2 + 1 + Math.random() * (w - 2);
+      const ac = new THREE.Mesh(
+        new THREE.BoxGeometry(0.8, 0.5, 0.6),
+        new THREE.MeshLambertMaterial({ color: 0xccccbb, transparent: true, opacity: 1 })
+      );
+      ac.position.set(acX, f * 2.2 + 1, d/2 + 0.35);
+      group.add(ac);
+      allBuildingMeshes.push(ac);
+      // AC drip stain
+      const drip = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.2, Math.random() * 2 + 0.5),
+        new THREE.MeshBasicMaterial({ color: 0x2a3530, transparent: true, opacity: 0.6 })
+      );
+      drip.position.set(acX, f * 2.2 - 0.5, d/2 + 0.02);
+      group.add(drip);
+    }
+  }
+
+  // ========== PIPES - Running up the building ==========
+  const pipeCount = 2 + Math.floor(Math.random() * 4);
+  for (let p = 0; p < pipeCount; p++) {
+    const pipeX = -w/2 + 0.5 + Math.random() * (w - 1);
+    const pipeH = 3 + Math.random() * (height - 5);
+    const pipe = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.06, 0.06, pipeH, 6),
+      new THREE.MeshLambertMaterial({ color: 0x444444, transparent: true, opacity: 1 })
+    );
+    pipe.position.set(pipeX, pipeH / 2 + Math.random() * 3, d/2 + 0.15);
+    group.add(pipe);
+    allBuildingMeshes.push(pipe);
+  }
+
+  // ========== WIRES - Messy electrical ==========
+  for (let i = 0; i < 5 + Math.floor(Math.random() * 8); i++) {
+    const wireY = 2 + Math.random() * (height - 4);
+    const wire = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.015, 0.015, w * 0.8, 4),
+      new THREE.MeshBasicMaterial({ color: 0x111111 })
+    );
+    wire.rotation.z = Math.PI / 2 + (Math.random() - 0.5) * 0.3;
+    wire.position.set(0, wireY, d/2 + 0.25 + Math.random() * 0.2);
+    group.add(wire);
+  }
+
+  // ========== NEON SIGNS - Multiple chaotic signs ==========
+  const signCount = 1 + Math.floor(Math.random() * 4);
+  const neonColors = [0xff0066, 0x00ffff, 0xff6600, 0x00ff66, 0xff00ff, 0xffff00, 0xff3333, 0x33ff33];
+  for (let s = 0; s < signCount; s++) {
     const neonColor = neonColors[Math.floor(Math.random() * neonColors.length)];
-    const signW = 1 + Math.random() * 2;
-    const signH = 0.4 + Math.random() * 0.4;
+    const isVertical = Math.random() > 0.5;
+    const signW = isVertical ? (0.4 + Math.random() * 0.3) : (1.5 + Math.random() * 2);
+    const signH = isVertical ? (2 + Math.random() * 4) : (0.5 + Math.random() * 0.5);
     const sign = new THREE.Mesh(
-      new THREE.BoxGeometry(signW, signH, 0.15),
+      new THREE.BoxGeometry(signW, signH, 0.1),
       new THREE.MeshBasicMaterial({ color: neonColor, transparent: true, opacity: 1 })
     );
-    sign.position.set((Math.random() - 0.5) * (w - 2), 3 + Math.random() * 4, d/2 + 0.2);
+    const signX = (Math.random() - 0.5) * w * 0.9;
+    const signY = 3 + Math.random() * Math.min(height - 6, 15);
+    sign.position.set(signX, signY, d/2 + 0.3 + s * 0.1);
     group.add(sign);
     allBuildingMeshes.push(sign);
     
-    const glow = new THREE.PointLight(neonColor, 0.8, 6);
-    glow.position.copy(sign.position);
-    glow.position.z += 0.5;
+    const glow = new THREE.PointLight(neonColor, 0.5, 4);
+    glow.position.set(signX, signY, d/2 + 1);
     group.add(glow);
   }
 
-  // Door - all buildings are enterable
+  // ========== LAUNDRY - Hanging clothes ==========
+  for (let f = 2; f < floors - 1; f += 2) {
+    if (Math.random() > 0.4) {
+      const laundryX = -w/2 + 2 + Math.random() * (w - 4);
+      // Pole
+      const pole = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.03, 0.03, 2.5, 4),
+        new THREE.MeshLambertMaterial({ color: 0x666666 })
+      );
+      pole.rotation.z = Math.PI / 2;
+      pole.position.set(laundryX, f * 2.2 + 1.5, d/2 + 1);
+      group.add(pole);
+      // Clothes
+      const clothColors = [0xeeeedd, 0x6688aa, 0xaa6655, 0x55aa66, 0xddddcc, 0x887766];
+      for (let c = 0; c < 3 + Math.floor(Math.random() * 4); c++) {
+        const cloth = new THREE.Mesh(
+          new THREE.PlaneGeometry(0.3 + Math.random() * 0.3, 0.5 + Math.random() * 0.4),
+          new THREE.MeshLambertMaterial({ 
+            color: clothColors[Math.floor(Math.random() * clothColors.length)],
+            side: THREE.DoubleSide
+          })
+        );
+        cloth.position.set(laundryX - 1 + c * 0.5, f * 2.2 + 1.2, d/2 + 1);
+        cloth.rotation.y = Math.random() * 0.3;
+        group.add(cloth);
+      }
+    }
+  }
+
+  // ========== PLANTS on windowsills ==========
+  for (let f = 0; f < floors; f++) {
+    if (Math.random() > 0.7) {
+      const plantX = -w/2 + 1 + Math.random() * (w - 2);
+      const pot = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.15, 0.12, 0.2, 6),
+        new THREE.MeshLambertMaterial({ color: 0x8b4513 })
+      );
+      pot.position.set(plantX, f * 2.2 + 0.6, d/2 + 0.3);
+      group.add(pot);
+      const plant = new THREE.Mesh(
+        new THREE.SphereGeometry(0.2, 6, 6),
+        new THREE.MeshLambertMaterial({ color: 0x228822 })
+      );
+      plant.position.set(plantX, f * 2.2 + 0.9, d/2 + 0.3);
+      group.add(plant);
+    }
+  }
+
+  // ========== BALCONY CLUTTER ==========
+  for (let f = 1; f < floors; f++) {
+    if (Math.random() > 0.6) {
+      const clutterX = -w/2 + 1 + Math.random() * (w - 2);
+      // Random boxes/stuff
+      for (let b = 0; b < 2 + Math.floor(Math.random() * 3); b++) {
+        const box = new THREE.Mesh(
+          new THREE.BoxGeometry(0.3 + Math.random() * 0.3, 0.2 + Math.random() * 0.3, 0.2),
+          new THREE.MeshLambertMaterial({ color: 0x665544 + Math.floor(Math.random() * 0x222222) })
+        );
+        box.position.set(clutterX + b * 0.35, f * 2.2 + 0.15, d/2 + 0.35);
+        group.add(box);
+      }
+    }
+  }
+
+  // ========== ROOFTOP CHAOS ==========
+  // Water tanks
+  for (let t = 0; t < 1 + Math.floor(Math.random() * 3); t++) {
+    const tank = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.6, 0.6, 1.2, 8),
+      new THREE.MeshLambertMaterial({ color: 0x4466aa, transparent: true, opacity: 1 })
+    );
+    tank.position.set(-w/3 + t * 2 + Math.random(), height + 0.6, Math.random() * 2 - 1);
+    group.add(tank);
+    allBuildingMeshes.push(tank);
+  }
+  // Antennas
+  for (let a = 0; a < 2 + Math.floor(Math.random() * 4); a++) {
+    const antenna = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.03, 0.03, 1.5 + Math.random() * 2, 4),
+      new THREE.MeshLambertMaterial({ color: 0x333333 })
+    );
+    antenna.position.set(-w/3 + Math.random() * (w * 0.6), height + 1, Math.random() * 2 - 1);
+    group.add(antenna);
+  }
+  // Satellite dishes
+  if (Math.random() > 0.5) {
+    const dish = new THREE.Mesh(
+      new THREE.SphereGeometry(0.4, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2),
+      new THREE.MeshLambertMaterial({ color: 0xcccccc })
+    );
+    dish.rotation.x = Math.PI / 4;
+    dish.position.set(w/4, height + 0.3, 0);
+    group.add(dish);
+  }
+
+  // ========== DOOR ==========
   const doorFrame = new THREE.Mesh(
     new THREE.BoxGeometry(2.5, 3.2, 0.25),
     new THREE.MeshLambertMaterial({ color: 0x3a2a1a, transparent: true, opacity: 1 })
@@ -181,7 +364,6 @@ function createCityBuilding(config: typeof cityLayout[0], index: number) {
   group.add(door);
   allBuildingMeshes.push(door);
   
-  // Door light
   const doorLight = new THREE.PointLight(0xffaa55, 0.6, 5);
   doorLight.position.set(0, 3, d/2 + 1);
   group.add(doorLight);
@@ -681,11 +863,109 @@ function spawnIndoorNPCs(buildingIdx: number, floorIdx: number, floorW: number, 
   }
 }
 
-// Update NPC positions
+// Update NPC positions with wall collision
 function updateNPCs() {
   const npcsToUpdate = state.mode === 'outdoor' ? outdoorNPCs : indoorNPCs;
   
+  // Room definitions for indoor collision (same as player)
+  const doorW = 1.6;
+  type RoomDef = { x: number, z: number, w: number, d: number, door: 'front' | 'back' | 'left' | 'right' };
+  
+  function getIndoorRooms(): RoomDef[] {
+    if (!floor) return [];
+    const hw = floor.w / 2, hd = floor.d / 2;
+    
+    if (floor.ground) {
+      return [
+        { x: -hw + 5, z: -hd + 6, w: 7, d: 5, door: 'right' },
+        { x: -hw + 5, z: -hd + 13, w: 7, d: 5, door: 'right' },
+        { x: -hw + 5, z: -hd + 20, w: 7, d: 5, door: 'right' },
+        { x: hw - 5, z: hd - 6, w: 7, d: 5, door: 'left' },
+        { x: hw - 5, z: hd - 13, w: 7, d: 5, door: 'left' },
+        { x: -12, z: -hd + 5, w: 6, d: 5, door: 'front' },
+      ];
+    } else if (!floor.top) {
+      return [
+        { x: -20, z: -12, w: 5, d: 5, door: 'front' },
+        { x: -20, z: -4, w: 5, d: 5, door: 'front' },
+        { x: -20, z: 4, w: 5, d: 5, door: 'front' },
+        { x: -20, z: 12, w: 5, d: 5, door: 'front' },
+        { x: -10, z: -12, w: 5, d: 5, door: 'front' },
+        { x: -10, z: -4, w: 5, d: 5, door: 'front' },
+        { x: -10, z: 4, w: 5, d: 5, door: 'front' },
+        { x: -10, z: 12, w: 5, d: 5, door: 'front' },
+        { x: 2, z: -12, w: 5, d: 5, door: 'front' },
+        { x: 2, z: -4, w: 5, d: 5, door: 'front' },
+        { x: 2, z: 4, w: 5, d: 5, door: 'front' },
+        { x: 2, z: 12, w: 5, d: 5, door: 'front' },
+        { x: 12, z: 4, w: 5, d: 5, door: 'front' },
+        { x: 12, z: 12, w: 5, d: 5, door: 'front' },
+      ];
+    }
+    return [];
+  }
+  
+  // Check if position collides with room walls (for NPCs)
+  function checkRoomCollision(x: number, z: number, oldX: number, oldZ: number, rooms: RoomDef[]): { x: number, z: number } {
+    const wallT = 0.5;
+    const doorHalf = doorW / 2;
+    let newX = x, newZ = z;
+    
+    for (const room of rooms) {
+      const left = room.x - room.w / 2;
+      const right = room.x + room.w / 2;
+      const back = room.z - room.d / 2;
+      const front = room.z + room.d / 2;
+      
+      // Back wall
+      if (room.door !== 'back') {
+        if (newX > left && newX < right && newZ > back - wallT && newZ < back + wallT) {
+          newZ = oldZ >= back ? back + wallT : back - wallT;
+        }
+      } else if (newX > left && newX < right && newZ > back - wallT && newZ < back + wallT &&
+          (newX < room.x - doorHalf || newX > room.x + doorHalf)) {
+        newZ = oldZ >= back ? back + wallT : back - wallT;
+      }
+      
+      // Front wall
+      if (room.door !== 'front') {
+        if (newX > left && newX < right && newZ > front - wallT && newZ < front + wallT) {
+          newZ = oldZ <= front ? front - wallT : front + wallT;
+        }
+      } else if (newX > left && newX < right && newZ > front - wallT && newZ < front + wallT &&
+          (newX < room.x - doorHalf || newX > room.x + doorHalf)) {
+        newZ = oldZ <= front ? front - wallT : front + wallT;
+      }
+      
+      // Left wall
+      if (room.door !== 'left') {
+        if (newZ > back && newZ < front && newX > left - wallT && newX < left + wallT) {
+          newX = oldX >= left ? left + wallT : left - wallT;
+        }
+      } else if (newZ > back && newZ < front && newX > left - wallT && newX < left + wallT &&
+          (newZ < room.z - doorHalf || newZ > room.z + doorHalf)) {
+        newX = oldX >= left ? left + wallT : left - wallT;
+      }
+      
+      // Right wall
+      if (room.door !== 'right') {
+        if (newZ > back && newZ < front && newX > right - wallT && newX < right + wallT) {
+          newX = oldX <= right ? right - wallT : right + wallT;
+        }
+      } else if (newZ > back && newZ < front && newX > right - wallT && newX < right + wallT &&
+          (newZ < room.z - doorHalf || newZ > room.z + doorHalf)) {
+        newX = oldX <= right ? right - wallT : right + wallT;
+      }
+    }
+    return { x: newX, z: newZ };
+  }
+  
+  const indoorRooms = state.mode === 'indoor' ? getIndoorRooms() : [];
+  
   for (const npc of npcsToUpdate) {
+    const oldX = npc.x;
+    const oldZ = npc.z;
+    
     // Check if reached target
     const dx = npc.targetX - npc.x;
     const dz = npc.targetZ - npc.z;
@@ -699,12 +979,12 @@ function updateNPCs() {
         npc.targetX = -hw + Math.random() * hw * 2;
         npc.targetZ = -hd + Math.random() * hd * 2;
       } else {
-        // Outdoor - wander in alleyways
-        npc.targetX = npc.x + (Math.random() - 0.5) * 20;
-        npc.targetZ = npc.z + (Math.random() - 0.5) * 20;
+        // Outdoor - wander in alleyways between buildings
+        npc.targetX = npc.x + (Math.random() - 0.5) * 15;
+        npc.targetZ = npc.z + (Math.random() - 0.5) * 15;
         // Clamp to city bounds
         npc.targetX = Math.max(-38, Math.min(38, npc.targetX));
-        npc.targetZ = Math.max(-42, Math.min(3, npc.targetZ));
+        npc.targetZ = Math.max(-75, Math.min(3, npc.targetZ));
       }
     } else {
       // Move towards target
@@ -712,6 +992,22 @@ function updateNPCs() {
       const moveZ = (dz / dist) * npc.speed;
       npc.x += moveX;
       npc.z += moveZ;
+      
+      // Apply indoor room collision for NPCs
+      if (npc.indoor && indoorRooms.length > 0) {
+        const collision = checkRoomCollision(npc.x, npc.z, oldX, oldZ, indoorRooms);
+        npc.x = collision.x;
+        npc.z = collision.z;
+        
+        // If NPC hit a wall, pick a new target
+        if (npc.x !== oldX + moveX || npc.z !== oldZ + moveZ) {
+          const hw = floor.w / 2 - 3;
+          const hd = floor.d / 2 - 3;
+          npc.targetX = -hw + Math.random() * hw * 2;
+          npc.targetZ = -hd + Math.random() * hd * 2;
+        }
+      }
+      
       npc.mesh.position.set(npc.x, 0, npc.z);
       
       // Face movement direction
@@ -948,421 +1244,684 @@ function createFloorView(buildingIdx: number, floor: number) {
     moonLight.position.set(5, 10, 5);
     group.add(moonLight);
 
-  // ====== LOBBY (Ground Floor) ======
+  // ====== LOBBY (Ground Floor) - With cramped bedrooms ======
   } else if (isGround) {
-    // Marble floor
+    const wallMat = new THREE.MeshLambertMaterial({ color: 0x5a5545 });
+    const roomWallMat = new THREE.MeshLambertMaterial({ color: 0x6a6555 });
+    
+    // Main floor
     const lobbyFloor = new THREE.Mesh(
       new THREE.PlaneGeometry(w, d),
-      new THREE.MeshLambertMaterial({ color: 0x8a8070 })
+      new THREE.MeshLambertMaterial({ color: 0x4a4540 })
     );
     lobbyFloor.rotation.x = -Math.PI / 2;
     lobbyFloor.position.y = 0.01;
     group.add(lobbyFloor);
 
-    // Checkered marble tiles
-    for (let x = -6; x <= 6; x++) {
-      for (let z = -4; z <= 4; z++) {
-        const tile = new THREE.Mesh(
-          new THREE.PlaneGeometry(1.9, 1.9),
-          new THREE.MeshLambertMaterial({ color: (x + z) % 2 === 0 ? 0x9a9080 : 0x706858 })
-        );
-        tile.rotation.x = -Math.PI / 2;
-        tile.position.set(x * 2, 0.02, z * 2);
-        group.add(tile);
-      }
-    }
-
-    // Walls - darker/dirtier
-    const wallMat = new THREE.MeshLambertMaterial({ color: 0x4a4540 });
-    const back = new THREE.Mesh(new THREE.BoxGeometry(w, wallH, 0.3), wallMat);
-    back.position.set(0, wallH/2, -d/2);
-    group.add(back);
-    const left = new THREE.Mesh(new THREE.BoxGeometry(0.3, wallH, d), wallMat);
-    left.position.set(-w/2, wallH/2, 0);
-    group.add(left);
-    const right = new THREE.Mesh(new THREE.BoxGeometry(0.3, wallH, d), wallMat);
-    right.position.set(w/2, wallH/2, 0);
-    group.add(right);
-
+    // Outer walls
+    const wallBack = new THREE.Mesh(new THREE.BoxGeometry(w, wallH, 0.2), wallMat);
+    wallBack.position.set(0, wallH/2, -d/2);
+    group.add(wallBack);
+    const wallLeft = new THREE.Mesh(new THREE.BoxGeometry(0.2, wallH, d), wallMat);
+    wallLeft.position.set(-w/2, wallH/2, 0);
+    group.add(wallLeft);
+    const wallRight = new THREE.Mesh(new THREE.BoxGeometry(0.2, wallH, d), wallMat);
+    wallRight.position.set(w/2, wallH/2, 0);
+    group.add(wallRight);
     // Front wall with exit
-    const fl = new THREE.Mesh(new THREE.BoxGeometry(w/2 - 3, wallH, 0.3), wallMat);
-    fl.position.set(-w/4 - 1.5, wallH/2, d/2);
-    group.add(fl);
-    const fr = new THREE.Mesh(new THREE.BoxGeometry(w/2 - 3, wallH, 0.3), wallMat);
-    fr.position.set(w/4 + 1.5, wallH/2, d/2);
-    group.add(fr);
+    const wallFrontL = new THREE.Mesh(new THREE.BoxGeometry(w/2 - 3, wallH, 0.2), wallMat);
+    wallFrontL.position.set(-w/4 - 1.5, wallH/2, d/2);
+    group.add(wallFrontL);
+    const wallFrontR = new THREE.Mesh(new THREE.BoxGeometry(w/2 - 3, wallH, 0.2), wallMat);
+    wallFrontR.position.set(w/4 + 1.5, wallH/2, d/2);
+    group.add(wallFrontR);
 
-    // Reception desk
-    const desk = new THREE.Mesh(
-      new THREE.BoxGeometry(6, 1.2, 2),
+    // Small lobby/entrance area (center)
+    const lobbyTile = new THREE.Mesh(
+      new THREE.PlaneGeometry(12, 10),
+      new THREE.MeshLambertMaterial({ color: 0x5a5550 })
+    );
+    lobbyTile.rotation.x = -Math.PI / 2;
+    lobbyTile.position.set(0, 0.02, 5);
+    group.add(lobbyTile);
+
+    // Small reception counter
+    const counter = new THREE.Mesh(
+      new THREE.BoxGeometry(4, 1, 1.5),
       new THREE.MeshLambertMaterial({ color: 0x553322 })
     );
-    desk.position.set(0, 0.6, -d/2 + 4);
-    group.add(desk);
-    
-    // Desk lamp
-    const lamp = new THREE.Mesh(
-      new THREE.ConeGeometry(0.3, 0.5, 8),
-      new THREE.MeshBasicMaterial({ color: 0xffdd88 })
-    );
-    lamp.position.set(-2, 1.5, -d/2 + 4);
-    group.add(lamp);
-    const deskLight = new THREE.PointLight(0xffdd88, 1, 5);
-    deskLight.position.set(-2, 1.5, -d/2 + 4);
-    group.add(deskLight);
+    counter.position.set(-8, 0.5, 8);
+    group.add(counter);
 
-    // Mailboxes on left wall
-    for (let r = 0; r < 3; r++) {
-      for (let c = 0; c < 5; c++) {
+    // Mailboxes (small)
+    for (let r = 0; r < 2; r++) {
+      for (let c = 0; c < 4; c++) {
         const box = new THREE.Mesh(
-          new THREE.BoxGeometry(0.8, 0.6, 0.4),
-          new THREE.MeshLambertMaterial({ color: 0x886644 })
+          new THREE.BoxGeometry(0.6, 0.5, 0.3),
+          new THREE.MeshLambertMaterial({ color: 0x775533 })
         );
-        box.position.set(-w/2 + 0.5, 1.5 + r * 0.7, -4 + c * 1);
+        box.position.set(-w/2 + 0.4, 1.5 + r * 0.6, 8 + c * 0.8);
         group.add(box);
       }
     }
 
-    // Waiting chairs
-    for (let i = 0; i < 3; i++) {
-      const chair = new THREE.Mesh(
-        new THREE.BoxGeometry(1.2, 0.8, 1.2),
-        new THREE.MeshLambertMaterial({ color: 0x664422 })
+    // ========== CRAMPED BEDROOMS around lobby edges ==========
+    // Helper to create a lobby room with solid walls
+    function createLobbyRoom(x: number, z: number, rw: number, rd: number, doorSide: 'left' | 'right' | 'front' | 'back', colorIdx: number) {
+      const roomLit = Math.random() > 0.35;
+      const glowing = roomLit && Math.random() > 0.6;
+      
+      // Room floor
+      const floor = new THREE.Mesh(
+        new THREE.PlaneGeometry(rw - 0.3, rd - 0.3),
+        new THREE.MeshLambertMaterial({ color: roomLit ? 0x5a5545 : 0x4a4540 })
       );
-      chair.position.set(w/2 - 3, 0.4, -2 + i * 2);
-      group.add(chair);
+      floor.rotation.x = -Math.PI / 2;
+      floor.position.set(x, 0.02, z);
+      group.add(floor);
+      
+      // Solid walls (full height) with door opening
+      const doorW = 1.6;
+      
+      // Back wall
+      if (doorSide !== 'back') {
+        const back = new THREE.Mesh(new THREE.BoxGeometry(rw, wallH, 0.15), roomWallMat);
+        back.position.set(x, wallH/2, z - rd/2);
+        group.add(back);
+      } else {
+        const backL = new THREE.Mesh(new THREE.BoxGeometry((rw - doorW)/2, wallH, 0.15), roomWallMat);
+        backL.position.set(x - rw/4 - doorW/4, wallH/2, z - rd/2);
+        group.add(backL);
+        const backR = new THREE.Mesh(new THREE.BoxGeometry((rw - doorW)/2, wallH, 0.15), roomWallMat);
+        backR.position.set(x + rw/4 + doorW/4, wallH/2, z - rd/2);
+        group.add(backR);
+      }
+      
+      // Front wall
+      if (doorSide !== 'front') {
+        const front = new THREE.Mesh(new THREE.BoxGeometry(rw, wallH, 0.15), roomWallMat);
+        front.position.set(x, wallH/2, z + rd/2);
+        group.add(front);
+      } else {
+        const frontL = new THREE.Mesh(new THREE.BoxGeometry((rw - doorW)/2, wallH, 0.15), roomWallMat);
+        frontL.position.set(x - rw/4 - doorW/4, wallH/2, z + rd/2);
+        group.add(frontL);
+        const frontR = new THREE.Mesh(new THREE.BoxGeometry((rw - doorW)/2, wallH, 0.15), roomWallMat);
+        frontR.position.set(x + rw/4 + doorW/4, wallH/2, z + rd/2);
+        group.add(frontR);
+      }
+      
+      // Left wall
+      if (doorSide !== 'left') {
+        const left = new THREE.Mesh(new THREE.BoxGeometry(0.15, wallH, rd), roomWallMat);
+        left.position.set(x - rw/2, wallH/2, z);
+        group.add(left);
+      } else {
+        const leftF = new THREE.Mesh(new THREE.BoxGeometry(0.15, wallH, (rd - doorW)/2), roomWallMat);
+        leftF.position.set(x - rw/2, wallH/2, z - rd/4 - doorW/4);
+        group.add(leftF);
+        const leftB = new THREE.Mesh(new THREE.BoxGeometry(0.15, wallH, (rd - doorW)/2), roomWallMat);
+        leftB.position.set(x - rw/2, wallH/2, z + rd/4 + doorW/4);
+        group.add(leftB);
+      }
+      
+      // Right wall
+      if (doorSide !== 'right') {
+        const right = new THREE.Mesh(new THREE.BoxGeometry(0.15, wallH, rd), roomWallMat);
+        right.position.set(x + rw/2, wallH/2, z);
+        group.add(right);
+      } else {
+        const rightF = new THREE.Mesh(new THREE.BoxGeometry(0.15, wallH, (rd - doorW)/2), roomWallMat);
+        rightF.position.set(x + rw/2, wallH/2, z - rd/4 - doorW/4);
+        group.add(rightF);
+        const rightB = new THREE.Mesh(new THREE.BoxGeometry(0.15, wallH, (rd - doorW)/2), roomWallMat);
+        rightB.position.set(x + rw/2, wallH/2, z + rd/4 + doorW/4);
+        group.add(rightB);
+      }
+      
+      // BED
+      const bed = new THREE.Mesh(new THREE.BoxGeometry(2, 0.4, 1.3), new THREE.MeshLambertMaterial({ color: 0x5a4a3a }));
+      bed.position.set(x, 0.2, z - rd/4);
+      group.add(bed);
+      const blanketColors = [0x7a6555, 0x665544, 0x887766, 0x556655, 0x775566];
+      const blanket = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.15, 1.1), new THREE.MeshLambertMaterial({ color: blanketColors[colorIdx % 5] }));
+      blanket.position.set(x, 0.45, z - rd/4);
+      group.add(blanket);
+      const pillow = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.2, 0.7), new THREE.MeshLambertMaterial({ color: 0xccbbaa }));
+      pillow.position.set(x - 0.6, 0.5, z - rd/4);
+      group.add(pillow);
+      
+      // Light
+      if (roomLit) {
+        const neonColors = [0xff4466, 0x44ff88, 0x4488ff, 0xffaa44, 0xff44ff, 0x44ffff];
+        const lightColor = glowing ? neonColors[Math.floor(Math.random() * neonColors.length)] : 0xffddaa;
+        const light = new THREE.PointLight(lightColor, glowing ? 1.2 : 0.5, glowing ? 10 : 6);
+        light.position.set(x, 2.5, z);
+        group.add(light);
+        
+        if (glowing) {
+          const glowBulb = new THREE.Mesh(
+            new THREE.SphereGeometry(0.2, 8, 8),
+            new THREE.MeshBasicMaterial({ color: lightColor })
+          );
+          glowBulb.position.set(x, 2.8, z);
+          group.add(glowBulb);
+        }
+      }
     }
+    
+    // Left side rooms (3 rooms, avoiding exit area)
+    createLobbyRoom(-w/2 + 5, -d/2 + 6, 7, 5, 'right', 0);
+    createLobbyRoom(-w/2 + 5, -d/2 + 13, 7, 5, 'right', 1);
+    createLobbyRoom(-w/2 + 5, -d/2 + 20, 7, 5, 'right', 2);
 
-    // Potted plant
-    const pot = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.5, 0.4, 0.8, 8),
-      new THREE.MeshLambertMaterial({ color: 0x885544 })
-    );
-    pot.position.set(-w/2 + 3, 0.4, d/2 - 3);
-    group.add(pot);
-    const plant = new THREE.Mesh(
-      new THREE.SphereGeometry(0.8, 8, 6),
-      new THREE.MeshLambertMaterial({ color: 0x336622 })
-    );
-    plant.position.set(-w/2 + 3, 1.2, d/2 - 3);
-    group.add(plant);
+    // Right side rooms (2 rooms, leaving space for stairs at back)
+    createLobbyRoom(w/2 - 5, d/2 - 6, 7, 5, 'left', 3);
+    createLobbyRoom(w/2 - 5, d/2 - 13, 7, 5, 'left', 4);
 
-    // Elevator doors (decorative)
-    for (let i = 0; i < 2; i++) {
-      const elev = new THREE.Mesh(
-        new THREE.PlaneGeometry(2.5, 3),
-        new THREE.MeshLambertMaterial({ color: 0x777777 })
-      );
-      elev.position.set(6 + i * 3.5, 1.5, -d/2 + 0.2);
-      group.add(elev);
-      // Button
-      const btn = new THREE.Mesh(
-        new THREE.SphereGeometry(0.1, 8, 8),
-        new THREE.MeshBasicMaterial({ color: 0xff0000 })
-      );
-      btn.position.set(4.5 + i * 3.5, 1.2, -d/2 + 0.3);
-      group.add(btn);
-    }
+    // Back wall rooms (only 1 room on left side, stairs on right)
+    createLobbyRoom(-12, -d/2 + 5, 6, 5, 'front', 5);
 
-    // Neon "LOBBY" sign
-    const lobbySign = new THREE.Mesh(
-      new THREE.BoxGeometry(4, 0.6, 0.1),
-      new THREE.MeshBasicMaterial({ color: 0xff00ff })
-    );
-    lobbySign.position.set(0, wallH - 0.5, -d/2 + 0.3);
-    group.add(lobbySign);
-    const lobbyGlow = new THREE.PointLight(0xff00ff, 1.5, 8);
-    lobbyGlow.position.set(0, wallH - 0.5, -d/2 + 1);
-    group.add(lobbyGlow);
-
-    // Door mat at exit
-    const doorMat = new THREE.Mesh(
-      new THREE.PlaneGeometry(3, 2),
-      new THREE.MeshLambertMaterial({ color: 0x3a3025 })
-    );
+    // EXIT sign and door mat
+    const exitSign = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.3, 0.05), new THREE.MeshBasicMaterial({ color: 0xcc3333 }));
+    exitSign.position.set(0, wallH - 0.3, d/2 - 0.15);
+    group.add(exitSign);
+    const doorMat = new THREE.Mesh(new THREE.PlaneGeometry(3, 2), new THREE.MeshLambertMaterial({ color: 0x3a3025 }));
     doorMat.rotation.x = -Math.PI / 2;
     doorMat.position.set(0, 0.03, d/2 - 1.5);
     group.add(doorMat);
-    
-    // Small EXIT sign above door (subtle red)
-    const exitSign = new THREE.Mesh(
-      new THREE.BoxGeometry(1.5, 0.3, 0.05),
-      new THREE.MeshBasicMaterial({ color: 0xcc3333 })
-    );
-    exitSign.position.set(0, wallH - 0.3, d/2 - 0.2);
-    group.add(exitSign);
-    const exitGlow = new THREE.PointLight(0xff4444, 0.3, 4);
-    exitGlow.position.set(0, wallH - 0.5, d/2 - 0.5);
-    group.add(exitGlow);
 
-    // UP STAIRS (back right) - light to dark gradient
+    // UP STAIRS (back right corner)
     const upColors = [0xaaaaaa, 0x999999, 0x888888, 0x777777, 0x666666, 0x555555, 0x444444];
     for (let s = 0; s < 7; s++) {
-      const step = new THREE.Mesh(
-        new THREE.BoxGeometry(4.5, 0.3, 1.2),
-        new THREE.MeshLambertMaterial({ color: upColors[s] })
-      );
+      const step = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.3, 1.2), new THREE.MeshLambertMaterial({ color: upColors[s] }));
       step.position.set(w/2 - 4, 0.15, -d/2 + 1 + s * 1.0);
       group.add(step);
     }
-    // UP label
-    const upLabel = new THREE.Mesh(
-      new THREE.PlaneGeometry(3, 0.8),
-      new THREE.MeshBasicMaterial({ color: 0x558855 })
-    );
-    upLabel.position.set(w/2 - 4, 2.5, -d/2 + 0.2);
+    const upLabel = new THREE.Mesh(new THREE.PlaneGeometry(3, 0.8), new THREE.MeshBasicMaterial({ color: 0x558855 }));
+    upLabel.position.set(w/2 - 4, 2.5, -d/2 + 0.15);
     group.add(upLabel);
-    
-    // Stair light
+
+    // Lights
+    const mainLight = new THREE.PointLight(0xffffee, 0.8, 30);
+    mainLight.position.set(0, 3.5, 5);
+    group.add(mainLight);
     const stairLight = new THREE.PointLight(0xffeedd, 0.5, 10);
     stairLight.position.set(w/2 - 4, 3, -d/2 + 3);
     group.add(stairLight);
 
-    // Ceiling light
-    const ceil = new THREE.PointLight(0xffffee, 1.2, 35);
-    ceil.position.set(0, 3.5, 0);
-    group.add(ceil);
-
-  // ====== APARTMENT FLOORS ======
+  // ====== APARTMENT FLOORS - Multiple corridors with rooms ======
   } else {
-    // Hallway carpet
-    const hallFloor = new THREE.Mesh(
+    const hallW = 2.5;      // Corridor width
+    const wallThick = 0.15; // Wall thickness
+    const roomSize = 5;     // Room size
+    
+    // Main floor
+    const mainFloor = new THREE.Mesh(
       new THREE.PlaneGeometry(w, d),
-      new THREE.MeshLambertMaterial({ color: 0x4a3530 })
+      new THREE.MeshLambertMaterial({ color: 0x4a4540 })
     );
-    hallFloor.rotation.x = -Math.PI / 2;
-    hallFloor.position.y = 0.01;
-    group.add(hallFloor);
+    mainFloor.rotation.x = -Math.PI / 2;
+    mainFloor.position.y = 0.01;
+    group.add(mainFloor);
 
-    // Main corridor runner
-    const runner = new THREE.Mesh(
-      new THREE.PlaneGeometry(5, d - 4),
-      new THREE.MeshLambertMaterial({ color: 0x3a2520 })
+    // ========== OUTER WALLS ==========
+    const wallMat = new THREE.MeshLambertMaterial({ color: 0x6a6055 });
+    const roomWallMat = new THREE.MeshLambertMaterial({ color: 0x7a7565 });
+    
+    const wallBack = new THREE.Mesh(new THREE.BoxGeometry(w, wallH, wallThick), wallMat);
+    wallBack.position.set(0, wallH/2, -d/2);
+    group.add(wallBack);
+    const wallFront = new THREE.Mesh(new THREE.BoxGeometry(w, wallH, wallThick), wallMat);
+    wallFront.position.set(0, wallH/2, d/2);
+    group.add(wallFront);
+    const wallLeft = new THREE.Mesh(new THREE.BoxGeometry(wallThick, wallH, d), wallMat);
+    wallLeft.position.set(-w/2, wallH/2, 0);
+    group.add(wallLeft);
+    const wallRight = new THREE.Mesh(new THREE.BoxGeometry(wallThick, wallH, d), wallMat);
+    wallRight.position.set(w/2, wallH/2, 0);
+    group.add(wallRight);
+
+    // ========== CORRIDOR GRID SYSTEM ==========
+    // Main horizontal corridor (runs left-right)
+    const mainCorridor = new THREE.Mesh(
+      new THREE.PlaneGeometry(w - 4, hallW),
+      new THREE.MeshLambertMaterial({ color: 0x5a5550 })
     );
-    runner.rotation.x = -Math.PI / 2;
-    runner.position.set(0, 0.02, 0);
-    group.add(runner);
+    mainCorridor.rotation.x = -Math.PI / 2;
+    mainCorridor.position.set(0, 0.02, 0);
+    group.add(mainCorridor);
 
-    // Walls - yellowed wallpaper
-    const wallMat = new THREE.MeshLambertMaterial({ color: 0x6a6050 });
-    const back = new THREE.Mesh(new THREE.BoxGeometry(w, wallH, 0.3), wallMat);
-    back.position.set(0, wallH/2, -d/2);
-    group.add(back);
-    const left = new THREE.Mesh(new THREE.BoxGeometry(0.3, wallH, d), wallMat);
-    left.position.set(-w/2, wallH/2, 0);
-    group.add(left);
-    const right = new THREE.Mesh(new THREE.BoxGeometry(0.3, wallH, d), wallMat);
-    right.position.set(w/2, wallH/2, 0);
-    group.add(right);
-    const front = new THREE.Mesh(new THREE.BoxGeometry(w, wallH, 0.3), wallMat);
-    front.position.set(0, wallH/2, d/2);
-    group.add(front);
+    // Vertical corridor 1 (left side)
+    const vCorridor1 = new THREE.Mesh(
+      new THREE.PlaneGeometry(hallW, d - 4),
+      new THREE.MeshLambertMaterial({ color: 0x5a5550 })
+    );
+    vCorridor1.rotation.x = -Math.PI / 2;
+    vCorridor1.position.set(-12, 0.02, 0);
+    group.add(vCorridor1);
 
-    // Many apartment doors on both sides
-    const doorColors = [0x553322, 0x4a3020, 0x5a4030, 0x443322, 0x504028];
-    for (let z = -d/2 + 4; z < d/2 - 4; z += 5) {
-      // Left wall doors
-      const leftDoor = new THREE.Mesh(
-        new THREE.PlaneGeometry(2, 3),
-        new THREE.MeshLambertMaterial({ color: doorColors[Math.floor(Math.random() * 5)] })
-      );
-      leftDoor.position.set(-w/2 + 0.2, 1.5, z);
-      leftDoor.rotation.y = Math.PI / 2;
-      group.add(leftDoor);
-      // Door frame
-      const leftFrame = new THREE.Mesh(
-        new THREE.BoxGeometry(0.15, 3.2, 2.3),
-        new THREE.MeshLambertMaterial({ color: 0x3a3025 })
-      );
-      leftFrame.position.set(-w/2 + 0.15, 1.6, z);
-      group.add(leftFrame);
-      // Door number plate
-      const numL = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.5, 0.35),
-        new THREE.MeshBasicMaterial({ color: 0xccaa77 })
-      );
-      numL.position.set(-w/2 + 0.25, 2.3, z);
-      numL.rotation.y = Math.PI / 2;
-      group.add(numL);
-      // Random light under door
-      if (Math.random() > 0.5) {
-        const glow = new THREE.PointLight(0xffdd88, 0.25, 3);
-        glow.position.set(-w/2 + 1, 0.1, z);
-        group.add(glow);
-      }
+    // Vertical corridor 2 (right side)
+    const vCorridor2 = new THREE.Mesh(
+      new THREE.PlaneGeometry(hallW, d - 4),
+      new THREE.MeshLambertMaterial({ color: 0x5a5550 })
+    );
+    vCorridor2.rotation.x = -Math.PI / 2;
+    vCorridor2.position.set(12, 0.02, 0);
+    group.add(vCorridor2);
 
-      // Right wall doors
-      const rightDoor = new THREE.Mesh(
-        new THREE.PlaneGeometry(2, 3),
-        new THREE.MeshLambertMaterial({ color: doorColors[Math.floor(Math.random() * 5)] })
+    // ========== ROOMS IN GRID BLOCKS ==========
+    // Helper function to create a room
+    function createRoom(x: number, z: number, rotated: boolean, colorIdx: number) {
+      const roomLit = Math.random() > 0.35;
+      const rw = rotated ? roomSize : roomSize;
+      const rd = rotated ? roomSize : roomSize;
+      
+      // Room floor
+      const floor = new THREE.Mesh(
+        new THREE.PlaneGeometry(rw - 0.5, rd - 0.5),
+        new THREE.MeshLambertMaterial({ color: roomLit ? 0x5a5545 : 0x4a4540 })
       );
-      rightDoor.position.set(w/2 - 0.2, 1.5, z);
-      rightDoor.rotation.y = -Math.PI / 2;
-      group.add(rightDoor);
-      const rightFrame = new THREE.Mesh(
-        new THREE.BoxGeometry(0.15, 3.2, 2.3),
-        new THREE.MeshLambertMaterial({ color: 0x3a3025 })
+      floor.rotation.x = -Math.PI / 2;
+      floor.position.set(x, 0.02, z);
+      group.add(floor);
+      
+      // Room walls (FULL HEIGHT - can only enter through door)
+      const doorW = 1.8;
+      
+      // Back wall (solid)
+      const backW = new THREE.Mesh(new THREE.BoxGeometry(rw, wallH, wallThick), roomWallMat);
+      backW.position.set(x, wallH/2, z - rd/2 + wallThick/2);
+      group.add(backW);
+      
+      // Front wall (with door opening)
+      const frontW1 = new THREE.Mesh(new THREE.BoxGeometry((rw - doorW) / 2, wallH, wallThick), roomWallMat);
+      frontW1.position.set(x - rw/4 - doorW/4, wallH/2, z + rd/2 - wallThick/2);
+      group.add(frontW1);
+      const frontW2 = new THREE.Mesh(new THREE.BoxGeometry((rw - doorW) / 2, wallH, wallThick), roomWallMat);
+      frontW2.position.set(x + rw/4 + doorW/4, wallH/2, z + rd/2 - wallThick/2);
+      group.add(frontW2);
+      // Wall above door
+      const frontTop = new THREE.Mesh(new THREE.BoxGeometry(doorW + 0.2, wallH - 2.5, wallThick), roomWallMat);
+      frontTop.position.set(x, wallH - (wallH - 2.5)/2, z + rd/2 - wallThick/2);
+      group.add(frontTop);
+      
+      // Side walls (solid)
+      const sideW1 = new THREE.Mesh(new THREE.BoxGeometry(wallThick, wallH, rd), roomWallMat);
+      sideW1.position.set(x - rw/2 + wallThick/2, wallH/2, z);
+      group.add(sideW1);
+      const sideW2 = new THREE.Mesh(new THREE.BoxGeometry(wallThick, wallH, rd), roomWallMat);
+      sideW2.position.set(x + rw/2 - wallThick/2, wallH/2, z);
+      group.add(sideW2);
+      
+      // Door frame (decorative)
+      const doorFrame = new THREE.Mesh(
+        new THREE.BoxGeometry(doorW + 0.15, 2.5, wallThick + 0.05),
+        new THREE.MeshLambertMaterial({ color: 0x3a2a1a })
       );
-      rightFrame.position.set(w/2 - 0.15, 1.6, z);
-      group.add(rightFrame);
-      const numR = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.5, 0.35),
-        new THREE.MeshBasicMaterial({ color: 0xccaa77 })
+      doorFrame.position.set(x, 1.25, z + rd/2 - wallThick/2);
+      group.add(doorFrame);
+      
+      // BED
+      const bedW = rotated ? 1.4 : 2.2;
+      const bedD = rotated ? 2.2 : 1.4;
+      const bed = new THREE.Mesh(
+        new THREE.BoxGeometry(bedW, 0.4, bedD),
+        new THREE.MeshLambertMaterial({ color: 0x5a4a3a })
       );
-      numR.position.set(w/2 - 0.25, 2.3, z);
-      numR.rotation.y = -Math.PI / 2;
-      group.add(numR);
-      if (Math.random() > 0.5) {
-        const glow = new THREE.PointLight(0xffdd88, 0.25, 3);
-        glow.position.set(w/2 - 1, 0.1, z);
-        group.add(glow);
+      bed.position.set(x - rw/2 + bedW/2 + 0.5, 0.2, z - rd/2 + bedD/2 + 0.5);
+      group.add(bed);
+      
+      // Blanket
+      const blanketColors = [0x7a6555, 0x665544, 0x887766, 0x556655, 0x775566, 0x667755];
+      const blanket = new THREE.Mesh(
+        new THREE.BoxGeometry(bedW - 0.2, 0.15, bedD - 0.2),
+        new THREE.MeshLambertMaterial({ color: blanketColors[colorIdx % 6] })
+      );
+      blanket.position.set(bed.position.x, 0.45, bed.position.z);
+      group.add(blanket);
+      
+      // Pillow
+      const pillow = new THREE.Mesh(
+        new THREE.BoxGeometry(rotated ? 0.8 : 0.5, 0.2, rotated ? 0.5 : 0.8),
+        new THREE.MeshLambertMaterial({ color: 0xccbbaa })
+      );
+      pillow.position.set(
+        bed.position.x - (rotated ? 0 : bedW/2 - 0.4),
+        0.5,
+        bed.position.z - (rotated ? bedD/2 - 0.4 : 0)
+      );
+      group.add(pillow);
+      
+      // Light - some rooms have glowing colored lights
+      if (roomLit) {
+        const glowChance = Math.random();
+        let lightColor = 0xffddaa;
+        let intensity = 0.6;
+        
+        if (glowChance > 0.5) {
+          // Neon glow colors - brighter and more visible
+          const neonColors = [0xff4466, 0x44ff88, 0x4488ff, 0xffaa44, 0xff44ff, 0x44ffff, 0xff6644, 0x66ff44];
+          lightColor = neonColors[Math.floor(Math.random() * neonColors.length)] ?? 0xff4466;
+          intensity = 1.5;
+          
+          // Add large glowing light source mesh
+          const glowBulb = new THREE.Mesh(
+            new THREE.SphereGeometry(0.25, 8, 8),
+            new THREE.MeshBasicMaterial({ color: lightColor })
+          );
+          glowBulb.position.set(x, 2.6, z);
+          group.add(glowBulb);
+          
+          // Add glow halo
+          const halo = new THREE.Mesh(
+            new THREE.SphereGeometry(0.5, 8, 8),
+            new THREE.MeshBasicMaterial({ color: lightColor, transparent: true, opacity: 0.3 })
+          );
+          halo.position.set(x, 2.6, z);
+          group.add(halo);
+        }
+        
+        const light = new THREE.PointLight(lightColor, intensity, 10);
+        light.position.set(x, 2.5, z);
+        group.add(light);
       }
     }
 
-    // Vending machines (scattered)
-    const vendingPositions = [
-      { x: -w/2 + 2, z: -8 },
-      { x: w/2 - 2, z: 5 },
+    // ========== CREATE ROOM GRID - Clean layout with no overlap ==========
+    let roomIdx = 0;
+    
+    // Room grid with proper spacing (7 units apart)
+    const roomSpacing = 7;
+    
+    // Left column of rooms (x = -20)
+    createRoom(-20, -12, false, roomIdx++);
+    createRoom(-20, -4, false, roomIdx++);
+    createRoom(-20, 4, true, roomIdx++);
+    createRoom(-20, 12, true, roomIdx++);
+    
+    // Left-center column (x = -10)
+    createRoom(-10, -12, false, roomIdx++);
+    createRoom(-10, -4, false, roomIdx++);
+    createRoom(-10, 4, true, roomIdx++);
+    createRoom(-10, 12, true, roomIdx++);
+    
+    // Right-center column (x = 2)
+    createRoom(2, -12, false, roomIdx++);
+    createRoom(2, -4, false, roomIdx++);
+    createRoom(2, 4, true, roomIdx++);
+    createRoom(2, 12, true, roomIdx++);
+    
+    // Right column (x = 12, avoiding stairs at top right)
+    createRoom(12, 4, true, roomIdx++);
+    createRoom(12, 12, true, roomIdx++);
+
+    // ========== CORRIDOR LIGHTING ==========
+    const corridorLights = [
+      { x: 0, z: 0 },
+      { x: -12, z: -12 }, { x: -12, z: 12 },
+      { x: 12, z: -12 }, { x: 12, z: 12 },
+      { x: -20, z: 0 }, { x: 20, z: 0 },
+      { x: 0, z: -15 }, { x: 0, z: 15 },
     ];
-    for (const pos of vendingPositions) {
-      const vend = new THREE.Mesh(
-        new THREE.BoxGeometry(1.5, 2.2, 1),
-        new THREE.MeshLambertMaterial({ color: 0x334455 })
-      );
-      vend.position.set(pos.x, 1.1, pos.z);
-      group.add(vend);
-      // Screen
-      const screen = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.2, 1),
-        new THREE.MeshBasicMaterial({ color: 0x88aacc })
-      );
-      screen.position.set(pos.x + (pos.x > 0 ? -0.76 : 0.76), 1.4, pos.z);
-      screen.rotation.y = pos.x > 0 ? Math.PI / 2 : -Math.PI / 2;
-      group.add(screen);
-      const vendLight = new THREE.PointLight(0x88aacc, 0.3, 4);
-      vendLight.position.set(pos.x, 1.5, pos.z);
-      group.add(vendLight);
-    }
-
-    // Potted plants
-    const plantPositions = [
-      { x: -10, z: 10 }, { x: 10, z: -10 }, { x: -15, z: -5 }, { x: 15, z: 8 }
-    ];
-    for (const pos of plantPositions) {
-      const pot = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.4, 0.35, 0.6, 8),
-        new THREE.MeshLambertMaterial({ color: 0x6a4030 })
-      );
-      pot.position.set(pos.x, 0.3, pos.z);
-      group.add(pot);
-      const plant = new THREE.Mesh(
-        new THREE.SphereGeometry(0.6, 8, 6),
-        new THREE.MeshLambertMaterial({ color: 0x3a5530 })
-      );
-      plant.position.set(pos.x, 0.9, pos.z);
-      group.add(plant);
-    }
-
-    // Benches/seats
-    const benchPositions = [{ x: -8, z: 0 }, { x: 12, z: 0 }];
-    for (const pos of benchPositions) {
-      const bench = new THREE.Mesh(
-        new THREE.BoxGeometry(3, 0.6, 1),
-        new THREE.MeshLambertMaterial({ color: 0x5a4535 })
-      );
-      bench.position.set(pos.x, 0.3, pos.z);
-      group.add(bench);
-      // Legs
-      for (const lx of [-1.2, 1.2]) {
-        const leg = new THREE.Mesh(
-          new THREE.BoxGeometry(0.15, 0.6, 0.8),
-          new THREE.MeshLambertMaterial({ color: 0x3a3025 })
-        );
-        leg.position.set(pos.x + lx, 0.3, pos.z);
-        group.add(leg);
-      }
-    }
-
-    // Trash cans
-    const trashPositions = [{ x: -5, z: 12 }, { x: 8, z: -12 }, { x: -18, z: 0 }];
-    for (const pos of trashPositions) {
-      const trash = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.4, 0.35, 0.9, 8),
-        new THREE.MeshLambertMaterial({ color: 0x404040 })
-      );
-      trash.position.set(pos.x, 0.45, pos.z);
-      group.add(trash);
-    }
-
-    // Wall notices/bulletin boards
-    for (let i = 0; i < 5; i++) {
-      const board = new THREE.Mesh(
-        new THREE.BoxGeometry(2, 1.4, 0.08),
-        new THREE.MeshLambertMaterial({ color: 0x5a5045 })
-      );
-      board.position.set(-18 + i * 8, 2.2, -d/2 + 0.2);
-      group.add(board);
-      // Papers on board
-      for (let p = 0; p < 3; p++) {
-        const paper = new THREE.Mesh(
-          new THREE.PlaneGeometry(0.5, 0.6),
-          new THREE.MeshLambertMaterial({ color: 0x908070 + Math.random() * 0x101010 })
-        );
-        paper.position.set(-18.5 + i * 8 + p * 0.6, 2.2, -d/2 + 0.25);
-        group.add(paper);
-      }
-    }
-
-    // Fire extinguisher
-    const extinguisher = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.12, 0.14, 0.5, 8),
-      new THREE.MeshLambertMaterial({ color: 0x8b2020 })
-    );
-    extinguisher.position.set(-w/2 + 0.5, 1.1, 10);
-    group.add(extinguisher);
-
-    // Utility closet door (back wall)
-    const closetDoor = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.8, 2.8),
-      new THREE.MeshLambertMaterial({ color: 0x505050 })
-    );
-    closetDoor.position.set(-10, 1.4, -d/2 + 0.2);
-    group.add(closetDoor);
-
-    // Laundry area (corner alcove)
-    const washer = new THREE.Mesh(
-      new THREE.BoxGeometry(1.2, 1.3, 1),
-      new THREE.MeshLambertMaterial({ color: 0xcccccc })
-    );
-    washer.position.set(-w/2 + 3, 0.65, d/2 - 3);
-    group.add(washer);
-    const washerDoor = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.35, 0.35, 0.1, 12),
-      new THREE.MeshBasicMaterial({ color: 0x333333 })
-    );
-    washerDoor.rotation.z = Math.PI / 2;
-    washerDoor.position.set(-w/2 + 3.6, 0.8, d/2 - 3);
-    group.add(washerDoor);
-
-    // Ceiling lights (multiple)
-    const lightPositions = [
-      { x: -15, z: -10 }, { x: 0, z: -10 }, { x: 15, z: -10 },
-      { x: -15, z: 5 }, { x: 0, z: 5 }, { x: 15, z: 5 },
-    ];
-    for (const pos of lightPositions) {
-      const light = new THREE.PointLight(0xffffcc, 0.5, 12);
+    for (const pos of corridorLights) {
+      const light = new THREE.PointLight(0xffffcc, 0.35, 10);
       light.position.set(pos.x, 3.5, pos.z);
       group.add(light);
-      // Light fixture
-      const fixture = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.3, 0.4, 0.1, 8),
-        new THREE.MeshBasicMaterial({ color: 0xffffee })
+      // Bare bulb with wire
+      const bulb = new THREE.Mesh(
+        new THREE.SphereGeometry(0.1, 6, 6),
+        new THREE.MeshBasicMaterial({ color: 0xffffdd })
       );
-      fixture.position.set(pos.x, 3.9, pos.z);
-      group.add(fixture);
+      bulb.position.set(pos.x, 3.65, pos.z);
+      group.add(bulb);
+      const bulbWire = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.01, 0.01, 0.3, 4),
+        new THREE.MeshBasicMaterial({ color: 0x111111 })
+      );
+      bulbWire.position.set(pos.x, 3.85, pos.z);
+      group.add(bulbWire);
     }
 
-    // ========== STAIRWELL (back right corner) ==========
+    // ========== SPORADIC WIRES (natural look, no grid) ==========
+    
+    // Random wire bundles across ceiling - different lengths and angles
+    for (let i = 0; i < 35; i++) {
+      const wireLen = 2 + Math.random() * 6;
+      const wire = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.015 + Math.random() * 0.02, 0.015 + Math.random() * 0.02, wireLen, 4),
+        new THREE.MeshBasicMaterial({ color: [0x111111, 0x1a1a1a, 0x0a0a0a, 0x181818][Math.floor(Math.random() * 4)] })
+      );
+      // Random orientations - not aligned to grid
+      wire.rotation.x = Math.random() * Math.PI;
+      wire.rotation.y = Math.random() * Math.PI;
+      wire.rotation.z = Math.random() * Math.PI;
+      wire.position.set(
+        -w/2 + 6 + Math.random() * (w - 12),
+        3.0 + Math.random() * 0.7,
+        -d/2 + 6 + Math.random() * (d - 12)
+      );
+      group.add(wire);
+    }
+    
+    // Drooping/hanging wires from ceiling
+    for (let i = 0; i < 30; i++) {
+      const droopLen = 0.4 + Math.random() * 2;
+      const droop = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.01, 0.01, droopLen, 4),
+        new THREE.MeshBasicMaterial({ color: 0x111111 })
+      );
+      // Mostly vertical with slight angle
+      droop.rotation.x = (Math.random() - 0.5) * 0.3;
+      droop.rotation.z = (Math.random() - 0.5) * 0.3;
+      droop.position.set(
+        -w/2 + 8 + Math.random() * (w - 16),
+        3.5 - droopLen/2,
+        -d/2 + 8 + Math.random() * (d - 16)
+      );
+      group.add(droop);
+    }
+    
+    // Some longer wires running along walls (not a grid)
+    for (let i = 0; i < 8; i++) {
+      const wallWire = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.02, 0.02, 5 + Math.random() * 8, 4),
+        new THREE.MeshBasicMaterial({ color: 0x1a1a1a })
+      );
+      const wallSide = Math.random() > 0.5;
+      wallWire.rotation.x = Math.PI / 2 + (Math.random() - 0.5) * 0.4;
+      wallWire.position.set(
+        wallSide ? (-w/2 + 2) : (w/2 - 2),
+        2.8 + Math.random() * 0.5,
+        -d/3 + Math.random() * (d * 0.66)
+      );
+      group.add(wallWire);
+    }
+    
+    // TRASH everywhere
+    // Garbage bags
+    for (let i = 0; i < 20; i++) {
+      const bag = new THREE.Mesh(
+        new THREE.SphereGeometry(0.25 + Math.random() * 0.2, 6, 6),
+        new THREE.MeshLambertMaterial({ color: 0x222222 })
+      );
+      bag.scale.set(1, 0.7, 1);
+      bag.position.set(
+        -w/2 + 8 + Math.random() * (w - 16),
+        0.15,
+        -d/2 + 8 + Math.random() * (d - 16)
+      );
+      group.add(bag);
+    }
+    // Small trash pieces
+    for (let i = 0; i < 40; i++) {
+      const trash = new THREE.Mesh(
+        new THREE.BoxGeometry(0.08 + Math.random() * 0.15, 0.03, 0.08 + Math.random() * 0.15),
+        new THREE.MeshLambertMaterial({ color: [0x8b7355, 0x666666, 0x444444, 0x554433, 0x445544][Math.floor(Math.random() * 5)] })
+      );
+      trash.rotation.y = Math.random() * Math.PI;
+      trash.position.set(
+        -w/2 + 6 + Math.random() * (w - 12),
+        0.02,
+        -d/2 + 6 + Math.random() * (d - 12)
+      );
+      group.add(trash);
+    }
+    // Crumpled paper
+    for (let i = 0; i < 15; i++) {
+      const paper = new THREE.Mesh(
+        new THREE.SphereGeometry(0.06 + Math.random() * 0.05, 4, 4),
+        new THREE.MeshLambertMaterial({ color: 0xccccbb })
+      );
+      paper.scale.set(1, 0.5, 1);
+      paper.position.set(
+        -w/2 + 8 + Math.random() * (w - 16),
+        0.04,
+        -d/2 + 8 + Math.random() * (d - 16)
+      );
+      group.add(paper);
+    }
+    
+    // Cardboard boxes stacked
+    for (let i = 0; i < 12; i++) {
+      const stackHeight = 1 + Math.floor(Math.random() * 3);
+      const bx = -w/2 + 10 + Math.random() * (w - 20);
+      const bz = -d/2 + 10 + Math.random() * (d - 20);
+      for (let b = 0; b < stackHeight; b++) {
+        const box = new THREE.Mesh(
+          new THREE.BoxGeometry(0.5 + Math.random() * 0.4, 0.35 + Math.random() * 0.2, 0.4 + Math.random() * 0.3),
+          new THREE.MeshLambertMaterial({ color: 0x8b7355 + Math.floor(Math.random() * 0x222222) })
+        );
+        box.position.set(bx + (Math.random() - 0.5) * 0.2, 0.2 + b * 0.35, bz + (Math.random() - 0.5) * 0.2);
+        box.rotation.y = Math.random() * 0.5;
+        group.add(box);
+      }
+    }
+    
+    // Buckets
+    for (let i = 0; i < 6; i++) {
+      const bucket = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.2, 0.15, 0.35, 8),
+        new THREE.MeshLambertMaterial({ color: [0x3355aa, 0x55aa33, 0xaa5533, 0x555555][Math.floor(Math.random() * 4)] })
+      );
+      bucket.position.set(
+        -w/2 + 10 + Math.random() * (w - 20),
+        0.175,
+        -d/2 + 10 + Math.random() * (d - 20)
+      );
+      group.add(bucket);
+    }
+    
+    // Shoes/slippers scattered outside doors
+    const shoeColors = [0x222222, 0x443322, 0x223344, 0x884433, 0x555555];
+    for (let i = 0; i < 25; i++) {
+      const shoe = new THREE.Mesh(
+        new THREE.BoxGeometry(0.22, 0.06, 0.1),
+        new THREE.MeshLambertMaterial({ color: shoeColors[Math.floor(Math.random() * 5)] })
+      );
+      shoe.position.set(
+        -w/2 + 8 + Math.random() * (w - 16),
+        0.03,
+        -d/2 + 8 + Math.random() * (d - 16)
+      );
+      shoe.rotation.y = Math.random() * Math.PI;
+      group.add(shoe);
+    }
+    
+    // Laundry hanging across some corridors
+    for (let l = 0; l < 6; l++) {
+      const lineX = -w/3 + l * (w/9);
+      const lineZ = -5 + Math.random() * 10;
+      const line = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.008, 0.008, 4 + Math.random() * 3, 4),
+        new THREE.MeshBasicMaterial({ color: 0x666666 })
+      );
+      line.rotation.z = Math.PI / 2;
+      line.position.set(lineX, 2.6, lineZ);
+      group.add(line);
+      // Hanging clothes
+      for (let c = 0; c < 2 + Math.floor(Math.random() * 3); c++) {
+        const cloth = new THREE.Mesh(
+          new THREE.PlaneGeometry(0.35, 0.5 + Math.random() * 0.3),
+          new THREE.MeshLambertMaterial({ 
+            color: [0xccbbaa, 0x8899aa, 0xaa8877, 0xaaaaaa, 0x778899, 0x998877][Math.floor(Math.random() * 6)],
+            side: THREE.DoubleSide 
+          })
+        );
+        cloth.position.set(lineX - 1.5 + c * 1.2, 2.2, lineZ);
+        group.add(cloth);
+      }
+    }
+    
+    // Bicycles
+    for (let i = 0; i < 3; i++) {
+      const bikeX = -w/3 + i * (w/5);
+      const bikeZ = (Math.random() > 0.5 ? 1 : -1) * (5 + Math.random() * 8);
+      // Frame
+      const frame = new THREE.Mesh(
+        new THREE.BoxGeometry(1, 0.06, 0.06),
+        new THREE.MeshLambertMaterial({ color: 0x333355 + Math.floor(Math.random() * 0x333333) })
+      );
+      frame.position.set(bikeX, 0.5, bikeZ);
+      group.add(frame);
+      // Wheels
+      for (const wx of [-0.4, 0.4]) {
+        const wheel = new THREE.Mesh(
+          new THREE.TorusGeometry(0.3, 0.025, 6, 12),
+          new THREE.MeshLambertMaterial({ color: 0x222222 })
+        );
+        wheel.rotation.y = Math.PI / 2;
+        wheel.position.set(bikeX + wx, 0.3, bikeZ);
+        group.add(wheel);
+      }
+    }
+    
+    // Old broken furniture
+    for (let i = 0; i < 4; i++) {
+      const chair = new THREE.Mesh(
+        new THREE.BoxGeometry(0.6, 0.7, 0.6),
+        new THREE.MeshLambertMaterial({ color: 0x5a4a3a })
+      );
+      chair.position.set(
+        -w/3 + Math.random() * (w * 0.66),
+        0.35,
+        -d/3 + Math.random() * (d * 0.66)
+      );
+      chair.rotation.y = Math.random() * Math.PI;
+      chair.rotation.z = (Math.random() - 0.5) * 0.3; // Tilted/broken
+      group.add(chair);
+    }
+    
+    // Electric meters/junction boxes on walls (added to corridor walls)
+    for (let i = 0; i < 8; i++) {
+      const jbox = new THREE.Mesh(
+        new THREE.BoxGeometry(0.5, 0.6, 0.12),
+        new THREE.MeshLambertMaterial({ color: 0x555555 })
+      );
+      const wallSide = Math.random() > 0.5;
+      jbox.position.set(
+        wallSide ? (-w/2 + 0.08) : (w/2 - 0.08),
+        1.8 + Math.random() * 0.5,
+        -d/3 + i * (d/6)
+      );
+      group.add(jbox);
+      // Wires coming out
+      for (let wi = 0; wi < 2 + Math.floor(Math.random() * 3); wi++) {
+        const jWire = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.012, 0.012, 0.8 + Math.random() * 1.5, 4),
+          new THREE.MeshBasicMaterial({ color: 0x111111 })
+        );
+        jWire.rotation.z = Math.PI / 2 + (Math.random() - 0.5) * 0.5;
+        jWire.position.set(
+          wallSide ? (-w/2 + 0.5) : (w/2 - 0.5),
+          1.8 + wi * 0.15,
+          -d/3 + i * (d/6)
+        );
+        group.add(jWire);
+      }
+    }
+
+    // ========== STAIRWELL (back right corner - clear area) ==========
     // UP STAIRS (right side) - light to dark gradient (going up into darkness)
     const upColors = [0xaaaaaa, 0x999999, 0x888888, 0x777777, 0x666666, 0x555555, 0x444444];
     for (let s = 0; s < 7; s++) {
@@ -1551,20 +2110,46 @@ function drawMinimap() {
   // Draw city boundary
   ctx.strokeStyle = '#5a4535';
   ctx.lineWidth = 2;
-  ctx.strokeRect(8, 8, W - 16, H - 28);
-  ctx.fillStyle = '#252018';
-  ctx.fillRect(8, 8, W - 16, H - 28);
+  ctx.strokeRect(4, 4, W - 8, H - 20);
+  ctx.fillStyle = '#201810';
+  ctx.fillRect(4, 4, W - 8, H - 20);
   
-  // Scale: map coords (-35 to 5 Z, -35 to 35 X) to minimap
-  const mapScale = (W - 20) / 70;
-  const offsetX = 10;
-  const offsetZ = 10;
+  // Scale to fit all buildings: X from -35 to 35 (70 units), Z from -75 to -5 (70 units)
+  const scaleX = (W - 16) / 70;
+  const scaleZ = (H - 28) / 70;
+  const mapScale = Math.min(scaleX, scaleZ);
+  const offsetX = W / 2;
+  const offsetY = H - 14;  // Bottom of map area
   
   function worldToMap(wx: number, wz: number) {
     return {
-      x: offsetX + (wx + 35) * mapScale,
-      y: offsetZ + (-wz + 5) * mapScale * 0.8
+      x: offsetX + wx * mapScale,
+      y: offsetY + (wz + 5) * mapScale  // +5 to shift so z=-5 is at bottom
     };
+  }
+  
+  // Draw alleyways first (under buildings)
+  ctx.strokeStyle = '#2a2520';
+  ctx.lineWidth = 2;
+  
+  // Horizontal alleyways between rows
+  for (const rowZ of [-64, -52, -40, -28, -16]) {
+    const start = worldToMap(-35, rowZ);
+    const end = worldToMap(35, rowZ);
+    ctx.beginPath();
+    ctx.moveTo(start.x, start.y);
+    ctx.lineTo(end.x, end.y);
+    ctx.stroke();
+  }
+  
+  // Vertical alleyways between building columns
+  for (const colX of [-25, -15, -5, 5, 15, 25]) {
+    const start = worldToMap(colX, -73);
+    const end = worldToMap(colX, -7);
+    ctx.beginPath();
+    ctx.moveTo(start.x, start.y);
+    ctx.lineTo(end.x, end.y);
+    ctx.stroke();
   }
   
   // Draw all buildings from buildingsData
@@ -1572,55 +2157,88 @@ function drawMinimap() {
     const b = buildingsData[i];
     if (!b) continue;
     const pos = worldToMap(b.x, b.z);
-    const bw = b.width * mapScale * 0.9;
-    const bd = b.depth * mapScale * 0.7;
+    const bw = b.width * mapScale;
+    const bd = b.depth * mapScale;
     
     // Check if this is the current building
     const isCurrentBuilding = state.mode === 'indoor' && state.currentBuilding === i;
     
-    // Building fill - all buildings enterable
-    ctx.fillStyle = isCurrentBuilding ? '#ff5533' : '#4a4540';
+    // Building fill - shade based on height
+    const heightShade = Math.floor(b.floors * 2);
+    if (isCurrentBuilding) {
+      ctx.fillStyle = '#ff5533';
+    } else {
+      ctx.fillStyle = `rgb(${60 + heightShade}, ${55 + heightShade}, ${50 + heightShade})`;
+    }
     ctx.fillRect(pos.x - bw/2, pos.y - bd/2, bw, bd);
     
     // Border
-    ctx.strokeStyle = isCurrentBuilding ? '#ffaa66' : '#6a6050';
-    ctx.lineWidth = isCurrentBuilding ? 2 : 1;
+    ctx.strokeStyle = isCurrentBuilding ? '#ffaa66' : '#7a7060';
+    ctx.lineWidth = isCurrentBuilding ? 2 : 0.5;
     ctx.strokeRect(pos.x - bw/2, pos.y - bd/2, bw, bd);
+    
+    // Add small details inside buildings
+    if (!isCurrentBuilding && bw > 4) {
+      ctx.fillStyle = '#3a3530';
+      ctx.fillRect(pos.x - bw/4, pos.y - bd/4, bw/3, bd/3);
+    }
   }
-  
-  // Draw alleyways (darker lines)
-  ctx.strokeStyle = '#151210';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(worldToMap(-35, -28).x, worldToMap(-35, -28).y);
-  ctx.lineTo(worldToMap(35, -28).x, worldToMap(35, -28).y);
-  ctx.moveTo(worldToMap(-35, -16).x, worldToMap(-35, -16).y);
-  ctx.lineTo(worldToMap(35, -16).x, worldToMap(35, -16).y);
-  ctx.stroke();
   
   // Draw player position
   if (state.mode === 'outdoor') {
     const pp = worldToMap(player.x, player.z);
     
-    // Player dot (pulsing red)
+    // Outer glow
     const pulse = Math.sin(Date.now() / 150) * 1.5;
+    ctx.fillStyle = 'rgba(255, 50, 50, 0.4)';
+    ctx.beginPath();
+    ctx.arc(pp.x, pp.y, 6 + pulse, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Player dot (red)
     ctx.fillStyle = '#ff3333';
     ctx.beginPath();
-    ctx.arc(pp.x, pp.y, 4 + pulse, 0, Math.PI * 2);
+    ctx.arc(pp.x, pp.y, 4, 0, Math.PI * 2);
     ctx.fill();
     
     // White center
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
-    ctx.arc(pp.x, pp.y, 2, 0, Math.PI * 2);
+    ctx.arc(pp.x, pp.y, 1.5, 0, Math.PI * 2);
     ctx.fill();
+    
+    // Direction indicator (player.facing is already an angle in radians)
+    const angle = player.facing + Math.PI / 2; // Rotate to match minimap orientation
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(pp.x, pp.y);
+    ctx.lineTo(pp.x + Math.sin(angle) * 5, pp.y - Math.cos(angle) * 5);
+    ctx.stroke();
+  } else {
+    // Indoor - show building location
+    const bd = buildingsData[state.currentBuilding];
+    if (bd) {
+      const bp = worldToMap(bd.x, bd.z);
+      const pulse = Math.sin(Date.now() / 200) * 2;
+      ctx.strokeStyle = '#ffaa33';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(bp.x, bp.y, 8 + pulse, 0, Math.PI * 2);
+      ctx.stroke();
+    }
   }
   
-  // Title
+  // Title and subtitle
   ctx.fillStyle = '#8a7060';
-  ctx.font = 'bold 8px monospace';
+  ctx.font = 'bold 9px monospace';
   ctx.textAlign = 'center';
-  ctx.fillText('九龍城寨', W/2, H - 6);
+  ctx.fillText('九龍城寨', W/2, H - 5);
+  
+  // Compass
+  ctx.fillStyle = '#6a5a4a';
+  ctx.font = '6px monospace';
+  ctx.fillText('N', W - 10, 12);
   ctx.textAlign = 'left';
 }
 
@@ -1793,7 +2411,7 @@ function update() {
     
     // Bounds
     player.x = Math.max(-40, Math.min(40, player.x));
-    player.z = Math.max(-45, Math.min(5, player.z));
+    player.z = Math.max(-80, Math.min(5, player.z));
     playerGroup.position.set(player.x, 0.1, player.z);
 
     // Show prompt when near a building door
@@ -1808,9 +2426,135 @@ function update() {
       return;
     }
   } else {
+    const oldX = player.x;
+    const oldZ = player.z;
     player.x += mx;
     player.z += mz;
     const hw = floor.w / 2 - 0.5, hd = floor.d / 2 - 0.5;
+    
+    // ========== ROOM COLLISION - Only enter through doors ==========
+    const doorW = 1.6;
+    
+    // Define room positions with door side
+    type RoomDef = { x: number, z: number, w: number, d: number, door: 'front' | 'back' | 'left' | 'right' };
+    let rooms: RoomDef[] = [];
+    
+    if (floor.ground) {
+      // Lobby rooms (with w, d, and door side)
+      const hw = floor.w / 2, hd = floor.d / 2;
+      rooms = [
+        { x: -hw + 5, z: -hd + 6, w: 7, d: 5, door: 'right' },
+        { x: -hw + 5, z: -hd + 13, w: 7, d: 5, door: 'right' },
+        { x: -hw + 5, z: -hd + 20, w: 7, d: 5, door: 'right' },
+        { x: hw - 5, z: hd - 6, w: 7, d: 5, door: 'left' },
+        { x: hw - 5, z: hd - 13, w: 7, d: 5, door: 'left' },
+        { x: -12, z: -hd + 5, w: 6, d: 5, door: 'front' },
+      ];
+    } else if (!floor.top) {
+      // Apartment floors - all doors on front (positive Z)
+      rooms = [
+        { x: -20, z: -12, w: 5, d: 5, door: 'front' },
+        { x: -20, z: -4, w: 5, d: 5, door: 'front' },
+        { x: -20, z: 4, w: 5, d: 5, door: 'front' },
+        { x: -20, z: 12, w: 5, d: 5, door: 'front' },
+        { x: -10, z: -12, w: 5, d: 5, door: 'front' },
+        { x: -10, z: -4, w: 5, d: 5, door: 'front' },
+        { x: -10, z: 4, w: 5, d: 5, door: 'front' },
+        { x: -10, z: 12, w: 5, d: 5, door: 'front' },
+        { x: 2, z: -12, w: 5, d: 5, door: 'front' },
+        { x: 2, z: -4, w: 5, d: 5, door: 'front' },
+        { x: 2, z: 4, w: 5, d: 5, door: 'front' },
+        { x: 2, z: 12, w: 5, d: 5, door: 'front' },
+        { x: 12, z: 4, w: 5, d: 5, door: 'front' },
+        { x: 12, z: 12, w: 5, d: 5, door: 'front' },
+      ];
+    }
+    
+    // Check collision with each room's walls
+    for (const room of rooms) {
+      const left = room.x - room.w / 2;
+      const right = room.x + room.w / 2;
+      const back = room.z - room.d / 2;
+      const front = room.z + room.d / 2;
+      const wallT = 0.4; // Wall thickness for collision
+      
+      // Door opening bounds
+      const doorHalf = doorW / 2;
+      
+      // Check each wall individually (works for both entry and exit)
+      
+      // BACK WALL (z = back) - solid unless door is 'back'
+      if (room.door !== 'back') {
+        // Solid back wall
+        if (player.x > left && player.x < right && 
+            player.z > back - wallT && player.z < back + wallT) {
+          if (oldZ >= back) player.z = back + wallT;
+          else player.z = back - wallT;
+        }
+      } else {
+        // Back wall with door opening
+        if (player.x > left && player.x < right && 
+            player.z > back - wallT && player.z < back + wallT &&
+            (player.x < room.x - doorHalf || player.x > room.x + doorHalf)) {
+          if (oldZ >= back) player.z = back + wallT;
+          else player.z = back - wallT;
+        }
+      }
+      
+      // FRONT WALL (z = front) - solid unless door is 'front'
+      if (room.door !== 'front') {
+        // Solid front wall
+        if (player.x > left && player.x < right && 
+            player.z > front - wallT && player.z < front + wallT) {
+          if (oldZ <= front) player.z = front - wallT;
+          else player.z = front + wallT;
+        }
+      } else {
+        // Front wall with door opening
+        if (player.x > left && player.x < right && 
+            player.z > front - wallT && player.z < front + wallT &&
+            (player.x < room.x - doorHalf || player.x > room.x + doorHalf)) {
+          if (oldZ <= front) player.z = front - wallT;
+          else player.z = front + wallT;
+        }
+      }
+      
+      // LEFT WALL (x = left) - solid unless door is 'left'
+      if (room.door !== 'left') {
+        // Solid left wall
+        if (player.z > back && player.z < front && 
+            player.x > left - wallT && player.x < left + wallT) {
+          if (oldX >= left) player.x = left + wallT;
+          else player.x = left - wallT;
+        }
+      } else {
+        // Left wall with door opening
+        if (player.z > back && player.z < front && 
+            player.x > left - wallT && player.x < left + wallT &&
+            (player.z < room.z - doorHalf || player.z > room.z + doorHalf)) {
+          if (oldX >= left) player.x = left + wallT;
+          else player.x = left - wallT;
+        }
+      }
+      
+      // RIGHT WALL (x = right) - solid unless door is 'right'
+      if (room.door !== 'right') {
+        // Solid right wall
+        if (player.z > back && player.z < front && 
+            player.x > right - wallT && player.x < right + wallT) {
+          if (oldX <= right) player.x = right - wallT;
+          else player.x = right + wallT;
+        }
+      } else {
+        // Right wall with door opening
+        if (player.z > back && player.z < front && 
+            player.x > right - wallT && player.x < right + wallT &&
+            (player.z < room.z - doorHalf || player.z > room.z + doorHalf)) {
+          if (oldX <= right) player.x = right - wallT;
+          else player.x = right + wallT;
+        }
+      }
+    }
     
     // Stair collision - can't walk ON the stairs, only approach from front
     const upStairX = hw - 3;
