@@ -101,6 +101,205 @@ body {
   pointer-events: none;
 }
 
+.instructions .subtitle {
+  font-size: 1.5rem;
+  color: #00ffff;
+  margin-bottom: 25px;
+  text-shadow: 0 0 10px #00ffff;
+}
+
+/* Character Customization */
+.customization {
+  margin: 20px 0;
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.customization h3 {
+  font-size: 0.9rem;
+  color: #ffdd88;
+  margin-bottom: 15px;
+  letter-spacing: 3px;
+}
+
+.custom-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 10px 0;
+}
+
+.custom-row label {
+  font-size: 0.8rem;
+  color: #aaaaaa;
+  width: 50px;
+  text-align: left;
+}
+
+.color-options {
+  display: flex;
+  gap: 8px;
+}
+
+.color-btn {
+  width: 28px;
+  height: 28px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.color-btn:hover {
+  transform: scale(1.15);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.color-btn.selected {
+  border-color: #ff00ff;
+  box-shadow: 0 0 8px #ff00ff;
+  transform: scale(1.1);
+}
+
+.start-btn {
+  margin-top: 25px;
+  padding: 15px 40px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  background: linear-gradient(135deg, #ff00ff, #cc00cc);
+  border: 2px solid #ff00ff;
+  color: white;
+  cursor: pointer;
+  letter-spacing: 3px;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 15px rgba(255, 0, 255, 0.5);
+  font-family: 'Courier New', monospace;
+}
+
+.start-btn:hover {
+  background: linear-gradient(135deg, #ff33ff, #dd00dd);
+  box-shadow: 0 0 25px rgba(255, 0, 255, 0.8);
+  transform: translateY(-2px);
+}
+
+.start-btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Menu buttons container */
+.menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin: 30px 0 20px 0;
+}
+
+.menu-btn {
+  padding: 12px 30px;
+  font-size: 1rem;
+  font-weight: bold;
+  background: linear-gradient(135deg, #00cccc, #009999);
+  border: 2px solid #00cccc;
+  color: white;
+  cursor: pointer;
+  letter-spacing: 2px;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 12px rgba(0, 204, 204, 0.4);
+  font-family: 'Courier New', monospace;
+}
+
+.menu-btn:hover {
+  background: linear-gradient(135deg, #33dddd, #00bbbb);
+  box-shadow: 0 0 20px rgba(0, 204, 204, 0.7);
+  transform: translateY(-2px);
+}
+
+/* Customize Character Popup */
+.customize-popup {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  justify-content: center;
+  align-items: center;
+  z-index: 200;
+  pointer-events: auto;
+}
+
+.customize-popup.visible {
+  display: flex;
+}
+
+.customize-content {
+  display: flex;
+  gap: 30px;
+  background: linear-gradient(135deg, rgba(15, 15, 20, 0.98), rgba(25, 15, 35, 0.98));
+  border: 3px solid #00cccc;
+  padding: 30px;
+  box-shadow:
+    0 0 30px rgba(0, 204, 204, 0.5),
+    0 0 60px rgba(255, 0, 255, 0.2),
+    inset 0 0 30px rgba(0, 0, 0, 0.8);
+}
+
+.customize-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.customize-preview canvas {
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(180deg, #1a1a2a 0%, #0a0a15 100%);
+}
+
+.customize-options {
+  display: flex;
+  flex-direction: column;
+  min-width: 280px;
+}
+
+.customize-options h3 {
+  font-size: 1.1rem;
+  color: #00cccc;
+  margin-bottom: 20px;
+  letter-spacing: 3px;
+  text-shadow: 0 0 10px #00cccc;
+}
+
+.customize-options .custom-row {
+  margin: 8px 0;
+}
+
+.customize-options .custom-row label {
+  width: 60px;
+}
+
+.done-btn {
+  margin-top: 25px;
+  padding: 12px 30px;
+  font-size: 1rem;
+  font-weight: bold;
+  background: linear-gradient(135deg, #00cc66, #009944);
+  border: 2px solid #00cc66;
+  color: white;
+  cursor: pointer;
+  letter-spacing: 2px;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 12px rgba(0, 204, 102, 0.4);
+  font-family: 'Courier New', monospace;
+}
+
+.done-btn:hover {
+  background: linear-gradient(135deg, #33dd77, #00bb55);
+  box-shadow: 0 0 20px rgba(0, 204, 102, 0.7);
+  transform: translateY(-2px);
+}
+
 /* Scroll counter */
 .scroll-counter {
   position: fixed;

@@ -18,9 +18,64 @@
     <div class="overlay">
       <div class="instructions" id="instructions">
         <h1>KOWLOON WALLED CITY</h1>
-        <p>Click or press any key to start</p>
-        <p class="controls">WASD / Arrows = Move</p>
-        <p class="hint">Explore the city. Approach doors and stairs for prompts!</p>
+        <p class="subtitle">九龍城寨</p>
+        
+        <div class="menu-buttons">
+          <button class="menu-btn" id="customize-btn">CUSTOMIZE CHARACTER</button>
+          <button class="start-btn" id="start-btn">START EXPLORING</button>
+        </div>
+        <p class="controls">WASD / Arrows = Move &nbsp;|&nbsp; E / Space = Interact</p>
+      </div>
+      
+      <!-- Character Customization Popup -->
+      <div class="customize-popup" id="customize-popup">
+        <div class="customize-content">
+          <div class="customize-preview">
+            <canvas id="preview-canvas" width="200" height="280"></canvas>
+          </div>
+          <div class="customize-options">
+            <h3>CUSTOMIZE CHARACTER</h3>
+            <div class="custom-row">
+              <label>Skin:</label>
+              <div class="color-options" id="skin-options">
+                <button class="color-btn selected" data-color="0xeeddcc" style="background:#eeddcc"></button>
+                <button class="color-btn" data-color="0xd4a574" style="background:#d4a574"></button>
+                <button class="color-btn" data-color="0x8d5524" style="background:#8d5524"></button>
+                <button class="color-btn" data-color="0x4a3728" style="background:#4a3728"></button>
+              </div>
+            </div>
+            <div class="custom-row">
+              <label>Hair:</label>
+              <div class="color-options" id="hair-options">
+                <button class="color-btn selected" data-color="0x332211" style="background:#332211"></button>
+                <button class="color-btn" data-color="0x111111" style="background:#111111"></button>
+                <button class="color-btn" data-color="0x664422" style="background:#664422"></button>
+                <button class="color-btn" data-color="0xffdd88" style="background:#ffdd88"></button>
+                <button class="color-btn" data-color="0xcc3333" style="background:#cc3333"></button>
+              </div>
+            </div>
+            <div class="custom-row">
+              <label>Shirt:</label>
+              <div class="color-options" id="shirt-options">
+                <button class="color-btn selected" data-color="0x334455" style="background:#334455"></button>
+                <button class="color-btn" data-color="0x553333" style="background:#553333"></button>
+                <button class="color-btn" data-color="0x335533" style="background:#335533"></button>
+                <button class="color-btn" data-color="0x555533" style="background:#555533"></button>
+                <button class="color-btn" data-color="0x222222" style="background:#222222"></button>
+              </div>
+            </div>
+            <div class="custom-row">
+              <label>Pants:</label>
+              <div class="color-options" id="pants-options">
+                <button class="color-btn selected" data-color="0x222233" style="background:#222233"></button>
+                <button class="color-btn" data-color="0x333322" style="background:#333322"></button>
+                <button class="color-btn" data-color="0x332222" style="background:#332222"></button>
+                <button class="color-btn" data-color="0x111111" style="background:#111111"></button>
+              </div>
+            </div>
+            <button class="done-btn" id="customize-done">DONE</button>
+          </div>
+        </div>
       </div>
       <div class="scroll-counter" id="scroll-counter">KOWLOON CITY</div>
       <div class="action-prompt" id="action-prompt"></div>
