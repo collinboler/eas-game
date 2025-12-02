@@ -80,31 +80,31 @@ const buildingsData: BuildingData[] = [];
 const allBuildingMeshes: THREE.Mesh[] = [];
 
 // City layout - buildings arranged in dense blocks with alleyways
-// Enterable buildings marked with *
+// ALL buildings are enterable
 const cityLayout = [
   // Row 1 (back) - z = -35
-  { x: -30, z: -35, w: 10, d: 8, floors: 16, enterable: true },
-  { x: -18, z: -35, w: 8, d: 8, floors: 14, enterable: false },
-  { x: -8, z: -35, w: 9, d: 8, floors: 18, enterable: true },
-  { x: 4, z: -35, w: 10, d: 8, floors: 12, enterable: false },
-  { x: 16, z: -35, w: 8, d: 8, floors: 15, enterable: true },
-  { x: 28, z: -35, w: 10, d: 8, floors: 17, enterable: false },
+  { x: -30, z: -35, w: 10, d: 8, floors: 16 },
+  { x: -18, z: -35, w: 8, d: 8, floors: 14 },
+  { x: -8, z: -35, w: 9, d: 8, floors: 18 },
+  { x: 4, z: -35, w: 10, d: 8, floors: 12 },
+  { x: 16, z: -35, w: 8, d: 8, floors: 15 },
+  { x: 28, z: -35, w: 10, d: 8, floors: 17 },
   // Row 2 - z = -22
-  { x: -28, z: -22, w: 9, d: 7, floors: 13, enterable: false },
-  { x: -16, z: -22, w: 10, d: 7, floors: 19, enterable: true },
-  { x: -4, z: -22, w: 8, d: 7, floors: 11, enterable: false },
-  { x: 8, z: -22, w: 9, d: 7, floors: 16, enterable: true },
-  { x: 20, z: -22, w: 10, d: 7, floors: 14, enterable: false },
+  { x: -28, z: -22, w: 9, d: 7, floors: 13 },
+  { x: -16, z: -22, w: 10, d: 7, floors: 19 },
+  { x: -4, z: -22, w: 8, d: 7, floors: 11 },
+  { x: 8, z: -22, w: 9, d: 7, floors: 16 },
+  { x: 20, z: -22, w: 10, d: 7, floors: 14 },
   // Row 3 - z = -10
-  { x: -25, z: -10, w: 8, d: 6, floors: 15, enterable: true },
-  { x: -14, z: -10, w: 9, d: 6, floors: 12, enterable: false },
-  { x: -2, z: -10, w: 10, d: 6, floors: 20, enterable: true },
-  { x: 12, z: -10, w: 8, d: 6, floors: 13, enterable: false },
-  { x: 24, z: -10, w: 9, d: 6, floors: 17, enterable: false },
+  { x: -25, z: -10, w: 8, d: 6, floors: 15 },
+  { x: -14, z: -10, w: 9, d: 6, floors: 12 },
+  { x: -2, z: -10, w: 10, d: 6, floors: 20 },
+  { x: 12, z: -10, w: 8, d: 6, floors: 13 },
+  { x: 24, z: -10, w: 9, d: 6, floors: 17 },
 ];
 
 function createCityBuilding(config: typeof cityLayout[0], index: number) {
-  const { x, z, w, d, floors, enterable } = config;
+  const { x, z, w, d, floors } = config;
   const height = floors * 2.2;
   const group = new THREE.Group();
   
@@ -164,32 +164,30 @@ function createCityBuilding(config: typeof cityLayout[0], index: number) {
     group.add(glow);
   }
 
-  // Door (only for enterable buildings)
-  if (enterable) {
-    const doorFrame = new THREE.Mesh(
-      new THREE.BoxGeometry(2.5, 3.2, 0.25),
-      new THREE.MeshLambertMaterial({ color: 0x3a2a1a, transparent: true, opacity: 1 })
-    );
-    doorFrame.position.set(0, 1.6, d/2 + 0.15);
-    group.add(doorFrame);
-    allBuildingMeshes.push(doorFrame);
-    
-    const door = new THREE.Mesh(
-      new THREE.PlaneGeometry(2, 2.8),
-      new THREE.MeshLambertMaterial({ color: 0x553322, transparent: true, opacity: 1 })
-    );
-    door.position.set(0, 1.4, d/2 + 0.3);
-    group.add(door);
-    allBuildingMeshes.push(door);
-    
-    // Door light
-    const doorLight = new THREE.PointLight(0xffaa55, 0.6, 5);
-    doorLight.position.set(0, 3, d/2 + 1);
-    group.add(doorLight);
-    
-    // Store building data for entry
-    buildingsData.push({ x, z, floors, group, width: w, depth: d });
-  }
+  // Door - all buildings are enterable
+  const doorFrame = new THREE.Mesh(
+    new THREE.BoxGeometry(2.5, 3.2, 0.25),
+    new THREE.MeshLambertMaterial({ color: 0x3a2a1a, transparent: true, opacity: 1 })
+  );
+  doorFrame.position.set(0, 1.6, d/2 + 0.15);
+  group.add(doorFrame);
+  allBuildingMeshes.push(doorFrame);
+  
+  const door = new THREE.Mesh(
+    new THREE.PlaneGeometry(2, 2.8),
+    new THREE.MeshLambertMaterial({ color: 0x553322, transparent: true, opacity: 1 })
+  );
+  door.position.set(0, 1.4, d/2 + 0.3);
+  group.add(door);
+  allBuildingMeshes.push(door);
+  
+  // Door light
+  const doorLight = new THREE.PointLight(0xffaa55, 0.6, 5);
+  doorLight.position.set(0, 3, d/2 + 1);
+  group.add(doorLight);
+  
+  // Store building data for entry
+  buildingsData.push({ x, z, floors, group, width: w, depth: d });
   
   group.position.set(x, 0, z);
   outdoorScene.add(group);
@@ -1083,45 +1081,23 @@ function drawMinimap() {
     };
   }
   
-  // Draw all buildings from cityLayout
-  const cityBuildings = [
-    { x: -30, z: -35, w: 10, d: 8, enter: true },
-    { x: -18, z: -35, w: 8, d: 8, enter: false },
-    { x: -8, z: -35, w: 9, d: 8, enter: true },
-    { x: 4, z: -35, w: 10, d: 8, enter: false },
-    { x: 16, z: -35, w: 8, d: 8, enter: true },
-    { x: 28, z: -35, w: 10, d: 8, enter: false },
-    { x: -28, z: -22, w: 9, d: 7, enter: false },
-    { x: -16, z: -22, w: 10, d: 7, enter: true },
-    { x: -4, z: -22, w: 8, d: 7, enter: false },
-    { x: 8, z: -22, w: 9, d: 7, enter: true },
-    { x: 20, z: -22, w: 10, d: 7, enter: false },
-    { x: -25, z: -10, w: 8, d: 6, enter: true },
-    { x: -14, z: -10, w: 9, d: 6, enter: false },
-    { x: -2, z: -10, w: 10, d: 6, enter: true },
-    { x: 12, z: -10, w: 8, d: 6, enter: false },
-    { x: 24, z: -10, w: 9, d: 6, enter: false },
-  ];
-  
-  let enterIdx = 0;
-  for (const b of cityBuildings) {
+  // Draw all buildings from buildingsData
+  for (let i = 0; i < buildingsData.length; i++) {
+    const b = buildingsData[i];
+    if (!b) continue;
     const pos = worldToMap(b.x, b.z);
-    const bw = b.w * mapScale * 0.9;
-    const bd = b.d * mapScale * 0.7;
+    const bw = b.width * mapScale * 0.9;
+    const bd = b.depth * mapScale * 0.7;
     
     // Check if this is the current building
-    let isCurrentBuilding = false;
-    if (b.enter) {
-      isCurrentBuilding = state.mode === 'indoor' && state.currentBuilding === enterIdx;
-      enterIdx++;
-    }
+    const isCurrentBuilding = state.mode === 'indoor' && state.currentBuilding === i;
     
-    // Building fill
-    ctx.fillStyle = isCurrentBuilding ? '#ff5533' : (b.enter ? '#4a4540' : '#3a3530');
+    // Building fill - all buildings enterable
+    ctx.fillStyle = isCurrentBuilding ? '#ff5533' : '#4a4540';
     ctx.fillRect(pos.x - bw/2, pos.y - bd/2, bw, bd);
     
     // Border
-    ctx.strokeStyle = isCurrentBuilding ? '#ffaa66' : (b.enter ? '#6a6050' : '#4a4540');
+    ctx.strokeStyle = isCurrentBuilding ? '#ffaa66' : '#6a6050';
     ctx.lineWidth = isCurrentBuilding ? 2 : 1;
     ctx.strokeRect(pos.x - bw/2, pos.y - bd/2, bw, bd);
   }
@@ -1222,8 +1198,8 @@ function goDown() {
 }
 
 function jumpRoof() {
+  // Jump down to street - instant transition
   exit();
-  showPopup("You jumped from the roof!");
 }
 
 function jumpToLeftBuilding() {
@@ -1239,7 +1215,6 @@ function jumpToLeftBuilding() {
   player.z = floor.d / 2 - 4;
   playerGroup.position.set(player.x, 0.1, player.z);
   updateUI();
-  showPopup("Jumped to building on the left!");
 }
 
 function jumpToRightBuilding() {
@@ -1255,7 +1230,6 @@ function jumpToRightBuilding() {
   player.z = floor.d / 2 - 4;
   playerGroup.position.set(player.x, 0.1, player.z);
   updateUI();
-  showPopup("Jumped to building on the right!");
 }
 
 // ============================================
