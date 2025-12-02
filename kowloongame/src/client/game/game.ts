@@ -251,7 +251,7 @@ function updateBuildingTransparency() {
 }
 
 // ============================================
-// NPCs - People and Foxes
+// NPCs - People and Animals
 // ============================================
 interface NPC {
   mesh: THREE.Group;
@@ -260,7 +260,7 @@ interface NPC {
   targetX: number;
   targetZ: number;
   speed: number;
-  type: 'person' | 'fox';
+  type: 'person' | 'fox' | 'monkey' | 'squirrel' | 'mouse';
   indoor: boolean;
   buildingIdx: number;
   floorIdx: number;
@@ -378,32 +378,255 @@ function createFoxMesh(): THREE.Group {
   return group;
 }
 
+// Create a monkey mesh
+function createMonkeyMesh(): THREE.Group {
+  const group = new THREE.Group();
+  const brown = 0x8B4513;
+  const tan = 0xDEB887;
+  
+  // Body
+  const body = new THREE.Mesh(
+    new THREE.SphereGeometry(0.25, 8, 8),
+    new THREE.MeshLambertMaterial({ color: brown })
+  );
+  body.scale.set(1, 1.2, 0.9);
+  body.position.set(0, 0.5, 0);
+  group.add(body);
+  
+  // Head
+  const head = new THREE.Mesh(
+    new THREE.SphereGeometry(0.2, 8, 8),
+    new THREE.MeshLambertMaterial({ color: brown })
+  );
+  head.position.set(0, 0.85, 0.1);
+  group.add(head);
+  
+  // Face
+  const face = new THREE.Mesh(
+    new THREE.SphereGeometry(0.12, 8, 8),
+    new THREE.MeshLambertMaterial({ color: tan })
+  );
+  face.position.set(0, 0.82, 0.22);
+  group.add(face);
+  
+  // Ears
+  for (let side = -1; side <= 1; side += 2) {
+    const ear = new THREE.Mesh(
+      new THREE.SphereGeometry(0.08, 6, 6),
+      new THREE.MeshLambertMaterial({ color: tan })
+    );
+    ear.position.set(side * 0.2, 0.9, 0.05);
+    group.add(ear);
+  }
+  
+  // Arms
+  for (let side = -1; side <= 1; side += 2) {
+    const arm = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.05, 0.04, 0.4, 6),
+      new THREE.MeshLambertMaterial({ color: brown })
+    );
+    arm.position.set(side * 0.25, 0.4, 0);
+    arm.rotation.z = side * 0.3;
+    group.add(arm);
+  }
+  
+  // Legs
+  for (let side = -1; side <= 1; side += 2) {
+    const leg = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.06, 0.05, 0.3, 6),
+      new THREE.MeshLambertMaterial({ color: brown })
+    );
+    leg.position.set(side * 0.12, 0.15, 0);
+    group.add(leg);
+  }
+  
+  // Tail (curled)
+  const tail = new THREE.Mesh(
+    new THREE.TorusGeometry(0.15, 0.03, 6, 12, Math.PI * 1.5),
+    new THREE.MeshLambertMaterial({ color: brown })
+  );
+  tail.position.set(0, 0.5, -0.3);
+  tail.rotation.y = Math.PI / 2;
+  group.add(tail);
+  
+  return group;
+}
+
+// Create a squirrel mesh
+function createSquirrelMesh(): THREE.Group {
+  const group = new THREE.Group();
+  const gray = 0x808080;
+  const lightGray = 0xC0C0C0;
+  
+  // Body
+  const body = new THREE.Mesh(
+    new THREE.SphereGeometry(0.12, 8, 8),
+    new THREE.MeshLambertMaterial({ color: gray })
+  );
+  body.scale.set(1, 0.8, 1.3);
+  body.position.set(0, 0.15, 0);
+  group.add(body);
+  
+  // Head
+  const head = new THREE.Mesh(
+    new THREE.SphereGeometry(0.08, 8, 8),
+    new THREE.MeshLambertMaterial({ color: gray })
+  );
+  head.position.set(0, 0.22, 0.15);
+  group.add(head);
+  
+  // Nose
+  const nose = new THREE.Mesh(
+    new THREE.SphereGeometry(0.02, 4, 4),
+    new THREE.MeshLambertMaterial({ color: 0x111111 })
+  );
+  nose.position.set(0, 0.2, 0.23);
+  group.add(nose);
+  
+  // Ears
+  for (let side = -1; side <= 1; side += 2) {
+    const ear = new THREE.Mesh(
+      new THREE.ConeGeometry(0.03, 0.06, 4),
+      new THREE.MeshLambertMaterial({ color: gray })
+    );
+    ear.position.set(side * 0.06, 0.3, 0.12);
+    group.add(ear);
+  }
+  
+  // Big fluffy tail
+  const tail = new THREE.Mesh(
+    new THREE.SphereGeometry(0.1, 8, 8),
+    new THREE.MeshLambertMaterial({ color: lightGray })
+  );
+  tail.scale.set(0.6, 1.5, 0.6);
+  tail.position.set(0, 0.25, -0.18);
+  tail.rotation.x = -0.5;
+  group.add(tail);
+  
+  // Legs
+  for (let lx = -1; lx <= 1; lx += 2) {
+    for (let lz = -1; lz <= 1; lz += 2) {
+      const leg = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.02, 0.02, 0.1, 4),
+        new THREE.MeshLambertMaterial({ color: gray })
+      );
+      leg.position.set(lx * 0.06, 0.05, lz * 0.08);
+      group.add(leg);
+    }
+  }
+  
+  return group;
+}
+
+// Create a mouse mesh
+function createMouseMesh(): THREE.Group {
+  const group = new THREE.Group();
+  const gray = 0x555555;
+  const pink = 0xFFAAAA;
+  
+  // Body
+  const body = new THREE.Mesh(
+    new THREE.SphereGeometry(0.06, 8, 8),
+    new THREE.MeshLambertMaterial({ color: gray })
+  );
+  body.scale.set(1, 0.7, 1.4);
+  body.position.set(0, 0.06, 0);
+  group.add(body);
+  
+  // Head
+  const head = new THREE.Mesh(
+    new THREE.SphereGeometry(0.04, 8, 8),
+    new THREE.MeshLambertMaterial({ color: gray })
+  );
+  head.position.set(0, 0.08, 0.08);
+  group.add(head);
+  
+  // Nose
+  const nose = new THREE.Mesh(
+    new THREE.SphereGeometry(0.015, 4, 4),
+    new THREE.MeshLambertMaterial({ color: pink })
+  );
+  nose.position.set(0, 0.07, 0.12);
+  group.add(nose);
+  
+  // Big round ears
+  for (let side = -1; side <= 1; side += 2) {
+    const ear = new THREE.Mesh(
+      new THREE.SphereGeometry(0.03, 6, 6),
+      new THREE.MeshLambertMaterial({ color: pink })
+    );
+    ear.scale.set(1, 1, 0.3);
+    ear.position.set(side * 0.04, 0.12, 0.05);
+    group.add(ear);
+  }
+  
+  // Long thin tail
+  const tail = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.005, 0.008, 0.15, 4),
+    new THREE.MeshLambertMaterial({ color: pink })
+  );
+  tail.rotation.x = Math.PI / 3;
+  tail.position.set(0, 0.08, -0.12);
+  group.add(tail);
+  
+  // Tiny legs
+  for (let lx = -1; lx <= 1; lx += 2) {
+    for (let lz = -1; lz <= 1; lz += 2) {
+      const leg = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.01, 0.01, 0.04, 4),
+        new THREE.MeshLambertMaterial({ color: pink })
+      );
+      leg.position.set(lx * 0.03, 0.02, lz * 0.04);
+      group.add(leg);
+    }
+  }
+  
+  return group;
+}
+
 // Spawn outdoor NPCs
 function spawnOutdoorNPCs() {
-  // Spawn 15 people and 5 foxes in the city
-  for (let i = 0; i < 20; i++) {
-    const isFox = i >= 15;
-    const mesh = isFox ? createFoxMesh() : createPersonMesh();
-    
-    // Random position in alleyways
-    const x = -35 + Math.random() * 70;
-    const z = -40 + Math.random() * 45;
-    
-    mesh.position.set(x, 0, z);
-    outdoorScene.add(mesh);
-    
-    outdoorNPCs.push({
-      mesh,
-      x,
-      z,
-      targetX: x,
-      targetZ: z,
-      speed: isFox ? 0.08 : 0.04,
-      type: isFox ? 'fox' : 'person',
-      indoor: false,
-      buildingIdx: -1,
-      floorIdx: -1
-    });
+  // Spawn various NPCs in the city
+  // 12 people, 4 foxes, 4 monkeys, 6 squirrels, 8 mice = 34 total
+  const npcTypes: { type: NPC['type']; count: number; speed: number }[] = [
+    { type: 'person', count: 12, speed: 0.04 },
+    { type: 'fox', count: 4, speed: 0.08 },
+    { type: 'monkey', count: 4, speed: 0.06 },
+    { type: 'squirrel', count: 6, speed: 0.1 },
+    { type: 'mouse', count: 8, speed: 0.12 },
+  ];
+  
+  for (const npcDef of npcTypes) {
+    for (let i = 0; i < npcDef.count; i++) {
+      let mesh: THREE.Group;
+      switch (npcDef.type) {
+        case 'fox': mesh = createFoxMesh(); break;
+        case 'monkey': mesh = createMonkeyMesh(); break;
+        case 'squirrel': mesh = createSquirrelMesh(); break;
+        case 'mouse': mesh = createMouseMesh(); break;
+        default: mesh = createPersonMesh();
+      }
+      
+      // Random position in alleyways
+      const x = -35 + Math.random() * 70;
+      const z = -40 + Math.random() * 45;
+      
+      mesh.position.set(x, 0, z);
+      outdoorScene.add(mesh);
+      
+      outdoorNPCs.push({
+        mesh,
+        x,
+        z,
+        targetX: x,
+        targetZ: z,
+        speed: npcDef.speed,
+        type: npcDef.type,
+        indoor: false,
+        buildingIdx: -1,
+        floorIdx: -1
+      });
+    }
   }
 }
 
@@ -415,11 +638,26 @@ function spawnIndoorNPCs(buildingIdx: number, floorIdx: number, floorW: number, 
   }
   indoorNPCs.length = 0;
   
-  // Spawn 3-6 NPCs per floor
-  const count = 3 + Math.floor(Math.random() * 4);
+  // Spawn 4-8 NPCs per floor (mix of types)
+  const count = 4 + Math.floor(Math.random() * 5);
   for (let i = 0; i < count; i++) {
-    const isFox = Math.random() < 0.15; // 15% chance of fox
-    const mesh = isFox ? createFoxMesh() : createPersonMesh();
+    // Random type selection
+    const roll = Math.random();
+    let type: NPC['type'];
+    let mesh: THREE.Group;
+    let speed: number;
+    
+    if (roll < 0.5) {
+      type = 'person'; mesh = createPersonMesh(); speed = 0.03;
+    } else if (roll < 0.65) {
+      type = 'fox'; mesh = createFoxMesh(); speed = 0.05;
+    } else if (roll < 0.75) {
+      type = 'monkey'; mesh = createMonkeyMesh(); speed = 0.045;
+    } else if (roll < 0.88) {
+      type = 'squirrel'; mesh = createSquirrelMesh(); speed = 0.07;
+    } else {
+      type = 'mouse'; mesh = createMouseMesh(); speed = 0.08;
+    }
     
     // Random position on floor (avoiding edges)
     const x = -floorW/2 + 3 + Math.random() * (floorW - 6);
@@ -434,8 +672,8 @@ function spawnIndoorNPCs(buildingIdx: number, floorIdx: number, floorW: number, 
       z,
       targetX: x,
       targetZ: z,
-      speed: isFox ? 0.06 : 0.03,
-      type: isFox ? 'fox' : 'person',
+      speed,
+      type,
       indoor: true,
       buildingIdx,
       floorIdx
@@ -480,9 +718,17 @@ function updateNPCs() {
       npc.mesh.rotation.y = Math.atan2(moveX, moveZ);
     }
     
-    // Simple walk animation (bobbing)
+    // Simple walk animation (bobbing) - different speeds for different animals
     if (dist > 0.5) {
-      npc.mesh.position.y = Math.abs(Math.sin(Date.now() / (npc.type === 'fox' ? 80 : 150))) * 0.1;
+      let bobSpeed = 150; // default for person
+      let bobHeight = 0.08;
+      switch (npc.type) {
+        case 'fox': bobSpeed = 80; bobHeight = 0.08; break;
+        case 'monkey': bobSpeed = 100; bobHeight = 0.1; break;
+        case 'squirrel': bobSpeed = 50; bobHeight = 0.05; break;
+        case 'mouse': bobSpeed = 40; bobHeight = 0.03; break;
+      }
+      npc.mesh.position.y = Math.abs(Math.sin(Date.now() / bobSpeed)) * bobHeight;
     }
   }
 }
