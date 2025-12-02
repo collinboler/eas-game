@@ -251,6 +251,246 @@ function updateBuildingTransparency() {
 }
 
 // ============================================
+// NPCs - People and Foxes
+// ============================================
+interface NPC {
+  mesh: THREE.Group;
+  x: number;
+  z: number;
+  targetX: number;
+  targetZ: number;
+  speed: number;
+  type: 'person' | 'fox';
+  indoor: boolean;
+  buildingIdx: number;
+  floorIdx: number;
+}
+
+const outdoorNPCs: NPC[] = [];
+const indoorNPCs: NPC[] = [];
+
+// Create a person mesh
+function createPersonMesh(): THREE.Group {
+  const group = new THREE.Group();
+  
+  // Random clothing colors
+  const shirtColors = [0x3355aa, 0xaa3355, 0x55aa33, 0xaaaa33, 0x8833aa, 0x33aaaa, 0xaa5533];
+  const pantsColors = [0x222233, 0x333322, 0x2a2a3a, 0x3a3a2a];
+  const skinColors = [0xeeddcc, 0xddccaa, 0xccaa88, 0xaa8866];
+  
+  // Body
+  const body = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.3, 0.35, 0.9, 8),
+    new THREE.MeshLambertMaterial({ color: shirtColors[Math.floor(Math.random() * shirtColors.length)] })
+  );
+  body.position.y = 0.7;
+  group.add(body);
+  
+  // Legs
+  const legs = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.25, 0.2, 0.5, 8),
+    new THREE.MeshLambertMaterial({ color: pantsColors[Math.floor(Math.random() * pantsColors.length)] })
+  );
+  legs.position.y = 0.25;
+  group.add(legs);
+  
+  // Head
+  const head = new THREE.Mesh(
+    new THREE.SphereGeometry(0.25, 8, 8),
+    new THREE.MeshLambertMaterial({ color: skinColors[Math.floor(Math.random() * skinColors.length)] })
+  );
+  head.position.y = 1.35;
+  group.add(head);
+  
+  // Hair
+  const hairColors = [0x222211, 0x111100, 0x332211, 0x553322, 0x666655];
+  const hair = new THREE.Mesh(
+    new THREE.SphereGeometry(0.27, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2),
+    new THREE.MeshLambertMaterial({ color: hairColors[Math.floor(Math.random() * hairColors.length)] })
+  );
+  hair.position.y = 1.4;
+  group.add(hair);
+  
+  return group;
+}
+
+// Create a fox mesh
+function createFoxMesh(): THREE.Group {
+  const group = new THREE.Group();
+  
+  // Body
+  const body = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.2, 0.25, 0.7, 8),
+    new THREE.MeshLambertMaterial({ color: 0xdd6622 })
+  );
+  body.rotation.x = Math.PI / 2;
+  body.position.set(0, 0.3, 0);
+  group.add(body);
+  
+  // Head
+  const head = new THREE.Mesh(
+    new THREE.SphereGeometry(0.2, 8, 8),
+    new THREE.MeshLambertMaterial({ color: 0xdd6622 })
+  );
+  head.position.set(0, 0.35, 0.4);
+  group.add(head);
+  
+  // Snout
+  const snout = new THREE.Mesh(
+    new THREE.ConeGeometry(0.1, 0.25, 6),
+    new THREE.MeshLambertMaterial({ color: 0xeeeeee })
+  );
+  snout.rotation.x = -Math.PI / 2;
+  snout.position.set(0, 0.3, 0.6);
+  group.add(snout);
+  
+  // Ears
+  for (let side = -1; side <= 1; side += 2) {
+    const ear = new THREE.Mesh(
+      new THREE.ConeGeometry(0.08, 0.2, 4),
+      new THREE.MeshLambertMaterial({ color: 0xdd6622 })
+    );
+    ear.position.set(side * 0.12, 0.55, 0.35);
+    group.add(ear);
+  }
+  
+  // Tail
+  const tail = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.05, 0.15, 0.5, 6),
+    new THREE.MeshLambertMaterial({ color: 0xeeeeee })
+  );
+  tail.rotation.x = Math.PI / 4;
+  tail.position.set(0, 0.4, -0.45);
+  group.add(tail);
+  
+  // Legs
+  for (let lx = -1; lx <= 1; lx += 2) {
+    for (let lz = -1; lz <= 1; lz += 2) {
+      const leg = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.04, 0.04, 0.25, 4),
+        new THREE.MeshLambertMaterial({ color: 0x111111 })
+      );
+      leg.position.set(lx * 0.12, 0.1, lz * 0.15);
+      group.add(leg);
+    }
+  }
+  
+  return group;
+}
+
+// Spawn outdoor NPCs
+function spawnOutdoorNPCs() {
+  // Spawn 15 people and 5 foxes in the city
+  for (let i = 0; i < 20; i++) {
+    const isFox = i >= 15;
+    const mesh = isFox ? createFoxMesh() : createPersonMesh();
+    
+    // Random position in alleyways
+    const x = -35 + Math.random() * 70;
+    const z = -40 + Math.random() * 45;
+    
+    mesh.position.set(x, 0, z);
+    outdoorScene.add(mesh);
+    
+    outdoorNPCs.push({
+      mesh,
+      x,
+      z,
+      targetX: x,
+      targetZ: z,
+      speed: isFox ? 0.08 : 0.04,
+      type: isFox ? 'fox' : 'person',
+      indoor: false,
+      buildingIdx: -1,
+      floorIdx: -1
+    });
+  }
+}
+
+// Spawn indoor NPCs for current floor
+function spawnIndoorNPCs(buildingIdx: number, floorIdx: number, floorW: number, floorD: number) {
+  // Clear existing indoor NPCs
+  for (const npc of indoorNPCs) {
+    indoorScene.remove(npc.mesh);
+  }
+  indoorNPCs.length = 0;
+  
+  // Spawn 3-6 NPCs per floor
+  const count = 3 + Math.floor(Math.random() * 4);
+  for (let i = 0; i < count; i++) {
+    const isFox = Math.random() < 0.15; // 15% chance of fox
+    const mesh = isFox ? createFoxMesh() : createPersonMesh();
+    
+    // Random position on floor (avoiding edges)
+    const x = -floorW/2 + 3 + Math.random() * (floorW - 6);
+    const z = -floorD/2 + 3 + Math.random() * (floorD - 6);
+    
+    mesh.position.set(x, 0, z);
+    indoorScene.add(mesh);
+    
+    indoorNPCs.push({
+      mesh,
+      x,
+      z,
+      targetX: x,
+      targetZ: z,
+      speed: isFox ? 0.06 : 0.03,
+      type: isFox ? 'fox' : 'person',
+      indoor: true,
+      buildingIdx,
+      floorIdx
+    });
+  }
+}
+
+// Update NPC positions
+function updateNPCs() {
+  const npcsToUpdate = state.mode === 'outdoor' ? outdoorNPCs : indoorNPCs;
+  
+  for (const npc of npcsToUpdate) {
+    // Check if reached target
+    const dx = npc.targetX - npc.x;
+    const dz = npc.targetZ - npc.z;
+    const dist = Math.sqrt(dx * dx + dz * dz);
+    
+    if (dist < 0.5) {
+      // Pick new target
+      if (npc.indoor) {
+        const hw = floor.w / 2 - 3;
+        const hd = floor.d / 2 - 3;
+        npc.targetX = -hw + Math.random() * hw * 2;
+        npc.targetZ = -hd + Math.random() * hd * 2;
+      } else {
+        // Outdoor - wander in alleyways
+        npc.targetX = npc.x + (Math.random() - 0.5) * 20;
+        npc.targetZ = npc.z + (Math.random() - 0.5) * 20;
+        // Clamp to city bounds
+        npc.targetX = Math.max(-38, Math.min(38, npc.targetX));
+        npc.targetZ = Math.max(-42, Math.min(3, npc.targetZ));
+      }
+    } else {
+      // Move towards target
+      const moveX = (dx / dist) * npc.speed;
+      const moveZ = (dz / dist) * npc.speed;
+      npc.x += moveX;
+      npc.z += moveZ;
+      npc.mesh.position.set(npc.x, 0, npc.z);
+      
+      // Face movement direction
+      npc.mesh.rotation.y = Math.atan2(moveX, moveZ);
+    }
+    
+    // Simple walk animation (bobbing)
+    if (dist > 0.5) {
+      npc.mesh.position.y = Math.abs(Math.sin(Date.now() / (npc.type === 'fox' ? 80 : 150))) * 0.1;
+    }
+  }
+}
+
+// Initialize outdoor NPCs
+spawnOutdoorNPCs();
+
+// ============================================
 // INDOOR SCENE
 // ============================================
 const indoorAmbient = new THREE.AmbientLight(0xffffff, 0.5);
@@ -1155,6 +1395,7 @@ function enter(i: number) {
   player.x = 0;
   player.z = floor.d / 2 - 2;
   playerGroup.position.set(0, 0.1, player.z);
+  spawnIndoorNPCs(i, 0, floor.w, floor.d);
   updateUI();
 }
 
@@ -1183,6 +1424,7 @@ function goUp() {
   player.x = floor.w / 2 - 6;
   player.z = -floor.d / 2 + 5;
   playerGroup.position.set(player.x, 0.1, player.z);
+  spawnIndoorNPCs(state.currentBuilding, state.currentFloor, floor.w, floor.d);
   updateUI();
 }
 
@@ -1194,6 +1436,7 @@ function goDown() {
   player.x = floor.w / 2 - 3;
   player.z = -floor.d / 2 + 5;
   playerGroup.position.set(player.x, 0.1, player.z);
+  spawnIndoorNPCs(state.currentBuilding, state.currentFloor, floor.w, floor.d);
   updateUI();
 }
 
@@ -1214,6 +1457,7 @@ function jumpToLeftBuilding() {
   player.x = floor.w / 2 - 4; // Arrive on right side
   player.z = floor.d / 2 - 4;
   playerGroup.position.set(player.x, 0.1, player.z);
+  spawnIndoorNPCs(leftIdx, state.currentFloor, floor.w, floor.d);
   updateUI();
 }
 
@@ -1229,6 +1473,7 @@ function jumpToRightBuilding() {
   player.x = -floor.w / 2 + 4; // Arrive on left side
   player.z = floor.d / 2 - 4;
   playerGroup.position.set(player.x, 0.1, player.z);
+  spawnIndoorNPCs(rightIdx, state.currentFloor, floor.w, floor.d);
   updateUI();
 }
 
@@ -1403,6 +1648,7 @@ function updateCamera() {
 function animate() {
   requestAnimationFrame(animate);
   update();
+  updateNPCs();
   updateCamera();
   drawMinimap();
   renderer.render(scene, camera);
