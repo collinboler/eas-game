@@ -1010,6 +1010,124 @@ function updateUI() {
 }
 
 // ============================================
+// MINIMAP - Kowloon Walled City layout
+// ============================================
+const minimapCanvas = document.getElementById('minimap-canvas') as HTMLCanvasElement;
+const minimapCtx = minimapCanvas?.getContext('2d');
+
+function drawMinimap() {
+  if (!minimapCtx || !minimapCanvas) return;
+  const ctx = minimapCtx;
+  const W = minimapCanvas.width;
+  const H = minimapCanvas.height;
+  
+  // Clear
+  ctx.fillStyle = '#1a1510';
+  ctx.fillRect(0, 0, W, H);
+  
+  // Draw irregular city boundary (like Kowloon's shape)
+  ctx.strokeStyle = '#6a5040';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(10, 30);
+  ctx.lineTo(30, 10);
+  ctx.lineTo(150, 8);
+  ctx.lineTo(170, 25);
+  ctx.lineTo(175, 100);
+  ctx.lineTo(160, 130);
+  ctx.lineTo(20, 135);
+  ctx.lineTo(5, 110);
+  ctx.closePath();
+  ctx.stroke();
+  
+  // Fill city area
+  ctx.fillStyle = '#2a2520';
+  ctx.fill();
+  
+  // Draw dense building blocks (Kowloon style - irregular packed buildings)
+  ctx.fillStyle = '#3a3530';
+  
+  // Main building blocks
+  const blocks = [
+    { x: 15, y: 35, w: 25, h: 20 },
+    { x: 45, y: 20, w: 30, h: 35 },
+    { x: 80, y: 15, w: 25, h: 25 },
+    { x: 110, y: 20, w: 35, h: 30 },
+    { x: 150, y: 30, w: 20, h: 25 },
+    { x: 20, y: 60, w: 35, h: 30 },
+    { x: 60, y: 55, w: 25, h: 40 },
+    { x: 90, y: 50, w: 30, h: 35 },
+    { x: 125, y: 55, w: 35, h: 40 },
+    { x: 25, y: 95, w: 40, h: 30 },
+    { x: 70, y: 100, w: 35, h: 25 },
+    { x: 110, y: 100, w: 45, h: 28 },
+  ];
+  
+  for (const b of blocks) {
+    ctx.fillRect(b.x, b.y, b.w, b.h);
+  }
+  
+  // Draw narrow alleys (dark lines between blocks)
+  ctx.strokeStyle = '#151210';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 15; i++) {
+    ctx.beginPath();
+    ctx.moveTo(20 + Math.random() * 140, 20 + Math.random() * 50);
+    ctx.lineTo(20 + Math.random() * 140, 70 + Math.random() * 50);
+    ctx.stroke();
+  }
+  for (let i = 0; i < 10; i++) {
+    ctx.beginPath();
+    ctx.moveTo(15 + Math.random() * 50, 30 + Math.random() * 90);
+    ctx.lineTo(100 + Math.random() * 60, 30 + Math.random() * 90);
+    ctx.stroke();
+  }
+  
+  // Draw the main buildings (our game buildings) - row at bottom
+  const buildingY = 115;
+  const buildingH = 12;
+  const startX = 25;
+  const spacing = 22;
+  
+  for (let i = 0; i < buildingsData.length; i++) {
+    const bx = startX + i * spacing;
+    const isCurrentBuilding = state.mode === 'indoor' && state.currentBuilding === i;
+    
+    // Building outline
+    ctx.fillStyle = isCurrentBuilding ? '#ff6644' : '#4a4540';
+    ctx.fillRect(bx, buildingY, 18, buildingH);
+    
+    // Building border
+    ctx.strokeStyle = isCurrentBuilding ? '#ffaa66' : '#5a5550';
+    ctx.lineWidth = isCurrentBuilding ? 2 : 1;
+    ctx.strokeRect(bx, buildingY, 18, buildingH);
+  }
+  
+  // Draw player position when outside
+  if (state.mode === 'outdoor') {
+    // Map player world position to minimap
+    const px = startX + ((player.x + 42) / 84) * (spacing * 6 + 18);
+    const py = buildingY + buildingH + 3;
+    
+    // Player dot (pulsing)
+    ctx.fillStyle = '#ff4444';
+    ctx.beginPath();
+    ctx.arc(px, py, 3 + Math.sin(Date.now() / 200) * 0.5, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // "YOU" label
+    ctx.fillStyle = '#ff6666';
+    ctx.font = '8px monospace';
+    ctx.fillText('▲', px - 3, py + 10);
+  }
+  
+  // Title on map
+  ctx.fillStyle = '#8a7060';
+  ctx.font = 'bold 7px monospace';
+  ctx.fillText('九龍城寨', 70, 145);
+}
+
+// ============================================
 // GAME LOGIC
 // ============================================
 let floor = { w: 28, d: 20, top: false, ground: true, leftRoof: false, rightRoof: false };
@@ -1248,6 +1366,7 @@ function animate() {
   requestAnimationFrame(animate);
   update();
   updateCamera();
+  drawMinimap();
   renderer.render(scene, camera);
 }
 
@@ -1257,4 +1376,5 @@ window.addEventListener('resize', () => {
 });
 
 updateUI();
+drawMinimap();
 animate();
