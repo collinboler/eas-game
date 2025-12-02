@@ -526,6 +526,135 @@ function createCityBuilding(config: typeof cityLayout[0], index: number) {
   doorLight.position.set(0, 3, d/2 + 1);
   group.add(doorLight);
   
+  // ========== VERTICAL CHINESE SIGNS (KWC signature) ==========
+  // These hang perpendicular from buildings with Chinese characters
+  const chineseTexts = [
+    '診所', '藥房', '茶餐廳', '酒樓', '雜貨', '理髮', '牙科', '眼鏡',
+    '五金', '電器', '洗衣', '麵家', '粥店', '燒味', '豆腐', '餅家',
+    '涼茶', '報紙', '雜誌', '修理', '裁縫', '花店', '魚店', '肉檔',
+    '大押', '金行', '當鋪', '藥材', '中醫', '西醫', '牙醫', '獸醫'
+  ];
+  const signColors = [0xdd2222, 0x22aa22, 0x2222dd, 0xdd8822, 0xaa22aa, 0x22aaaa, 0xdddd22, 0xffffff];
+  const bgColors = [0x111144, 0x441111, 0x114411, 0x444411, 0x114444, 0x441144, 0x222222, 0x880000];
+  
+  // Add 2-5 vertical hanging signs
+  const numVerticalSigns = 2 + Math.floor(Math.random() * 4);
+  for (let vs = 0; vs < numVerticalSigns; vs++) {
+    const signHeight = 3 + Math.random() * 5;
+    const signWidth = 0.8 + Math.random() * 0.4;
+    const signY = 4 + Math.random() * (height - 8);
+    const signX = -w/2 + 1 + vs * (w / numVerticalSigns) + Math.random() * 1;
+    const signExtend = 1.5 + Math.random(); // How far it sticks out
+    
+    // Sign board (vertical rectangle)
+    const bgColor = bgColors[Math.floor(Math.random() * bgColors.length)];
+    const signBoard = new THREE.Mesh(
+      new THREE.BoxGeometry(signWidth, signHeight, 0.15),
+      new THREE.MeshLambertMaterial({ color: bgColor, transparent: true, opacity: 1 })
+    );
+    signBoard.position.set(signX, signY, d/2 + signExtend);
+    group.add(signBoard);
+    allBuildingMeshes.push(signBoard);
+    
+    // Gold/red border
+    const borderColor = Math.random() > 0.5 ? 0xdaa520 : 0xcc3333;
+    const border = new THREE.Mesh(
+      new THREE.BoxGeometry(signWidth + 0.1, signHeight + 0.1, 0.12),
+      new THREE.MeshLambertMaterial({ color: borderColor })
+    );
+    border.position.set(signX, signY, d/2 + signExtend - 0.02);
+    group.add(border);
+    
+    // Create Chinese text texture
+    const textCanvas = document.createElement('canvas');
+    const numChars = 2 + Math.floor(Math.random() * 3);
+    textCanvas.width = 64;
+    textCanvas.height = 64 * numChars;
+    const textCtx = textCanvas.getContext('2d');
+    if (textCtx) {
+      // Background
+      textCtx.fillStyle = '#' + bgColor.toString(16).padStart(6, '0');
+      textCtx.fillRect(0, 0, textCanvas.width, textCanvas.height);
+      
+      // Text color
+      const textColor = signColors[Math.floor(Math.random() * signColors.length)];
+      textCtx.fillStyle = '#' + textColor.toString(16).padStart(6, '0');
+      textCtx.font = 'bold 52px serif';
+      textCtx.textAlign = 'center';
+      textCtx.textBaseline = 'middle';
+      
+      // Write characters vertically
+      const text = chineseTexts[Math.floor(Math.random() * chineseTexts.length)];
+      for (let c = 0; c < Math.min(text.length, numChars); c++) {
+        textCtx.fillText(text[c] || '', 32, 32 + c * 64);
+      }
+    }
+    
+    const textTexture = new THREE.CanvasTexture(textCanvas);
+    const textFace = new THREE.Mesh(
+      new THREE.PlaneGeometry(signWidth - 0.15, signHeight - 0.15),
+      new THREE.MeshBasicMaterial({ map: textTexture })
+    );
+    textFace.position.set(signX, signY, d/2 + signExtend + 0.08);
+    group.add(textFace);
+    allBuildingMeshes.push(textFace);
+    
+    // Mount bracket
+    const bracket = new THREE.Mesh(
+      new THREE.BoxGeometry(0.15, 0.15, signExtend),
+      new THREE.MeshLambertMaterial({ color: 0x444444 })
+    );
+    bracket.position.set(signX, signY + signHeight/2 - 0.3, d/2 + signExtend/2);
+    group.add(bracket);
+  }
+  
+  // ========== HORIZONTAL SHOP SIGNS ==========
+  // Lower signs near ground floor (like shop names)
+  const numShopSigns = 1 + Math.floor(Math.random() * 2);
+  for (let ss = 0; ss < numShopSigns; ss++) {
+    const shopSignW = 2 + Math.random() * 2;
+    const shopSignH = 0.6 + Math.random() * 0.4;
+    const shopSignX = -w/2 + 2 + ss * 3 + Math.random() * 1;
+    const shopSignY = 2.8 + ss * 0.5;
+    
+    const shopBg = bgColors[Math.floor(Math.random() * bgColors.length)];
+    const shopSign = new THREE.Mesh(
+      new THREE.BoxGeometry(shopSignW, shopSignH, 0.1),
+      new THREE.MeshLambertMaterial({ color: shopBg })
+    );
+    shopSign.position.set(shopSignX, shopSignY, d/2 + 0.5);
+    group.add(shopSign);
+    allBuildingMeshes.push(shopSign);
+    
+    // Create horizontal text
+    const hCanvas = document.createElement('canvas');
+    hCanvas.width = 256;
+    hCanvas.height = 64;
+    const hCtx = hCanvas.getContext('2d');
+    if (hCtx) {
+      hCtx.fillStyle = '#' + shopBg.toString(16).padStart(6, '0');
+      hCtx.fillRect(0, 0, 256, 64);
+      
+      const hTextColor = signColors[Math.floor(Math.random() * signColors.length)];
+      hCtx.fillStyle = '#' + hTextColor.toString(16).padStart(6, '0');
+      hCtx.font = 'bold 40px serif';
+      hCtx.textAlign = 'center';
+      hCtx.textBaseline = 'middle';
+      
+      const shopText = chineseTexts[Math.floor(Math.random() * chineseTexts.length)];
+      hCtx.fillText(shopText, 128, 32);
+    }
+    
+    const hTexture = new THREE.CanvasTexture(hCanvas);
+    const hFace = new THREE.Mesh(
+      new THREE.PlaneGeometry(shopSignW - 0.1, shopSignH - 0.1),
+      new THREE.MeshBasicMaterial({ map: hTexture })
+    );
+    hFace.position.set(shopSignX, shopSignY, d/2 + 0.56);
+    group.add(hFace);
+    allBuildingMeshes.push(hFace);
+  }
+  
   // Store building data for entry
   buildingsData.push({ x, z, floors, group, width: w, depth: d });
   
@@ -3313,6 +3442,149 @@ function createFloorView(buildingIdx: number, floor: number) {
     const stairLight = new THREE.PointLight(0xffeedd, 0.5, 10);
     stairLight.position.set(w/2 - 4, 3, -d/2 + 3);
     group.add(stairLight);
+    
+    // ========== LOBBY CLUTTER AND DETAILS ==========
+    
+    // Trash and debris in corridors
+    for (let i = 0; i < 20; i++) {
+      const trashX = (Math.random() - 0.5) * w * 0.7;
+      const trashZ = (Math.random() - 0.5) * d * 0.7;
+      const trash = new THREE.Mesh(
+        new THREE.BoxGeometry(0.15 + Math.random() * 0.2, 0.1 + Math.random() * 0.15, 0.15 + Math.random() * 0.2),
+        new THREE.MeshLambertMaterial({ color: [0x4a4540, 0x5a5550, 0x3a3530, 0x555550][Math.floor(Math.random() * 4)] })
+      );
+      trash.position.set(trashX, 0.08, trashZ);
+      trash.rotation.y = Math.random() * Math.PI;
+      group.add(trash);
+    }
+    
+    // Pipes along ceiling
+    for (let i = 0; i < 6; i++) {
+      const pipeLen = 8 + Math.random() * 15;
+      const pipe = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.08, 0.08, pipeLen, 6),
+        new THREE.MeshLambertMaterial({ color: 0x5a4a3a })
+      );
+      pipe.rotation.z = Math.PI / 2;
+      pipe.position.set((Math.random() - 0.5) * w * 0.5, wallH - 0.3, (Math.random() - 0.5) * d * 0.6);
+      group.add(pipe);
+    }
+    
+    // Wires hanging from ceiling
+    for (let i = 0; i < 15; i++) {
+      const wireLen = 3 + Math.random() * 8;
+      const wire = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.015, 0.015, wireLen, 4),
+        new THREE.MeshBasicMaterial({ color: 0x222222 })
+      );
+      wire.rotation.x = Math.random() * Math.PI;
+      wire.rotation.z = Math.PI / 2 + (Math.random() - 0.5) * 0.3;
+      wire.position.set((Math.random() - 0.5) * w * 0.7, wallH - 0.5 - Math.random() * 0.5, (Math.random() - 0.5) * d * 0.7);
+      group.add(wire);
+    }
+    
+    // Shoes/slippers outside rooms
+    for (let i = 0; i < 8; i++) {
+      const shoeX = -w/2 + 6 + Math.random() * 3;
+      const shoeZ = -d/2 + 5 + i * 4;
+      const shoe = new THREE.Mesh(
+        new THREE.BoxGeometry(0.25, 0.08, 0.12),
+        new THREE.MeshLambertMaterial({ color: [0x333333, 0x4a3a2a, 0x2a2a4a][Math.floor(Math.random() * 3)] })
+      );
+      shoe.position.set(shoeX, 0.04, shoeZ);
+      shoe.rotation.y = Math.random() * 0.5;
+      group.add(shoe);
+    }
+    
+    // Buckets
+    for (let i = 0; i < 4; i++) {
+      const bucket = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.2, 0.15, 0.35, 8),
+        new THREE.MeshLambertMaterial({ color: [0x335588, 0x885533, 0x555555][Math.floor(Math.random() * 3)] })
+      );
+      bucket.position.set(-12 + i * 6 + Math.random() * 2, 0.175, (Math.random() - 0.5) * d * 0.5);
+      group.add(bucket);
+    }
+    
+    // Old bicycle
+    const bikeX = -w/2 + 3;
+    const bikeZ = 3;
+    const bikeFrame = new THREE.Mesh(
+      new THREE.BoxGeometry(0.08, 0.5, 1.2),
+      new THREE.MeshLambertMaterial({ color: 0x4a4a4a })
+    );
+    bikeFrame.position.set(bikeX, 0.5, bikeZ);
+    bikeFrame.rotation.x = 0.1;
+    group.add(bikeFrame);
+    const bikeWheel1 = new THREE.Mesh(
+      new THREE.TorusGeometry(0.35, 0.04, 8, 16),
+      new THREE.MeshLambertMaterial({ color: 0x333333 })
+    );
+    bikeWheel1.position.set(bikeX, 0.4, bikeZ - 0.5);
+    group.add(bikeWheel1);
+    const bikeWheel2 = new THREE.Mesh(
+      new THREE.TorusGeometry(0.35, 0.04, 8, 16),
+      new THREE.MeshLambertMaterial({ color: 0x333333 })
+    );
+    bikeWheel2.position.set(bikeX, 0.4, bikeZ + 0.5);
+    group.add(bikeWheel2);
+    
+    // Notice board on wall
+    const noticeBoard = new THREE.Mesh(
+      new THREE.BoxGeometry(2, 1.5, 0.08),
+      new THREE.MeshLambertMaterial({ color: 0x8a7a6a })
+    );
+    noticeBoard.position.set(-w/2 + 0.2, 1.8, 0);
+    group.add(noticeBoard);
+    // Papers on board
+    for (let p = 0; p < 6; p++) {
+      const paper = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.4 + Math.random() * 0.3, 0.5 + Math.random() * 0.3),
+        new THREE.MeshBasicMaterial({ color: [0xeeeeee, 0xffffaa, 0xffdddd, 0xddffdd][Math.floor(Math.random() * 4)] })
+      );
+      paper.position.set(-w/2 + 0.25, 1.5 + Math.random() * 0.6, -0.6 + p * 0.25);
+      paper.rotation.y = Math.PI / 2;
+      paper.rotation.z = (Math.random() - 0.5) * 0.2;
+      group.add(paper);
+    }
+    
+    // Stacked boxes near reception
+    for (let b = 0; b < 4; b++) {
+      const box = new THREE.Mesh(
+        new THREE.BoxGeometry(0.6 + Math.random() * 0.3, 0.4, 0.6 + Math.random() * 0.3),
+        new THREE.MeshLambertMaterial({ color: 0x7a6a5a })
+      );
+      box.position.set(-9 + Math.random() * 0.5, 0.2 + b * 0.35, 7 + Math.random() * 0.5);
+      box.rotation.y = Math.random() * 0.3;
+      group.add(box);
+    }
+    
+    // Fire extinguisher
+    const extinguisher = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.1, 0.1, 0.5, 8),
+      new THREE.MeshLambertMaterial({ color: 0xaa3333 })
+    );
+    extinguisher.position.set(w/2 - 0.3, 0.8, 5);
+    group.add(extinguisher);
+    
+    // Laundry hanging
+    const laundryLine = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.01, 0.01, 10, 4),
+      new THREE.MeshBasicMaterial({ color: 0x666666 })
+    );
+    laundryLine.rotation.z = Math.PI / 2;
+    laundryLine.position.set(-5, 3.2, -5);
+    group.add(laundryLine);
+    const clothColors = [0x8a7a6a, 0x6a7a8a, 0x7a8a7a, 0x9a8a7a];
+    for (let c = 0; c < 4; c++) {
+      const cloth = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.6, 0.8),
+        new THREE.MeshLambertMaterial({ color: clothColors[c], side: THREE.DoubleSide })
+      );
+      cloth.position.set(-8 + c * 2, 2.6, -5);
+      cloth.rotation.y = (Math.random() - 0.5) * 0.3;
+      group.add(cloth);
+    }
 
   // ====== APARTMENT FLOORS - Multiple corridors with rooms ======
   } else {
@@ -5829,6 +6101,125 @@ function drawMinimap() {
     ctx.moveTo(pp.x, pp.y);
     ctx.lineTo(pp.x + Math.sin(angle) * 6, pp.y - Math.cos(angle) * 6);
     ctx.stroke();
+  } else if (state.mode === 'underground') {
+    // Underground minimap - show underground layout
+    // Clear and redraw with underground theme
+    ctx.fillStyle = '#0a0808';
+    ctx.fillRect(4, 4, W - 8, H - 20);
+    
+    // Underground boundary
+    ctx.strokeStyle = '#3a2a20';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(6, 6, W - 12, H - 24);
+    
+    // Scale for underground (100x120 area mapped to minimap)
+    const ugScaleX = (W - 20) / 100;
+    const ugScaleZ = (H - 32) / 120;
+    const ugScale = Math.min(ugScaleX, ugScaleZ);
+    const ugOffsetX = W / 2;
+    const ugOffsetY = H / 2 - 6;
+    
+    function undergroundToMap(ux: number, uz: number) {
+      return {
+        x: ugOffsetX + ux * ugScale,
+        y: ugOffsetY + uz * ugScale
+      };
+    }
+    
+    // Draw internal walls
+    ctx.fillStyle = '#3a3530';
+    const ugWalls = [
+      { x: -30, z: -45, w: 18, d: 0.6 },
+      { x: 10, z: -40, w: 22, d: 0.6 },
+      { x: -20, z: -25, w: 16, d: 0.6 },
+      { x: 25, z: -20, w: 20, d: 0.6 },
+      { x: -35, z: -5, w: 14, d: 0.6 },
+      { x: 5, z: 0, w: 24, d: 0.6 },
+      { x: 35, z: 5, w: 12, d: 0.6 },
+      { x: -25, z: 20, w: 18, d: 0.6 },
+      { x: 15, z: 25, w: 16, d: 0.6 },
+      { x: -10, z: 40, w: 20, d: 0.6 },
+      { x: 30, z: 35, w: 14, d: 0.6 },
+      { x: -35, z: 50, w: 16, d: 0.6 },
+      { x: -40, z: -30, w: 0.6, d: 20 },
+      { x: -25, z: -35, w: 0.6, d: 16 },
+      { x: -10, z: -15, w: 0.6, d: 22 },
+      { x: 5, z: -30, w: 0.6, d: 18 },
+      { x: 20, z: -10, w: 0.6, d: 24 },
+      { x: 35, z: -35, w: 0.6, d: 14 },
+      { x: -38, z: 15, w: 0.6, d: 20 },
+      { x: -20, z: 30, w: 0.6, d: 18 },
+      { x: 0, z: 20, w: 0.6, d: 16 },
+      { x: 18, z: 45, w: 0.6, d: 22 },
+      { x: 38, z: 25, w: 0.6, d: 18 },
+      { x: -30, z: 45, w: 0.6, d: 14 },
+    ];
+    
+    for (const wall of ugWalls) {
+      const wp = undergroundToMap(wall.x, wall.z);
+      const ww = Math.max(wall.w * ugScale, 2);
+      const wd = Math.max(wall.d * ugScale, 2);
+      ctx.fillRect(wp.x - ww/2, wp.y - wd/2, ww, wd);
+    }
+    
+    // Draw pillars
+    ctx.fillStyle = '#4a4540';
+    for (let px = -35; px <= 35; px += 20) {
+      for (let pz = -50; pz <= 50; pz += 25) {
+        const pp = undergroundToMap(px, pz);
+        ctx.beginPath();
+        ctx.arc(pp.x, pp.y, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    
+    // Draw exit ladders (green dots)
+    ctx.fillStyle = '#33aa33';
+    for (const drain of drainPositions) {
+      const lp = undergroundToMap(drain.x * 1.1, (drain.z + 35) * 1.1);
+      ctx.beginPath();
+      ctx.arc(lp.x, lp.y, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    
+    // Draw player position in underground
+    const pp = undergroundToMap(player.x, player.z);
+    
+    // Outer glow
+    const pulse = Math.sin(Date.now() / 150) * 1.5;
+    ctx.fillStyle = 'rgba(255, 100, 50, 0.4)';
+    ctx.beginPath();
+    ctx.arc(pp.x, pp.y, 6 + pulse, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Player dot
+    ctx.fillStyle = '#ff6633';
+    ctx.beginPath();
+    ctx.arc(pp.x, pp.y, 4, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // White center
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(pp.x, pp.y, 1.5, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Direction indicator
+    const angle = Math.PI - player.facing;
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(pp.x, pp.y);
+    ctx.lineTo(pp.x + Math.sin(angle) * 6, pp.y - Math.cos(angle) * 6);
+    ctx.stroke();
+    
+    // Underground title
+    ctx.fillStyle = '#6a5a4a';
+    ctx.font = 'bold 8px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('地下 UNDERGROUND', W/2, H - 5);
+    
+    return; // Exit early for underground
   } else {
     // Indoor - show building location
     const bd = buildingsData[state.currentBuilding];
