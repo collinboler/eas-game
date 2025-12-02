@@ -228,7 +228,7 @@ function createFloorView(buildingIdx: number, floor: number) {
   if (!bd) return { w: 28, d: 20, top: false, ground: true, leftRoof: false, rightRoof: false };
   
   const group = new THREE.Group();
-  const w = 28, d = 20, wallH = 4;
+  const w = 50, d = 36, wallH = 4;
   const isTop = floor === bd.floors - 1;
   const isGround = floor === 0;
   const hasLeftBuilding = buildingIdx > 0;
@@ -319,14 +319,14 @@ function createFloorView(buildingIdx: number, floor: number) {
     line.position.set(0, 2, 0);
     group.add(line);
     
-    // Clothes on line
-    const clothColors = [0xff6666, 0x6666ff, 0xffff66, 0x66ff66];
+    // Clothes on line - muted colors
+    const clothColors = [0x8a7060, 0x606878, 0x807870, 0x607060];
     for (let i = 0; i < 4; i++) {
       const cloth = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.8, 1.2),
-        new THREE.MeshBasicMaterial({ color: clothColors[i], side: THREE.DoubleSide })
+        new THREE.PlaneGeometry(0.7, 1),
+        new THREE.MeshLambertMaterial({ color: clothColors[i], side: THREE.DoubleSide })
       );
-      cloth.position.set(-3 + i * 2, 1.5, 0);
+      cloth.position.set(-3 + i * 2, 1.4, 0);
       cloth.rotation.y = 0.1 * (i - 1.5);
       group.add(cloth);
     }
@@ -572,40 +572,27 @@ function createFloorView(buildingIdx: number, floor: number) {
     exitGlow.position.set(0, wallH - 0.5, d/2 - 0.5);
     group.add(exitGlow);
 
-    // Stairwell (back right) - doorframe and stairs visible
-    const stairFrame = new THREE.Mesh(
-      new THREE.BoxGeometry(4, wallH, 0.2),
-      new THREE.MeshLambertMaterial({ color: 0x4a4035 })
-    );
-    stairFrame.position.set(w/2 - 3.5, wallH/2, -d/2 + 0.2);
-    group.add(stairFrame);
-    // Dark stairwell opening
-    const stairOpening = new THREE.Mesh(
-      new THREE.PlaneGeometry(3, 3),
-      new THREE.MeshBasicMaterial({ color: 0x1a1815 })
-    );
-    stairOpening.position.set(w/2 - 3.5, 1.6, -d/2 + 0.25);
-    group.add(stairOpening);
-    // Visible stairs going up
-    for (let s = 0; s < 4; s++) {
+    // UP STAIRS (back right) - light to dark gradient
+    const upColors = [0xaaaaaa, 0x999999, 0x888888, 0x777777, 0x666666, 0x555555, 0x444444];
+    for (let s = 0; s < 7; s++) {
       const step = new THREE.Mesh(
-        new THREE.BoxGeometry(2.5, 0.2, 0.6),
-        new THREE.MeshLambertMaterial({ color: 0x5a5550 })
+        new THREE.BoxGeometry(4.5, 0.3, 1.2),
+        new THREE.MeshLambertMaterial({ color: upColors[s] })
       );
-      step.position.set(w/2 - 3.5, 0.3 + s * 0.4, -d/2 + 2 + s * 0.5);
+      step.position.set(w/2 - 4, 0.15, -d/2 + 1 + s * 1.0);
       group.add(step);
     }
-    // Handrail
-    const rail = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.05, 0.05, 3, 6),
-      new THREE.MeshLambertMaterial({ color: 0x666655 })
+    // UP label
+    const upLabel = new THREE.Mesh(
+      new THREE.PlaneGeometry(3, 0.8),
+      new THREE.MeshBasicMaterial({ color: 0x558855 })
     );
-    rail.rotation.x = Math.PI / 4;
-    rail.position.set(w/2 - 2, 1.5, -d/2 + 3);
-    group.add(rail);
+    upLabel.position.set(w/2 - 4, 2.5, -d/2 + 0.2);
+    group.add(upLabel);
+    
     // Stair light
-    const stairLight = new THREE.PointLight(0xffffee, 0.4, 8);
-    stairLight.position.set(w/2 - 3.5, 2.5, -d/2 + 3);
+    const stairLight = new THREE.PointLight(0xffeedd, 0.5, 10);
+    stairLight.position.set(w/2 - 4, 3, -d/2 + 3);
     group.add(stairLight);
 
     // Ceiling light
@@ -618,16 +605,16 @@ function createFloorView(buildingIdx: number, floor: number) {
     // Hallway carpet
     const hallFloor = new THREE.Mesh(
       new THREE.PlaneGeometry(w, d),
-      new THREE.MeshLambertMaterial({ color: 0x553333 })
+      new THREE.MeshLambertMaterial({ color: 0x4a3530 })
     );
     hallFloor.rotation.x = -Math.PI / 2;
     hallFloor.position.y = 0.01;
     group.add(hallFloor);
 
-    // Carpet pattern
+    // Main corridor runner
     const runner = new THREE.Mesh(
-      new THREE.PlaneGeometry(4, d - 2),
-      new THREE.MeshLambertMaterial({ color: 0x442222 })
+      new THREE.PlaneGeometry(5, d - 4),
+      new THREE.MeshLambertMaterial({ color: 0x3a2520 })
     );
     runner.rotation.x = -Math.PI / 2;
     runner.position.set(0, 0.02, 0);
@@ -648,167 +635,250 @@ function createFloorView(buildingIdx: number, floor: number) {
     front.position.set(0, wallH/2, d/2);
     group.add(front);
 
-    // Apartment doors on both sides
-    const doorPositions = [-8, -4, 0, 4, 8];
-    const apartmentSide = floor % 2 === 0 ? -1 : 1; // Alternate which side is "open"
-    
-    for (const px of doorPositions) {
-      // Left side doors
+    // Many apartment doors on both sides
+    const doorColors = [0x553322, 0x4a3020, 0x5a4030, 0x443322, 0x504028];
+    for (let z = -d/2 + 4; z < d/2 - 4; z += 5) {
+      // Left wall doors
       const leftDoor = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.8, 2.8),
-        new THREE.MeshLambertMaterial({ color: 0x553322 })
+        new THREE.PlaneGeometry(2, 3),
+        new THREE.MeshLambertMaterial({ color: doorColors[Math.floor(Math.random() * 5)] })
       );
-      leftDoor.position.set(-w/2 + 0.2, 1.4, px);
+      leftDoor.position.set(-w/2 + 0.2, 1.5, z);
       leftDoor.rotation.y = Math.PI / 2;
       group.add(leftDoor);
-      
-      // Door number
+      // Door frame
+      const leftFrame = new THREE.Mesh(
+        new THREE.BoxGeometry(0.15, 3.2, 2.3),
+        new THREE.MeshLambertMaterial({ color: 0x3a3025 })
+      );
+      leftFrame.position.set(-w/2 + 0.15, 1.6, z);
+      group.add(leftFrame);
+      // Door number plate
       const numL = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.4, 0.3),
+        new THREE.PlaneGeometry(0.5, 0.35),
         new THREE.MeshBasicMaterial({ color: 0xccaa77 })
       );
-      numL.position.set(-w/2 + 0.25, 2.2, px);
+      numL.position.set(-w/2 + 0.25, 2.3, z);
       numL.rotation.y = Math.PI / 2;
       group.add(numL);
+      // Random light under door
+      if (Math.random() > 0.5) {
+        const glow = new THREE.PointLight(0xffdd88, 0.25, 3);
+        glow.position.set(-w/2 + 1, 0.1, z);
+        group.add(glow);
+      }
 
-      // Right side doors
+      // Right wall doors
       const rightDoor = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.8, 2.8),
-        new THREE.MeshLambertMaterial({ color: 0x443322 })
+        new THREE.PlaneGeometry(2, 3),
+        new THREE.MeshLambertMaterial({ color: doorColors[Math.floor(Math.random() * 5)] })
       );
-      rightDoor.position.set(w/2 - 0.2, 1.4, px);
+      rightDoor.position.set(w/2 - 0.2, 1.5, z);
       rightDoor.rotation.y = -Math.PI / 2;
       group.add(rightDoor);
-      
+      const rightFrame = new THREE.Mesh(
+        new THREE.BoxGeometry(0.15, 3.2, 2.3),
+        new THREE.MeshLambertMaterial({ color: 0x3a3025 })
+      );
+      rightFrame.position.set(w/2 - 0.15, 1.6, z);
+      group.add(rightFrame);
       const numR = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.4, 0.3),
+        new THREE.PlaneGeometry(0.5, 0.35),
         new THREE.MeshBasicMaterial({ color: 0xccaa77 })
       );
-      numR.position.set(w/2 - 0.25, 2.2, px);
+      numR.position.set(w/2 - 0.25, 2.3, z);
       numR.rotation.y = -Math.PI / 2;
       group.add(numR);
-
-      // Some doors have light underneath (occupied)
-      if (Math.random() > 0.4) {
-        const light = new THREE.PointLight(0xffdd88, 0.3, 3);
-        light.position.set(apartmentSide * (w/2 - 1), 0.1, px);
-        group.add(light);
+      if (Math.random() > 0.5) {
+        const glow = new THREE.PointLight(0xffdd88, 0.25, 3);
+        glow.position.set(w/2 - 1, 0.1, z);
+        group.add(glow);
       }
     }
 
-    // Wall decorations - peeling posters
-    for (let i = 0; i < 3; i++) {
-      const poster = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.5, 2),
-        new THREE.MeshBasicMaterial({ color: [0xcc6666, 0x66cc66, 0x6666cc][i] })
+    // Vending machines (scattered)
+    const vendingPositions = [
+      { x: -w/2 + 2, z: -8 },
+      { x: w/2 - 2, z: 5 },
+    ];
+    for (const pos of vendingPositions) {
+      const vend = new THREE.Mesh(
+        new THREE.BoxGeometry(1.5, 2.2, 1),
+        new THREE.MeshLambertMaterial({ color: 0x334455 })
       );
-      poster.position.set(-6 + i * 6, 2, -d/2 + 0.2);
-      group.add(poster);
+      vend.position.set(pos.x, 1.1, pos.z);
+      group.add(vend);
+      // Screen
+      const screen = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.2, 1),
+        new THREE.MeshBasicMaterial({ color: 0x88aacc })
+      );
+      screen.position.set(pos.x + (pos.x > 0 ? -0.76 : 0.76), 1.4, pos.z);
+      screen.rotation.y = pos.x > 0 ? Math.PI / 2 : -Math.PI / 2;
+      group.add(screen);
+      const vendLight = new THREE.PointLight(0x88aacc, 0.3, 4);
+      vendLight.position.set(pos.x, 1.5, pos.z);
+      group.add(vendLight);
+    }
+
+    // Potted plants
+    const plantPositions = [
+      { x: -10, z: 10 }, { x: 10, z: -10 }, { x: -15, z: -5 }, { x: 15, z: 8 }
+    ];
+    for (const pos of plantPositions) {
+      const pot = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.4, 0.35, 0.6, 8),
+        new THREE.MeshLambertMaterial({ color: 0x6a4030 })
+      );
+      pot.position.set(pos.x, 0.3, pos.z);
+      group.add(pot);
+      const plant = new THREE.Mesh(
+        new THREE.SphereGeometry(0.6, 8, 6),
+        new THREE.MeshLambertMaterial({ color: 0x3a5530 })
+      );
+      plant.position.set(pos.x, 0.9, pos.z);
+      group.add(plant);
+    }
+
+    // Benches/seats
+    const benchPositions = [{ x: -8, z: 0 }, { x: 12, z: 0 }];
+    for (const pos of benchPositions) {
+      const bench = new THREE.Mesh(
+        new THREE.BoxGeometry(3, 0.6, 1),
+        new THREE.MeshLambertMaterial({ color: 0x5a4535 })
+      );
+      bench.position.set(pos.x, 0.3, pos.z);
+      group.add(bench);
+      // Legs
+      for (const lx of [-1.2, 1.2]) {
+        const leg = new THREE.Mesh(
+          new THREE.BoxGeometry(0.15, 0.6, 0.8),
+          new THREE.MeshLambertMaterial({ color: 0x3a3025 })
+        );
+        leg.position.set(pos.x + lx, 0.3, pos.z);
+        group.add(leg);
+      }
+    }
+
+    // Trash cans
+    const trashPositions = [{ x: -5, z: 12 }, { x: 8, z: -12 }, { x: -18, z: 0 }];
+    for (const pos of trashPositions) {
+      const trash = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.4, 0.35, 0.9, 8),
+        new THREE.MeshLambertMaterial({ color: 0x404040 })
+      );
+      trash.position.set(pos.x, 0.45, pos.z);
+      group.add(trash);
+    }
+
+    // Wall notices/bulletin boards
+    for (let i = 0; i < 5; i++) {
+      const board = new THREE.Mesh(
+        new THREE.BoxGeometry(2, 1.4, 0.08),
+        new THREE.MeshLambertMaterial({ color: 0x5a5045 })
+      );
+      board.position.set(-18 + i * 8, 2.2, -d/2 + 0.2);
+      group.add(board);
+      // Papers on board
+      for (let p = 0; p < 3; p++) {
+        const paper = new THREE.Mesh(
+          new THREE.PlaneGeometry(0.5, 0.6),
+          new THREE.MeshLambertMaterial({ color: 0x908070 + Math.random() * 0x101010 })
+        );
+        paper.position.set(-18.5 + i * 8 + p * 0.6, 2.2, -d/2 + 0.25);
+        group.add(paper);
+      }
     }
 
     // Fire extinguisher
     const extinguisher = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.15, 0.15, 0.6, 8),
-      new THREE.MeshBasicMaterial({ color: 0xff2222 })
+      new THREE.CylinderGeometry(0.12, 0.14, 0.5, 8),
+      new THREE.MeshLambertMaterial({ color: 0x8b2020 })
     );
-    extinguisher.position.set(-w/2 + 0.4, 1.2, 6);
+    extinguisher.position.set(-w/2 + 0.5, 1.1, 10);
     group.add(extinguisher);
 
-    // Flickering hallway lights
-    const ceilLight1 = new THREE.PointLight(0xffffcc, 0.8, 15);
-    ceilLight1.position.set(-5, 3.5, 0);
-    group.add(ceilLight1);
-    const ceilLight2 = new THREE.PointLight(0xffffcc, 0.6, 15);
-    ceilLight2.position.set(5, 3.5, 0);
-    group.add(ceilLight2);
+    // Utility closet door (back wall)
+    const closetDoor = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.8, 2.8),
+      new THREE.MeshLambertMaterial({ color: 0x505050 })
+    );
+    closetDoor.position.set(-10, 1.4, -d/2 + 0.2);
+    group.add(closetDoor);
 
-    // Floor number on wall
-    const floorNum = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.2, 0.8),
-      new THREE.MeshBasicMaterial({ color: 0x3a3530 })
+    // Laundry area (corner alcove)
+    const washer = new THREE.Mesh(
+      new THREE.BoxGeometry(1.2, 1.3, 1),
+      new THREE.MeshLambertMaterial({ color: 0xcccccc })
     );
-    floorNum.position.set(0, 2.5, -d/2 + 0.2);
-    group.add(floorNum);
+    washer.position.set(-w/2 + 3, 0.65, d/2 - 3);
+    group.add(washer);
+    const washerDoor = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.35, 0.35, 0.1, 12),
+      new THREE.MeshBasicMaterial({ color: 0x333333 })
+    );
+    washerDoor.rotation.z = Math.PI / 2;
+    washerDoor.position.set(-w/2 + 3.6, 0.8, d/2 - 3);
+    group.add(washerDoor);
 
-    // STAIRWELL AREA (back right corner) - UP and DOWN side by side
-    // Stairwell enclosure
-    const stairwellWallL = new THREE.Mesh(
-      new THREE.BoxGeometry(0.2, wallH, 7),
-      new THREE.MeshLambertMaterial({ color: 0x4a4540 })
-    );
-    stairwellWallL.position.set(w/2 - 8, wallH/2, -d/2 + 3.5);
-    group.add(stairwellWallL);
-    
-    // Stairwell floor (landing)
-    const landing = new THREE.Mesh(
-      new THREE.PlaneGeometry(7.5, 6),
-      new THREE.MeshLambertMaterial({ color: 0x3a3530 })
-    );
-    landing.rotation.x = -Math.PI / 2;
-    landing.position.set(w/2 - 4, 0.03, -d/2 + 3);
-    group.add(landing);
-
-    // UP stairs (right side of stairwell)
-    const upSign = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.5, 0.4),
-      new THREE.MeshBasicMaterial({ color: 0x2a2520 })
-    );
-    upSign.position.set(w/2 - 2, 3, -d/2 + 0.2);
-    group.add(upSign);
-    // Stairs going up
-    for (let s = 0; s < 5; s++) {
-      const step = new THREE.Mesh(
-        new THREE.BoxGeometry(3, 0.18, 0.5),
-        new THREE.MeshLambertMaterial({ color: 0x5a5550 })
+    // Ceiling lights (multiple)
+    const lightPositions = [
+      { x: -15, z: -10 }, { x: 0, z: -10 }, { x: 15, z: -10 },
+      { x: -15, z: 5 }, { x: 0, z: 5 }, { x: 15, z: 5 },
+    ];
+    for (const pos of lightPositions) {
+      const light = new THREE.PointLight(0xffffcc, 0.5, 12);
+      light.position.set(pos.x, 3.5, pos.z);
+      group.add(light);
+      // Light fixture
+      const fixture = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.3, 0.4, 0.1, 8),
+        new THREE.MeshBasicMaterial({ color: 0xffffee })
       );
-      step.position.set(w/2 - 2, 0.2 + s * 0.35, -d/2 + 1.5 + s * 0.45);
+      fixture.position.set(pos.x, 3.9, pos.z);
+      group.add(fixture);
+    }
+
+    // ========== STAIRWELL (back right corner) ==========
+    // UP STAIRS (right side) - light to dark gradient (going up into darkness)
+    const upColors = [0xaaaaaa, 0x999999, 0x888888, 0x777777, 0x666666, 0x555555, 0x444444];
+    for (let s = 0; s < 7; s++) {
+      const step = new THREE.Mesh(
+        new THREE.BoxGeometry(4.5, 0.3, 1.2),
+        new THREE.MeshLambertMaterial({ color: upColors[s] })
+      );
+      step.position.set(w/2 - 3, 0.15, -d/2 + 1 + s * 1.0);
       group.add(step);
     }
-    // Up handrail
-    const upRailL = new THREE.Mesh(
-      new THREE.BoxGeometry(0.08, 0.08, 4),
-      new THREE.MeshLambertMaterial({ color: 0x666655 })
+    // UP label
+    const upLabel = new THREE.Mesh(
+      new THREE.PlaneGeometry(3, 0.8),
+      new THREE.MeshBasicMaterial({ color: 0x558855 })
     );
-    upRailL.rotation.x = Math.PI / 5;
-    upRailL.position.set(w/2 - 0.5, 1.3, -d/2 + 3);
-    group.add(upRailL);
+    upLabel.position.set(w/2 - 3, 2.5, -d/2 + 0.2);
+    group.add(upLabel);
 
-    // DOWN stairs (left side of stairwell)
-    const downSign = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.5, 0.4),
-      new THREE.MeshBasicMaterial({ color: 0x2a2520 })
-    );
-    downSign.position.set(w/2 - 6, 3, -d/2 + 0.2);
-    group.add(downSign);
-    // Stairs going down (into darkness)
-    for (let s = 0; s < 4; s++) {
+    // DOWN STAIRS (left side) - dark to light gradient (coming from darkness)
+    const downColors = [0x333333, 0x444444, 0x555555, 0x666666, 0x777777, 0x888888, 0x999999];
+    for (let s = 0; s < 7; s++) {
       const step = new THREE.Mesh(
-        new THREE.BoxGeometry(3, 0.18, 0.5),
-        new THREE.MeshLambertMaterial({ color: 0x4a4540 })
+        new THREE.BoxGeometry(4.5, 0.3, 1.2),
+        new THREE.MeshLambertMaterial({ color: downColors[s] })
       );
-      step.position.set(w/2 - 6, -0.1 - s * 0.3, -d/2 + 1.5 + s * 0.4);
+      step.position.set(w/2 - 8, 0.15, -d/2 + 1 + s * 1.0);
       group.add(step);
     }
-    // Down handrail
-    const downRailL = new THREE.Mesh(
-      new THREE.BoxGeometry(0.08, 0.08, 3.5),
-      new THREE.MeshLambertMaterial({ color: 0x555544 })
+    // DOWN label
+    const downLabel = new THREE.Mesh(
+      new THREE.PlaneGeometry(3, 0.8),
+      new THREE.MeshBasicMaterial({ color: 0x885555 })
     );
-    downRailL.rotation.x = -Math.PI / 6;
-    downRailL.position.set(w/2 - 7.5, 0.8, -d/2 + 2.5);
-    group.add(downRailL);
-
-    // Divider between up and down
-    const divider = new THREE.Mesh(
-      new THREE.BoxGeometry(0.15, 1.2, 5),
-      new THREE.MeshLambertMaterial({ color: 0x4a4540 })
-    );
-    divider.position.set(w/2 - 4, 0.6, -d/2 + 3);
-    group.add(divider);
+    downLabel.position.set(w/2 - 8, 2.5, -d/2 + 0.2);
+    group.add(downLabel);
 
     // Stairwell light
-    const stairLight = new THREE.PointLight(0xffffee, 0.4, 10);
-    stairLight.position.set(w/2 - 4, 3, -d/2 + 3);
+    const stairLight = new THREE.PointLight(0xffffee, 0.6, 12);
+    stairLight.position.set(w/2 - 5.5, 3.5, -d/2 + 4);
     group.add(stairLight);
   }
 
@@ -1096,32 +1166,46 @@ function update() {
     player.x += mx;
     player.z += mz;
     const hw = floor.w / 2 - 0.5, hd = floor.d / 2 - 0.5;
+    
+    // Stair collision - can't walk ON the stairs, only approach from front
+    const upStairX = hw - 3;
+    const downStairX = hw - 8;
+    const stairZStart = -hd + 2;
+    const stairZEnd = -hd + 8;
+    
+    // Block walking into UP stairs area (except from front edge)
+    if (player.x > upStairX - 2.5 && player.x < upStairX + 2.5 && player.z < stairZEnd && player.z > stairZStart) {
+      if (mz < 0) player.z = stairZEnd; // pushed back to front of stairs
+    }
+    // Block walking into DOWN stairs area (except from front edge)  
+    if (player.x > downStairX - 2.5 && player.x < downStairX + 2.5 && player.z < stairZEnd && player.z > stairZStart) {
+      if (mz < 0) player.z = stairZEnd; // pushed back to front of stairs
+    }
+    
     player.x = Math.max(-hw, Math.min(hw, player.x));
     player.z = Math.max(-hd, Math.min(hd, player.z));
     playerGroup.position.set(player.x, 0.1, player.z);
 
-    // Check proximity to interactive elements
-    // Stairwell is in back-right corner: UP on right side, DOWN on left side
-    const inStairwell = player.x > hw - 10 && player.z < -hd + 7;
-    const nearStairsUp = !floor.top && inStairwell && player.x > hw - 5;
-    const nearStairsDown = !floor.ground && inStairwell && player.x < hw - 5;
+    // Check proximity to interactive elements (standing in front of stairs)
+    const atUpStairs = !floor.top && Math.abs(player.x - upStairX) < 3 && player.z > stairZEnd - 1 && player.z < stairZEnd + 2;
+    const atDownStairs = !floor.ground && Math.abs(player.x - downStairX) < 3 && player.z > stairZEnd - 1 && player.z < stairZEnd + 2;
     const nearExit = floor.ground && Math.abs(player.x) < 4 && player.z > hd - 3;
     const nearJumpDown = floor.top && Math.abs(player.x) < 4 && player.z > hd - 5;
     const nearJumpLeft = floor.leftRoof && player.x < -hw + 6 && player.z > hd - 5;
     const nearJumpRight = floor.rightRoof && player.x > hw - 6 && player.z > hd - 5;
-    const nearStairsDownRoof = floor.top && inStairwell && player.x < hw - 5;
+    const atDownStairsRoof = floor.top && Math.abs(player.x - downStairX) < 3 && player.z > stairZEnd - 1 && player.z < stairZEnd + 2;
 
     // Set prompt based on what player is near
-    if (nearStairsUp) prompt = 'upstairs';
-    else if (nearStairsDown || nearStairsDownRoof) prompt = 'downstairs';
+    if (atUpStairs) prompt = 'upstairs';
+    else if (atDownStairs || atDownStairsRoof) prompt = 'downstairs';
     else if (nearExit) prompt = 'exit';
     else if (nearJumpDown) prompt = 'jump down';
     else if (nearJumpLeft) prompt = 'jump left';
     else if (nearJumpRight) prompt = 'jump right';
 
     if (acted) {
-      if (nearStairsUp) { goUp(); showPrompt(''); return; }
-      if (nearStairsDown || nearStairsDownRoof) { goDown(); showPrompt(''); return; }
+      if (atUpStairs) { goUp(); showPrompt(''); return; }
+      if (atDownStairs || atDownStairsRoof) { goDown(); showPrompt(''); return; }
       if (nearExit) { exit(); showPrompt(''); return; }
       if (nearJumpDown) { jumpRoof(); showPrompt(''); return; }
       if (nearJumpLeft) { jumpToLeftBuilding(); showPrompt(''); return; }
@@ -1142,10 +1226,12 @@ function updateCamera() {
     camera.position.set(player.x, 20, player.z + 25);
     camera.lookAt(player.x, 5, -5);
   } else {
-    viewSize = 17;
-    // Bird's eye view of floor
-    camera.position.set(0, 35, 15);
-    camera.lookAt(0, 0, 0);
+    viewSize = 22;
+    // Bird's eye view - camera follows player across the larger floor
+    const camX = player.x * 0.5;
+    const camZ = player.z * 0.5;
+    camera.position.set(camX, 40, camZ + 25);
+    camera.lookAt(camX, 0, camZ);
   }
   const a = window.innerWidth / window.innerHeight;
   camera.left = -viewSize * a;
