@@ -54,163 +54,202 @@ sun.position.set(10, 20, 10);
 outdoorScene.add(sun);
 
 // ============================================
-// GROUND - Player walks here (Z = 0 to 8)
+// KOWLOON CITY LAYOUT - Dense buildings with alleyways
 // ============================================
 const ground = new THREE.Mesh(
-  new THREE.PlaneGeometry(120, 20),
-  new THREE.MeshLambertMaterial({ color: 0x1a1a1a })
+  new THREE.PlaneGeometry(100, 100),
+  new THREE.MeshLambertMaterial({ color: 0x1a1815 })
 );
 ground.rotation.x = -Math.PI / 2;
-ground.position.set(0, 0, 4);
+ground.position.set(0, 0, 0);
 outdoorScene.add(ground);
-
-// Sidewalk where player walks
-const sidewalk = new THREE.Mesh(
-  new THREE.PlaneGeometry(120, 8),
-  new THREE.MeshLambertMaterial({ color: 0x2a2a2a })
-);
-sidewalk.rotation.x = -Math.PI / 2;
-sidewalk.position.set(0, 0.02, 4);
-outdoorScene.add(sidewalk);
 
 // ============================================
 // BUILDING DATA
 // ============================================
 interface BuildingData {
   x: number;
+  z: number;
   floors: number;
+  group: THREE.Group;
+  width: number;
+  depth: number;
 }
 
 const buildingsData: BuildingData[] = [];
+const allBuildingMeshes: THREE.Mesh[] = [];
 
-// Buildings are BEHIND the player (negative Z)
-function createBuilding(x: number, floors: number): number {
-  const width = 9;
-  const height = floors * 2.5;
-  const z = -8; // Far behind player
-  const depth = 6;
+// City layout - buildings arranged in dense blocks with alleyways
+// Enterable buildings marked with *
+const cityLayout = [
+  // Row 1 (back) - z = -35
+  { x: -30, z: -35, w: 10, d: 8, floors: 16, enterable: true },
+  { x: -18, z: -35, w: 8, d: 8, floors: 14, enterable: false },
+  { x: -8, z: -35, w: 9, d: 8, floors: 18, enterable: true },
+  { x: 4, z: -35, w: 10, d: 8, floors: 12, enterable: false },
+  { x: 16, z: -35, w: 8, d: 8, floors: 15, enterable: true },
+  { x: 28, z: -35, w: 10, d: 8, floors: 17, enterable: false },
+  // Row 2 - z = -22
+  { x: -28, z: -22, w: 9, d: 7, floors: 13, enterable: false },
+  { x: -16, z: -22, w: 10, d: 7, floors: 19, enterable: true },
+  { x: -4, z: -22, w: 8, d: 7, floors: 11, enterable: false },
+  { x: 8, z: -22, w: 9, d: 7, floors: 16, enterable: true },
+  { x: 20, z: -22, w: 10, d: 7, floors: 14, enterable: false },
+  // Row 3 - z = -10
+  { x: -25, z: -10, w: 8, d: 6, floors: 15, enterable: true },
+  { x: -14, z: -10, w: 9, d: 6, floors: 12, enterable: false },
+  { x: -2, z: -10, w: 10, d: 6, floors: 20, enterable: true },
+  { x: 12, z: -10, w: 8, d: 6, floors: 13, enterable: false },
+  { x: 24, z: -10, w: 9, d: 6, floors: 17, enterable: false },
+];
 
-  const colors = [0x3a3545, 0x2d2835, 0x352d3a, 0x2a2535];
-  const color = colors[Math.floor(Math.random() * colors.length)];
+function createCityBuilding(config: typeof cityLayout[0], index: number) {
+  const { x, z, w, d, floors, enterable } = config;
+  const height = floors * 2.2;
+  const group = new THREE.Group();
   
+  const colors = [0x3a3540, 0x35303a, 0x403538, 0x383540, 0x353038];
+  const color = colors[index % colors.length];
+  
+  // Main building mesh
+  const buildingMat = new THREE.MeshLambertMaterial({ 
+    color, 
+    transparent: true, 
+    opacity: 1 
+  });
   const building = new THREE.Mesh(
-    new THREE.BoxGeometry(width, height, depth),
-    new THREE.MeshLambertMaterial({ color })
+    new THREE.BoxGeometry(w, height, d),
+    buildingMat
   );
-  building.position.set(x, height / 2, z);
-  outdoorScene.add(building);
+  building.position.set(0, height / 2, 0);
+  group.add(building);
+  allBuildingMeshes.push(building);
 
   // Windows
-  for (let f = 0; f < Math.min(floors, 12); f++) {
-    const y = f * 2.5 + 1.5;
-    for (let w = 0; w < 3; w++) {
-      const isLit = Math.random() > 0.3;
-      const litColors = [0xffdd77, 0xffaa55, 0x77ddff, 0xaaffaa];
+  for (let f = 0; f < Math.min(floors, 10); f++) {
+    const y = f * 2.2 + 1.5;
+    for (let wx = 0; wx < Math.floor(w / 2.5); wx++) {
+      const isLit = Math.random() > 0.35;
+      const litColors = [0xffdd66, 0xffaa44, 0x66ddff, 0x88ffaa];
       const win = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.2, 1.6),
+        new THREE.PlaneGeometry(1, 1.4),
         new THREE.MeshBasicMaterial({ 
-          color: isLit ? litColors[Math.floor(Math.random() * 4)] : 0x1a2535 
+          color: isLit ? litColors[Math.floor(Math.random() * 4)] : 0x1a2030,
+          transparent: true, opacity: 1
         })
       );
-      win.position.set(x - 3 + w * 3, y, z + depth/2 + 0.01);
-      outdoorScene.add(win);
+      win.position.set(-w/2 + 1.5 + wx * 2.5, y, d/2 + 0.01);
+      group.add(win);
+      allBuildingMeshes.push(win);
     }
   }
 
-  // Neon sign
-  const neonColors = [0xff0066, 0x00ffff, 0xff6600, 0x00ff66, 0xff00ff];
-  const neonColor = neonColors[Math.floor(Math.random() * neonColors.length)];
-  const isVert = Math.random() > 0.5;
-  
-  const sign = new THREE.Mesh(
-    isVert ? new THREE.BoxGeometry(0.5, 3 + Math.random() * 3, 0.2) : new THREE.BoxGeometry(3 + Math.random() * 2, 0.5, 0.2),
-    new THREE.MeshBasicMaterial({ color: neonColor })
-  );
-  sign.position.set(x + (Math.random() - 0.5) * 4, 4 + Math.random() * (height - 6), z + depth/2 + 0.3);
-  outdoorScene.add(sign);
-  
-  const glow = new THREE.PointLight(neonColor, 1.5, 10);
-  glow.position.set(sign.position.x, sign.position.y, sign.position.z + 1);
-  outdoorScene.add(glow);
+  // Neon signs (random)
+  if (Math.random() > 0.4) {
+    const neonColors = [0xff0066, 0x00ffff, 0xff6600, 0x00ff66, 0xff00ff, 0xffff00];
+    const neonColor = neonColors[Math.floor(Math.random() * neonColors.length)];
+    const signW = 1 + Math.random() * 2;
+    const signH = 0.4 + Math.random() * 0.4;
+    const sign = new THREE.Mesh(
+      new THREE.BoxGeometry(signW, signH, 0.15),
+      new THREE.MeshBasicMaterial({ color: neonColor, transparent: true, opacity: 1 })
+    );
+    sign.position.set((Math.random() - 0.5) * (w - 2), 3 + Math.random() * 4, d/2 + 0.2);
+    group.add(sign);
+    allBuildingMeshes.push(sign);
+    
+    const glow = new THREE.PointLight(neonColor, 0.8, 6);
+    glow.position.copy(sign.position);
+    glow.position.z += 0.5;
+    group.add(glow);
+  }
 
-  // Door - facing player
-  const doorFrame = new THREE.Mesh(
-    new THREE.BoxGeometry(2.8, 3.5, 0.3),
-    new THREE.MeshLambertMaterial({ color: 0x442211 })
-  );
-  doorFrame.position.set(x, 1.75, z + depth/2 + 0.2);
-  outdoorScene.add(doorFrame);
+  // Door (only for enterable buildings)
+  if (enterable) {
+    const doorFrame = new THREE.Mesh(
+      new THREE.BoxGeometry(2.5, 3.2, 0.25),
+      new THREE.MeshLambertMaterial({ color: 0x3a2a1a, transparent: true, opacity: 1 })
+    );
+    doorFrame.position.set(0, 1.6, d/2 + 0.15);
+    group.add(doorFrame);
+    allBuildingMeshes.push(doorFrame);
+    
+    const door = new THREE.Mesh(
+      new THREE.PlaneGeometry(2, 2.8),
+      new THREE.MeshLambertMaterial({ color: 0x553322, transparent: true, opacity: 1 })
+    );
+    door.position.set(0, 1.4, d/2 + 0.3);
+    group.add(door);
+    allBuildingMeshes.push(door);
+    
+    // Door light
+    const doorLight = new THREE.PointLight(0xffaa55, 0.6, 5);
+    doorLight.position.set(0, 3, d/2 + 1);
+    group.add(doorLight);
+    
+    // Store building data for entry
+    buildingsData.push({ x, z, floors, group, width: w, depth: d });
+  }
   
-  const door = new THREE.Mesh(
-    new THREE.PlaneGeometry(2.2, 3),
-    new THREE.MeshBasicMaterial({ color: 0x663322 })
-  );
-  door.position.set(x, 1.5, z + depth/2 + 0.35);
-  outdoorScene.add(door);
-  
-  // Door light
-  const doorLight = new THREE.PointLight(0xffaa66, 1.2, 6);
-  doorLight.position.set(x, 3.5, z + depth/2 + 1.5);
-  outdoorScene.add(doorLight);
-  
-  // ENTER sign - bright green
-  const enter = new THREE.Mesh(
-    new THREE.BoxGeometry(2.5, 0.5, 0.1),
-    new THREE.MeshBasicMaterial({ color: 0x00ff44 })
-  );
-  enter.position.set(x, 4, z + depth/2 + 0.4);
-  outdoorScene.add(enter);
-  
-  const enterGlow = new THREE.PointLight(0x00ff44, 1, 5);
-  enterGlow.position.set(x, 4, z + depth/2 + 1);
-  outdoorScene.add(enterGlow);
-  
-  buildingsData.push({ x, floors });
-  return buildingsData.length - 1;
+  group.position.set(x, 0, z);
+  outdoorScene.add(group);
 }
 
-// Create row of buildings (all behind player)
-createBuilding(-36, 14);
-createBuilding(-24, 18);
-createBuilding(-12, 12);
-createBuilding(0, 20);
-createBuilding(12, 15);
-createBuilding(24, 17);
-createBuilding(36, 13);
+// Create all city buildings
+cityLayout.forEach((config, i) => createCityBuilding(config, i));
 
-// Some detail in the distance
-for (let i = 0; i < 5; i++) {
-  const bg = new THREE.Mesh(
-    new THREE.BoxGeometry(8, 30 + Math.random() * 20, 4),
-    new THREE.MeshLambertMaterial({ color: 0x151015 })
+// Alleyway ground markings
+for (let i = 0; i < 20; i++) {
+  const alley = new THREE.Mesh(
+    new THREE.PlaneGeometry(2 + Math.random() * 2, 15 + Math.random() * 20),
+    new THREE.MeshLambertMaterial({ color: 0x252220 })
   );
-  bg.position.set(-40 + i * 20, 20, -20);
-  outdoorScene.add(bg);
+  alley.rotation.x = -Math.PI / 2;
+  alley.position.set(-30 + Math.random() * 60, 0.01, -35 + Math.random() * 30);
+  alley.rotation.z = Math.random() * 0.3;
+  outdoorScene.add(alley);
 }
 
-// Hanging wires
-for (let i = 0; i < 10; i++) {
-  const wire = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.02, 0.02, 15, 4),
-    new THREE.MeshBasicMaterial({ color: 0x111111 })
-  );
-  wire.position.set(-40 + i * 9, 10 + Math.random() * 8, -4);
-  wire.rotation.x = Math.PI / 2;
-  outdoorScene.add(wire);
-}
-
-// Street lights (in front for visibility)
-for (let i = -3; i <= 3; i++) {
-  const pole = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.1, 0.12, 5, 6),
-    new THREE.MeshLambertMaterial({ color: 0x333333 })
-  );
-  pole.position.set(i * 14, 2.5, 8);
-  outdoorScene.add(pole);
-  
-  const light = new THREE.PointLight(0xffffcc, 0.6, 10);
-  light.position.set(i * 14, 5.5, 8);
+// Ambient city lights
+for (let i = 0; i < 8; i++) {
+  const light = new THREE.PointLight(0xffddaa, 0.3, 15);
+  light.position.set(-25 + i * 8, 3, -20 + (i % 3) * 10);
   outdoorScene.add(light);
+}
+
+// Function to update building transparency based on player position
+function updateBuildingTransparency() {
+  const playerPos = new THREE.Vector3(player.x, 1.5, player.z);
+  const cameraPos = camera.position.clone();
+  
+  for (const mesh of allBuildingMeshes) {
+    if (!mesh.material || Array.isArray(mesh.material)) continue;
+    const mat = mesh.material as THREE.MeshLambertMaterial | THREE.MeshBasicMaterial;
+    
+    // Get mesh world position
+    const meshPos = new THREE.Vector3();
+    mesh.getWorldPosition(meshPos);
+    
+    // Check if mesh is between camera and player
+    const toPlayer = playerPos.clone().sub(cameraPos);
+    const toMesh = meshPos.clone().sub(cameraPos);
+    
+    const distToPlayer = toPlayer.length();
+    const distToMesh = toMesh.length();
+    
+    // If mesh is closer than player and roughly in the same direction
+    if (distToMesh < distToPlayer - 2) {
+      const dot = toPlayer.normalize().dot(toMesh.normalize());
+      if (dot > 0.7) {
+        // Mesh is blocking view - make transparent
+        mat.opacity = 0.15;
+      } else {
+        mat.opacity = 1;
+      }
+    } else {
+      mat.opacity = 1;
+    }
+  }
 }
 
 // ============================================
@@ -927,11 +966,11 @@ const playerLight = new THREE.PointLight(0xffffee, 0.8, 6);
 playerLight.position.set(0, 1.2, 0);
 playerGroup.add(playerLight);
 
-// Player starts in FRONT of buildings
-playerGroup.position.set(0, 0.1, 4);
+// Player starts in alleyway area (south of city)
+playerGroup.position.set(0, 0.1, 0);
 outdoorScene.add(playerGroup);
 
-const player = { x: 0, z: 4, facing: 0, speed: 0.28 };
+const player = { x: 0, z: 0, facing: 0, speed: 0.25 };
 
 // ============================================
 // INPUT
@@ -1025,106 +1064,102 @@ function drawMinimap() {
   ctx.fillStyle = '#1a1510';
   ctx.fillRect(0, 0, W, H);
   
-  // Draw irregular city boundary (like Kowloon's shape)
-  ctx.strokeStyle = '#6a5040';
+  // Draw city boundary
+  ctx.strokeStyle = '#5a4535';
   ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(10, 30);
-  ctx.lineTo(30, 10);
-  ctx.lineTo(150, 8);
-  ctx.lineTo(170, 25);
-  ctx.lineTo(175, 100);
-  ctx.lineTo(160, 130);
-  ctx.lineTo(20, 135);
-  ctx.lineTo(5, 110);
-  ctx.closePath();
-  ctx.stroke();
+  ctx.strokeRect(8, 8, W - 16, H - 28);
+  ctx.fillStyle = '#252018';
+  ctx.fillRect(8, 8, W - 16, H - 28);
   
-  // Fill city area
-  ctx.fillStyle = '#2a2520';
-  ctx.fill();
+  // Scale: map coords (-35 to 5 Z, -35 to 35 X) to minimap
+  const mapScale = (W - 20) / 70;
+  const offsetX = 10;
+  const offsetZ = 10;
   
-  // Draw dense building blocks (Kowloon style - irregular packed buildings)
-  ctx.fillStyle = '#3a3530';
+  function worldToMap(wx: number, wz: number) {
+    return {
+      x: offsetX + (wx + 35) * mapScale,
+      y: offsetZ + (-wz + 5) * mapScale * 0.8
+    };
+  }
   
-  // Main building blocks
-  const blocks = [
-    { x: 15, y: 35, w: 25, h: 20 },
-    { x: 45, y: 20, w: 30, h: 35 },
-    { x: 80, y: 15, w: 25, h: 25 },
-    { x: 110, y: 20, w: 35, h: 30 },
-    { x: 150, y: 30, w: 20, h: 25 },
-    { x: 20, y: 60, w: 35, h: 30 },
-    { x: 60, y: 55, w: 25, h: 40 },
-    { x: 90, y: 50, w: 30, h: 35 },
-    { x: 125, y: 55, w: 35, h: 40 },
-    { x: 25, y: 95, w: 40, h: 30 },
-    { x: 70, y: 100, w: 35, h: 25 },
-    { x: 110, y: 100, w: 45, h: 28 },
+  // Draw all buildings from cityLayout
+  const cityBuildings = [
+    { x: -30, z: -35, w: 10, d: 8, enter: true },
+    { x: -18, z: -35, w: 8, d: 8, enter: false },
+    { x: -8, z: -35, w: 9, d: 8, enter: true },
+    { x: 4, z: -35, w: 10, d: 8, enter: false },
+    { x: 16, z: -35, w: 8, d: 8, enter: true },
+    { x: 28, z: -35, w: 10, d: 8, enter: false },
+    { x: -28, z: -22, w: 9, d: 7, enter: false },
+    { x: -16, z: -22, w: 10, d: 7, enter: true },
+    { x: -4, z: -22, w: 8, d: 7, enter: false },
+    { x: 8, z: -22, w: 9, d: 7, enter: true },
+    { x: 20, z: -22, w: 10, d: 7, enter: false },
+    { x: -25, z: -10, w: 8, d: 6, enter: true },
+    { x: -14, z: -10, w: 9, d: 6, enter: false },
+    { x: -2, z: -10, w: 10, d: 6, enter: true },
+    { x: 12, z: -10, w: 8, d: 6, enter: false },
+    { x: 24, z: -10, w: 9, d: 6, enter: false },
   ];
   
-  for (const b of blocks) {
-    ctx.fillRect(b.x, b.y, b.w, b.h);
+  let enterIdx = 0;
+  for (const b of cityBuildings) {
+    const pos = worldToMap(b.x, b.z);
+    const bw = b.w * mapScale * 0.9;
+    const bd = b.d * mapScale * 0.7;
+    
+    // Check if this is the current building
+    let isCurrentBuilding = false;
+    if (b.enter) {
+      isCurrentBuilding = state.mode === 'indoor' && state.currentBuilding === enterIdx;
+      enterIdx++;
+    }
+    
+    // Building fill
+    ctx.fillStyle = isCurrentBuilding ? '#ff5533' : (b.enter ? '#4a4540' : '#3a3530');
+    ctx.fillRect(pos.x - bw/2, pos.y - bd/2, bw, bd);
+    
+    // Border
+    ctx.strokeStyle = isCurrentBuilding ? '#ffaa66' : (b.enter ? '#6a6050' : '#4a4540');
+    ctx.lineWidth = isCurrentBuilding ? 2 : 1;
+    ctx.strokeRect(pos.x - bw/2, pos.y - bd/2, bw, bd);
   }
   
-  // Draw narrow alleys (dark lines between blocks)
+  // Draw alleyways (darker lines)
   ctx.strokeStyle = '#151210';
   ctx.lineWidth = 1;
-  for (let i = 0; i < 15; i++) {
-    ctx.beginPath();
-    ctx.moveTo(20 + Math.random() * 140, 20 + Math.random() * 50);
-    ctx.lineTo(20 + Math.random() * 140, 70 + Math.random() * 50);
-    ctx.stroke();
-  }
-  for (let i = 0; i < 10; i++) {
-    ctx.beginPath();
-    ctx.moveTo(15 + Math.random() * 50, 30 + Math.random() * 90);
-    ctx.lineTo(100 + Math.random() * 60, 30 + Math.random() * 90);
-    ctx.stroke();
-  }
+  ctx.beginPath();
+  ctx.moveTo(worldToMap(-35, -28).x, worldToMap(-35, -28).y);
+  ctx.lineTo(worldToMap(35, -28).x, worldToMap(35, -28).y);
+  ctx.moveTo(worldToMap(-35, -16).x, worldToMap(-35, -16).y);
+  ctx.lineTo(worldToMap(35, -16).x, worldToMap(35, -16).y);
+  ctx.stroke();
   
-  // Draw the main buildings (our game buildings) - row at bottom
-  const buildingY = 115;
-  const buildingH = 12;
-  const startX = 25;
-  const spacing = 22;
-  
-  for (let i = 0; i < buildingsData.length; i++) {
-    const bx = startX + i * spacing;
-    const isCurrentBuilding = state.mode === 'indoor' && state.currentBuilding === i;
-    
-    // Building outline
-    ctx.fillStyle = isCurrentBuilding ? '#ff6644' : '#4a4540';
-    ctx.fillRect(bx, buildingY, 18, buildingH);
-    
-    // Building border
-    ctx.strokeStyle = isCurrentBuilding ? '#ffaa66' : '#5a5550';
-    ctx.lineWidth = isCurrentBuilding ? 2 : 1;
-    ctx.strokeRect(bx, buildingY, 18, buildingH);
-  }
-  
-  // Draw player position when outside
+  // Draw player position
   if (state.mode === 'outdoor') {
-    // Map player world position to minimap
-    const px = startX + ((player.x + 42) / 84) * (spacing * 6 + 18);
-    const py = buildingY + buildingH + 3;
+    const pp = worldToMap(player.x, player.z);
     
-    // Player dot (pulsing)
-    ctx.fillStyle = '#ff4444';
+    // Player dot (pulsing red)
+    const pulse = Math.sin(Date.now() / 150) * 1.5;
+    ctx.fillStyle = '#ff3333';
     ctx.beginPath();
-    ctx.arc(px, py, 3 + Math.sin(Date.now() / 200) * 0.5, 0, Math.PI * 2);
+    ctx.arc(pp.x, pp.y, 4 + pulse, 0, Math.PI * 2);
     ctx.fill();
     
-    // "YOU" label
-    ctx.fillStyle = '#ff6666';
-    ctx.font = '8px monospace';
-    ctx.fillText('▲', px - 3, py + 10);
+    // White center
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(pp.x, pp.y, 2, 0, Math.PI * 2);
+    ctx.fill();
   }
   
-  // Title on map
+  // Title
   ctx.fillStyle = '#8a7060';
-  ctx.font = 'bold 7px monospace';
-  ctx.fillText('九龍城寨', 70, 145);
+  ctx.font = 'bold 8px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('九龍城寨', W/2, H - 6);
+  ctx.textAlign = 'left';
 }
 
 // ============================================
@@ -1154,8 +1189,9 @@ function exit() {
   indoorScene.visible = false;
   indoorScene.remove(playerGroup);
   outdoorScene.add(playerGroup);
+  // Spawn in front of the building door
   player.x = bd?.x ?? 0;
-  player.z = 4;
+  player.z = (bd?.z ?? 0) + (bd?.depth ?? 6) / 2 + 2;
   playerGroup.position.set(player.x, 0.1, player.z);
   state.currentBuilding = -1;
   state.currentFloor = 0;
@@ -1248,35 +1284,61 @@ function update() {
   let prompt = '';
 
   if (state.mode === 'outdoor') {
-    player.x += mx;
-    player.z += mz;
-    player.x = Math.max(-42, Math.min(42, player.x));
-    player.z = Math.max(0, Math.min(8, player.z));
-    playerGroup.position.set(player.x, 0.1, player.z);
-
-    // Find nearest building for prompt
+    // Try to move
+    const newX = player.x + mx;
+    const newZ = player.z + mz;
+    
+    // Check collision with buildings (simplified - alleyways between them)
+    let canMove = true;
+    let nearestBuildingIdx = -1;
     let nearestDist = 999;
-    for (const bd of buildingsData) {
-      const d = Math.abs(player.x - bd.x);
-      if (d < nearestDist) nearestDist = d;
+    
+    for (let i = 0; i < buildingsData.length; i++) {
+      const bd = buildingsData[i];
+      if (!bd) continue;
+      
+      const bx = bd.x, bz = bd.z, bw = bd.width, bdepth = bd.depth;
+      const halfW = bw / 2 + 0.5;
+      const halfD = bdepth / 2 + 0.5;
+      
+      // Check if player would be inside building
+      if (newX > bx - halfW && newX < bx + halfW && 
+          newZ > bz - halfD && newZ < bz + halfD) {
+        // Inside a building - only block if not near door
+        const doorZone = newZ > bz + halfD - 3;
+        if (!doorZone) {
+          canMove = false;
+        }
+      }
+      
+      // Distance to building door (front face)
+      const doorX = bx;
+      const doorZ = bz + bdepth / 2;
+      const dist = Math.sqrt(Math.pow(player.x - doorX, 2) + Math.pow(player.z - doorZ, 2));
+      if (dist < nearestDist) {
+        nearestDist = dist;
+        nearestBuildingIdx = i;
+      }
     }
     
-    // Show prompt when near a building
+    if (canMove) {
+      player.x = newX;
+      player.z = newZ;
+    }
+    
+    // Bounds
+    player.x = Math.max(-40, Math.min(40, player.x));
+    player.z = Math.max(-45, Math.min(5, player.z));
+    playerGroup.position.set(player.x, 0.1, player.z);
+
+    // Show prompt when near a building door
     if (nearestDist < 5) {
       prompt = 'enter';
     }
 
-    // Press E/SPACE/ENTER to enter NEAREST building
-    if (acted && buildingsData.length > 0) {
-      let best = 0;
-      let bestDist = Math.abs(player.x - (buildingsData[0]?.x ?? 0));
-      for (let i = 1; i < buildingsData.length; i++) {
-        const bd = buildingsData[i];
-        if (!bd) continue;
-        const d = Math.abs(player.x - bd.x);
-        if (d < bestDist) { bestDist = d; best = i; }
-      }
-      enter(best);
+    // Press E/SPACE/ENTER to enter nearest building
+    if (acted && nearestBuildingIdx >= 0 && nearestDist < 6) {
+      enter(nearestBuildingIdx);
       showPrompt('');
       return;
     }
@@ -1339,10 +1401,12 @@ function update() {
 // ============================================
 function updateCamera() {
   if (state.mode === 'outdoor') {
-    viewSize = 15;
-    // Camera above and behind player, looking at buildings
-    camera.position.set(player.x, 20, player.z + 25);
-    camera.lookAt(player.x, 5, -5);
+    viewSize = 22;
+    // Isometric view following player through city
+    camera.position.set(player.x + 15, 35, player.z + 30);
+    camera.lookAt(player.x, 3, player.z - 10);
+    // Update building transparency
+    updateBuildingTransparency();
   } else {
     viewSize = 22;
     // Bird's eye view - camera follows player across the larger floor
