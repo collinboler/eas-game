@@ -2266,7 +2266,7 @@ function spawnOutdoorNPCs() {
       outdoorScene.add(mesh);
       
       const npcData: NPC = {
-        mesh,
+    mesh,
         x,
         z,
         targetX: x,
@@ -2278,8 +2278,8 @@ function spawnOutdoorNPCs() {
         floorIdx: -1
       };
       
-      // Some foxes are shapeshifters (kitsune) - 40% chance
-      if (npcDef.type === 'fox' && Math.random() < 0.4) {
+      // Some foxes are shapeshifters (kitsune) - 64% chance
+      if (npcDef.type === 'fox' && Math.random() < 0.64) {
         npcData.isShapeshifter = true;
         npcData.isTransformed = false;
         npcData.transformTimer = Date.now() + 5000 + Math.random() * 15000; // First transform in 5-20 seconds
@@ -2342,8 +2342,8 @@ function spawnIndoorNPCs(buildingIdx: number, floorIdx: number, floorW: number, 
       floorIdx
     };
     
-    // Some foxes are shapeshifters (kitsune) - 40% chance
-    if (type === 'fox' && Math.random() < 0.4) {
+    // Some foxes are shapeshifters (kitsune) - 64% chance
+    if (type === 'fox' && Math.random() < 0.64) {
       npcData.isShapeshifter = true;
       npcData.isTransformed = false;
       npcData.transformTimer = Date.now() + 5000 + Math.random() * 15000;
@@ -3472,7 +3472,7 @@ function createFloorView(buildingIdx: number, floor: number) {
         new THREE.CylinderGeometry(0.08, 0.08, pipeLen, 6),
         new THREE.MeshLambertMaterial({ color: 0x5a4a3a })
       );
-      pipe.rotation.z = Math.PI / 2;
+  pipe.rotation.z = Math.PI / 2;
       pipe.position.set((Math.random() - 0.5) * w * 0.5, wallH - 0.3, (Math.random() - 0.5) * d * 0.6);
       group.add(pipe);
     }
@@ -4090,7 +4090,7 @@ function createFloorView(buildingIdx: number, floor: number) {
     }
     
     // Cardboard boxes stacked
-    for (let i = 0; i < 12; i++) {
+for (let i = 0; i < 12; i++) {
       const stackHeight = 1 + Math.floor(Math.random() * 3);
       const bx = -w/2 + 10 + Math.random() * (w - 20);
       const bz = -d/2 + 10 + Math.random() * (d - 20);
@@ -4647,7 +4647,7 @@ function createUndergroundView(drainIdx: number) {
   }
   
   // ========== BROKEN CONCRETE VOIDS - Dark gaps ==========
-  for (let i = 0; i < 25; i++) {
+for (let i = 0; i < 25; i++) {
     const voidW = 1 + Math.random() * 3;
     const voidD = 1 + Math.random() * 3;
     const voidH = 0.5 + Math.random() * 1;
@@ -4692,7 +4692,7 @@ function createUndergroundView(drainIdx: number) {
   // ========== SECRET GANG PASSAGE MARKERS ==========
   // Graffiti/markings
   const graffiti = [0x881111, 0x118811, 0x111188, 0x888811, 0xffffff];
-  for (let i = 0; i < 15; i++) {
+for (let i = 0; i < 15; i++) {
     const mark = new THREE.Mesh(
       new THREE.PlaneGeometry(0.5 + Math.random() * 1.5, 0.3 + Math.random() * 0.8),
       new THREE.MeshBasicMaterial({ color: graffiti[Math.floor(Math.random() * graffiti.length)], transparent: true, opacity: 0.7 })
@@ -4962,7 +4962,7 @@ function createUndergroundView(drainIdx: number) {
   
   // ========== OLD FURNITURE ==========
   // Broken chairs
-  for (let i = 0; i < 8; i++) {
+for (let i = 0; i < 8; i++) {
     const chairX = -w/2 + 10 + Math.random() * (w - 20);
     const chairZ = -d/2 + 10 + Math.random() * (d - 20);
     
