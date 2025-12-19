@@ -19,14 +19,14 @@
       <div class="instructions" id="instructions">
         <h1>KOWLOON WALLED CITY</h1>
         <p class="subtitle">九龍城寨</p>
-        
+
         <div class="menu-buttons">
           <button class="menu-btn" id="customize-btn">CUSTOMIZE CHARACTER</button>
           <button class="start-btn" id="start-btn">START EXPLORING</button>
         </div>
         <p class="controls">WASD / Arrows = Move &nbsp;|&nbsp; E / Space = Interact</p>
       </div>
-      
+
       <!-- Character Customization Popup -->
       <div class="customize-popup" id="customize-popup">
         <div class="customize-content">
@@ -38,39 +38,111 @@
             <div class="custom-row">
               <label>Skin:</label>
               <div class="color-options" id="skin-options">
-                <button class="color-btn selected" data-color="0xeeddcc" style="background:#eeddcc"></button>
-                <button class="color-btn" data-color="0xd4a574" style="background:#d4a574"></button>
-                <button class="color-btn" data-color="0x8d5524" style="background:#8d5524"></button>
-                <button class="color-btn" data-color="0x4a3728" style="background:#4a3728"></button>
+                <button
+                  class="color-btn selected"
+                  data-color="0xeeddcc"
+                  style="background: #eeddcc"
+                ></button>
+                <button
+                  class="color-btn"
+                  data-color="0xd4a574"
+                  style="background: #d4a574"
+                ></button>
+                <button
+                  class="color-btn"
+                  data-color="0x8d5524"
+                  style="background: #8d5524"
+                ></button>
+                <button
+                  class="color-btn"
+                  data-color="0x4a3728"
+                  style="background: #4a3728"
+                ></button>
               </div>
             </div>
             <div class="custom-row">
               <label>Hair:</label>
               <div class="color-options" id="hair-options">
-                <button class="color-btn selected" data-color="0x332211" style="background:#332211"></button>
-                <button class="color-btn" data-color="0x111111" style="background:#111111"></button>
-                <button class="color-btn" data-color="0x664422" style="background:#664422"></button>
-                <button class="color-btn" data-color="0xffdd88" style="background:#ffdd88"></button>
-                <button class="color-btn" data-color="0xcc3333" style="background:#cc3333"></button>
+                <button
+                  class="color-btn selected"
+                  data-color="0x332211"
+                  style="background: #332211"
+                ></button>
+                <button
+                  class="color-btn"
+                  data-color="0x111111"
+                  style="background: #111111"
+                ></button>
+                <button
+                  class="color-btn"
+                  data-color="0x664422"
+                  style="background: #664422"
+                ></button>
+                <button
+                  class="color-btn"
+                  data-color="0xffdd88"
+                  style="background: #ffdd88"
+                ></button>
+                <button
+                  class="color-btn"
+                  data-color="0xcc3333"
+                  style="background: #cc3333"
+                ></button>
               </div>
             </div>
             <div class="custom-row">
               <label>Shirt:</label>
               <div class="color-options" id="shirt-options">
-                <button class="color-btn selected" data-color="0x334455" style="background:#334455"></button>
-                <button class="color-btn" data-color="0x553333" style="background:#553333"></button>
-                <button class="color-btn" data-color="0x335533" style="background:#335533"></button>
-                <button class="color-btn" data-color="0x555533" style="background:#555533"></button>
-                <button class="color-btn" data-color="0x222222" style="background:#222222"></button>
+                <button
+                  class="color-btn selected"
+                  data-color="0x334455"
+                  style="background: #334455"
+                ></button>
+                <button
+                  class="color-btn"
+                  data-color="0x553333"
+                  style="background: #553333"
+                ></button>
+                <button
+                  class="color-btn"
+                  data-color="0x335533"
+                  style="background: #335533"
+                ></button>
+                <button
+                  class="color-btn"
+                  data-color="0x555533"
+                  style="background: #555533"
+                ></button>
+                <button
+                  class="color-btn"
+                  data-color="0x222222"
+                  style="background: #222222"
+                ></button>
               </div>
             </div>
             <div class="custom-row">
               <label>Pants:</label>
               <div class="color-options" id="pants-options">
-                <button class="color-btn selected" data-color="0x222233" style="background:#222233"></button>
-                <button class="color-btn" data-color="0x333322" style="background:#333322"></button>
-                <button class="color-btn" data-color="0x332222" style="background:#332222"></button>
-                <button class="color-btn" data-color="0x111111" style="background:#111111"></button>
+                <button
+                  class="color-btn selected"
+                  data-color="0x222233"
+                  style="background: #222233"
+                ></button>
+                <button
+                  class="color-btn"
+                  data-color="0x333322"
+                  style="background: #333322"
+                ></button>
+                <button
+                  class="color-btn"
+                  data-color="0x332222"
+                  style="background: #332222"
+                ></button>
+                <button
+                  class="color-btn"
+                  data-color="0x111111"
+                  style="background: #111111"
+                ></button>
               </div>
             </div>
             <button class="done-btn" id="customize-done">DONE</button>
@@ -78,10 +150,33 @@
         </div>
       </div>
       <div class="scroll-counter" id="scroll-counter">KOWLOON CITY</div>
+      <div class="scroll-collection" id="scroll-collection">
+        <div class="scroll-icon" id="scroll-icon">📜</div>
+        <div class="scroll-count" id="scroll-count">0/7</div>
+      </div>
       <div class="action-prompt" id="action-prompt"></div>
       <div class="minimap" id="minimap">
         <canvas id="minimap-canvas" width="180" height="140"></canvas>
         <div class="minimap-label">KOWLOON WALLED CITY</div>
+      </div>
+    </div>
+    <!-- Scroll Viewer Popup -->
+    <div id="scroll-viewer" class="scroll-viewer">
+      <div class="scroll-viewer-content">
+        <h2>📜 COLLECTED SCROLLS</h2>
+        <div id="scroll-list" class="scroll-list"></div>
+        <button id="scroll-viewer-close" class="scroll-viewer-close">CLOSE</button>
+      </div>
+    </div>
+    <!-- NPC Dialogue Popup -->
+    <div id="npc-dialogue" class="npc-dialogue">
+      <div class="npc-dialogue-content">
+        <div class="npc-dialogue-header" id="npc-dialogue-header">STRANGER</div>
+        <div class="npc-dialogue-text" id="npc-dialogue-text"></div>
+        <div class="npc-dialogue-buttons">
+          <button id="npc-dialogue-accept" class="npc-dialogue-accept">ACCEPT SCROLL</button>
+          <button id="npc-dialogue-close" class="npc-dialogue-close">CLOSE</button>
+        </div>
       </div>
     </div>
     <div id="popup" class="popup">
