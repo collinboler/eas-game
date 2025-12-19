@@ -113,7 +113,7 @@ const allBuildingMeshes: THREE.Mesh[] = [];
 // ============================================
 // FLOOR ROOM CACHE - Persists room configurations
 // ============================================
-type RoomType = 'bedroom' | 'kitchen' | 'bathroom' | 'living' | 'storage';
+type RoomType = 'bedroom' | 'kitchen' | 'bathroom' | 'living' | 'storage' | 'sewage' | 'boxes' | 'clinic' | 'dental' | 'factory' | 'noodle_shop' | 'food_stall' | 'grocery' | 'school' | 'temple' | 'infrastructure';
 
 interface FloorRoomConfig {
   roomTypes: RoomType[];
@@ -139,15 +139,34 @@ function getOrCreateFloorConfig(
     // Generate room types based on a seed for consistency
     const seed = buildingIdx * 1000 + floorNum;
     const roomTypes: RoomType[] = [];
-    const allTypes: RoomType[] = [
-      'bedroom',
-      'bedroom',
-      'bedroom',
-      'kitchen',
-      'bathroom',
+
+    // Base room types - weighted distribution
+    const baseTypes: RoomType[] = [
+      'bedroom', 'bedroom', 'bedroom', 'bedroom',  // Most common - residential
+      'kitchen', 'kitchen',
       'living',
       'storage',
+      'boxes', 'boxes',  // Random storage rooms
+      'clinic',  // Unlicensed medical clinics
+      'dental',  // Unlicensed dental clinics
+      'factory', 'factory',  // Small factories/workshops
+      'noodle_shop', 'noodle_shop',  // Noodle shops
+      'food_stall',  // Snack stands
+      'grocery',  // Tiny grocery stores
+      'school',  // Informal schools
+      'temple',  // Religious spaces
+      'infrastructure',  // Shared infrastructure (water points, mail, etc.)
     ];
+
+    // Bathrooms only on every other floor, sewage rooms occasionally
+    const allTypes: RoomType[] = [...baseTypes];
+    if (floorNum % 2 === 0) {
+      allTypes.push('bathroom');  // Toilets only on even floors
+    }
+    // Sewage rooms randomly (less common)
+    if (floorNum % 3 === 0 || floorNum === 1) {
+      allTypes.push('sewage');
+    }
 
     // Use seeded random for consistency
     let rand = seed;
@@ -5276,6 +5295,17 @@ function createFloorView(buildingIdx: number, floor: number) {
         bathroom: roomLit ? 0x6a7a7a : 0x5a6a6a,
         living: roomLit ? 0x5a5a50 : 0x4a4a45,
         storage: 0x3a3a35,
+        sewage: 0x2a3530,  // Dark greenish grimy
+        boxes: 0x3a3530,  // Dusty brown
+        clinic: roomLit ? 0x7a8585 : 0x5a6565,  // Clinical gray-green
+        dental: roomLit ? 0x7a8080 : 0x5a6060,  // Sterile gray
+        factory: 0x4a4545,  // Industrial gray
+        noodle_shop: roomLit ? 0x6a5a4a : 0x5a4a3a,  // Warm wood tones
+        food_stall: roomLit ? 0x6a5545 : 0x5a4540,  // Warm brown
+        grocery: roomLit ? 0x5a5a4a : 0x4a4a3a,  // Neutral
+        school: roomLit ? 0x5a5a55 : 0x4a4a45,  // Neutral gray
+        temple: roomLit ? 0x6a4a3a : 0x5a3a2a,  // Dark red-brown
+        infrastructure: 0x3a4040,  // Dark utility gray
       };
       const floor = new THREE.Mesh(
         new THREE.PlaneGeometry(rw - 0.5, rd - 0.5),
@@ -5593,6 +5623,774 @@ function createFloorView(buildingIdx: number, floor: number) {
         );
         bucket.position.set(x - rw / 4, 0.15, z + rd / 4);
         group.add(bucket);
+      } else if (roomType === 'sewage') {
+        // SEWAGE ROOM - Pipes, drains, puddles, grimy infrastructure
+        // Main sewage pipe
+        const mainPipe = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.3, 0.3, rw - 1, 12),
+          new THREE.MeshLambertMaterial({ color: 0x4a4a4a })
+        );
+        mainPipe.rotation.z = Math.PI / 2;
+        mainPipe.position.set(x, 1.5, z - rd / 2 + 0.5);
+        group.add(mainPipe);
+
+        // Secondary pipes
+        for (let i = 0; i < 3; i++) {
+          const pipe = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.15, 0.15, 2.5, 8),
+            new THREE.MeshLambertMaterial({ color: 0x3a3a3a })
+          );
+          pipe.position.set(x - rw / 3 + i * (rw / 3), 1.25, z - rd / 2 + 0.5);
+          group.add(pipe);
+        }
+
+        // Drain grate in floor
+        const drain = new THREE.Mesh(
+          new THREE.BoxGeometry(0.8, 0.05, 0.8),
+          new THREE.MeshLambertMaterial({ color: 0x2a2a2a })
+        );
+        drain.position.set(x, 0.03, z);
+        group.add(drain);
+
+        // Grate lines
+        for (let i = 0; i < 5; i++) {
+          const grateLine = new THREE.Mesh(
+            new THREE.BoxGeometry(0.05, 0.08, 0.7),
+            new THREE.MeshLambertMaterial({ color: 0x1a1a1a })
+          );
+          grateLine.position.set(x - 0.3 + i * 0.15, 0.06, z);
+          group.add(grateLine);
+        }
+
+        // Puddle (greenish water)
+        const puddle = new THREE.Mesh(
+          new THREE.CircleGeometry(0.6, 16),
+          new THREE.MeshLambertMaterial({ color: 0x3a5a4a, transparent: true, opacity: 0.7 })
+        );
+        puddle.rotation.x = -Math.PI / 2;
+        puddle.position.set(x + rw / 4, 0.02, z + rd / 4);
+        group.add(puddle);
+
+        // Rusty valve
+        const valve = new THREE.Mesh(
+          new THREE.TorusGeometry(0.15, 0.03, 8, 12),
+          new THREE.MeshLambertMaterial({ color: 0x8a4a2a })
+        );
+        valve.position.set(x - rw / 3, 1.8, z - rd / 2 + 0.3);
+        group.add(valve);
+
+        // Old bucket
+        const oldBucket = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.2, 0.15, 0.35, 8),
+          new THREE.MeshLambertMaterial({ color: 0x5a5a5a })
+        );
+        oldBucket.position.set(x + rw / 4, 0.18, z - rd / 4);
+        group.add(oldBucket);
+
+      } else if (roomType === 'boxes') {
+        // BOXES ROOM - Just random storage boxes scattered around
+        for (let i = 0; i < 12; i++) {
+          const boxW = 0.3 + Math.random() * 0.5;
+          const boxH = 0.25 + Math.random() * 0.5;
+          const boxD = 0.25 + Math.random() * 0.4;
+          const boxColor = [0x6a5a4a, 0x7a6a5a, 0x5a4a3a, 0x8a7a6a, 0x4a3a2a][Math.floor(Math.random() * 5)]!;
+          const box = new THREE.Mesh(
+            new THREE.BoxGeometry(boxW, boxH, boxD),
+            new THREE.MeshLambertMaterial({ color: boxColor })
+          );
+          const stackHeight = i > 6 ? 0.4 + Math.random() * 0.4 : 0;
+          box.position.set(
+            x - rw / 2.5 + Math.random() * (rw * 0.8),
+            boxH / 2 + stackHeight,
+            z - rd / 2.5 + Math.random() * (rd * 0.8)
+          );
+          box.rotation.y = Math.random() * 0.5 - 0.25;
+          group.add(box);
+        }
+
+        // Dusty tarp over some boxes
+        const tarp = new THREE.Mesh(
+          new THREE.PlaneGeometry(1.5, 1.2),
+          new THREE.MeshLambertMaterial({ color: 0x4a5a6a, side: THREE.DoubleSide })
+        );
+        tarp.position.set(x - rw / 4, 0.6, z + rd / 4);
+        tarp.rotation.x = -0.3;
+        tarp.rotation.z = 0.1;
+        group.add(tarp);
+
+      } else if (roomType === 'clinic') {
+        // UNLICENSED MEDICAL CLINIC - Examination table, medicine shelf, basic equipment
+        // Examination table/bed
+        const examTable = new THREE.Mesh(
+          new THREE.BoxGeometry(2.0, 0.5, 0.9),
+          new THREE.MeshLambertMaterial({ color: 0xdddddd })
+        );
+        examTable.position.set(x, 0.45, z - rd / 4);
+        group.add(examTable);
+
+        // Table legs
+        for (let i = 0; i < 4; i++) {
+          const leg = new THREE.Mesh(
+            new THREE.BoxGeometry(0.08, 0.2, 0.08),
+            new THREE.MeshLambertMaterial({ color: 0x888888 })
+          );
+          leg.position.set(
+            x + (i < 2 ? -0.9 : 0.9),
+            0.1,
+            z - rd / 4 + (i % 2 === 0 ? -0.35 : 0.35)
+          );
+          group.add(leg);
+        }
+
+        // Pillow
+        const pillow = new THREE.Mesh(
+          new THREE.BoxGeometry(0.4, 0.1, 0.5),
+          new THREE.MeshLambertMaterial({ color: 0xeeeeee })
+        );
+        pillow.position.set(x - 0.7, 0.75, z - rd / 4);
+        group.add(pillow);
+
+        // Medicine cabinet
+        const cabinet = new THREE.Mesh(
+          new THREE.BoxGeometry(1.2, 1.5, 0.4),
+          new THREE.MeshLambertMaterial({ color: 0xaaaaaa })
+        );
+        cabinet.position.set(x + rw / 3, 1.0, z - rd / 2 + 0.35);
+        group.add(cabinet);
+
+        // Cabinet cross (medical symbol)
+        const crossV = new THREE.Mesh(
+          new THREE.BoxGeometry(0.08, 0.4, 0.02),
+          new THREE.MeshLambertMaterial({ color: 0xcc3333 })
+        );
+        crossV.position.set(x + rw / 3, 1.2, z - rd / 2 + 0.56);
+        group.add(crossV);
+        const crossH = new THREE.Mesh(
+          new THREE.BoxGeometry(0.4, 0.08, 0.02),
+          new THREE.MeshLambertMaterial({ color: 0xcc3333 })
+        );
+        crossH.position.set(x + rw / 3, 1.2, z - rd / 2 + 0.56);
+        group.add(crossH);
+
+        // Small stool
+        const stool = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.2, 0.2, 0.4, 12),
+          new THREE.MeshLambertMaterial({ color: 0x666666 })
+        );
+        stool.position.set(x + 0.8, 0.2, z);
+        group.add(stool);
+
+        // IV stand (just the pole)
+        const ivPole = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.02, 0.02, 1.8, 8),
+          new THREE.MeshLambertMaterial({ color: 0xcccccc })
+        );
+        ivPole.position.set(x - rw / 3, 0.9, z - rd / 4);
+        group.add(ivPole);
+
+      } else if (roomType === 'dental') {
+        // UNLICENSED DENTAL CLINIC - Dental chair, instruments, bright light
+        // Dental chair base
+        const chairBase = new THREE.Mesh(
+          new THREE.BoxGeometry(0.8, 0.3, 1.8),
+          new THREE.MeshLambertMaterial({ color: 0x4a6a7a })
+        );
+        chairBase.position.set(x, 0.35, z);
+        group.add(chairBase);
+
+        // Chair back (angled)
+        const chairBack = new THREE.Mesh(
+          new THREE.BoxGeometry(0.7, 0.15, 1.0),
+          new THREE.MeshLambertMaterial({ color: 0x4a6a7a })
+        );
+        chairBack.position.set(x, 0.65, z - 0.5);
+        chairBack.rotation.x = -0.4;
+        group.add(chairBack);
+
+        // Headrest
+        const headrest = new THREE.Mesh(
+          new THREE.BoxGeometry(0.35, 0.1, 0.3),
+          new THREE.MeshLambertMaterial({ color: 0x3a5a6a })
+        );
+        headrest.position.set(x, 0.85, z - 0.9);
+        group.add(headrest);
+
+        // Instrument tray
+        const tray = new THREE.Mesh(
+          new THREE.BoxGeometry(0.5, 0.05, 0.3),
+          new THREE.MeshLambertMaterial({ color: 0xcccccc })
+        );
+        tray.position.set(x + 0.7, 0.9, z);
+        group.add(tray);
+
+        // Dental instruments on tray
+        for (let i = 0; i < 4; i++) {
+          const tool = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.015, 0.015, 0.2, 6),
+            new THREE.MeshLambertMaterial({ color: 0xdddddd })
+          );
+          tool.rotation.x = Math.PI / 2;
+          tool.position.set(x + 0.55 + i * 0.1, 0.95, z);
+          group.add(tool);
+        }
+
+        // Overhead lamp arm
+        const lampArm = new THREE.Mesh(
+          new THREE.BoxGeometry(0.05, 0.05, 1.0),
+          new THREE.MeshLambertMaterial({ color: 0x888888 })
+        );
+        lampArm.position.set(x, 2.0, z - 0.3);
+        group.add(lampArm);
+
+        // Dental lamp
+        const dentalLamp = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.2, 0.25, 0.1, 12),
+          new THREE.MeshLambertMaterial({ color: 0xeeeeee })
+        );
+        dentalLamp.position.set(x, 1.9, z + 0.15);
+        group.add(dentalLamp);
+
+        // Bright dental light
+        const dentalLight = new THREE.PointLight(0xffffff, 0.6, 4);
+        dentalLight.position.set(x, 1.85, z + 0.15);
+        group.add(dentalLight);
+
+        // Small cabinet
+        const dentalCabinet = new THREE.Mesh(
+          new THREE.BoxGeometry(0.8, 1.2, 0.5),
+          new THREE.MeshLambertMaterial({ color: 0xaaaaaa })
+        );
+        dentalCabinet.position.set(x - rw / 3, 0.6, z + rd / 3);
+        group.add(dentalCabinet);
+
+      } else if (roomType === 'factory') {
+        // SMALL FACTORY / WORKSHOP - Noodles, fish balls, light manufacturing
+        // Work table
+        const workTable = new THREE.Mesh(
+          new THREE.BoxGeometry(2.5, 0.8, 1.2),
+          new THREE.MeshLambertMaterial({ color: 0x888888 })
+        );
+        workTable.position.set(x, 0.4, z - rd / 4);
+        group.add(workTable);
+
+        // Table top (stainless steel look)
+        const tableTop = new THREE.Mesh(
+          new THREE.BoxGeometry(2.6, 0.05, 1.3),
+          new THREE.MeshLambertMaterial({ color: 0xaaaaaa })
+        );
+        tableTop.position.set(x, 0.83, z - rd / 4);
+        group.add(tableTop);
+
+        // Large mixing bowl
+        const bowl = new THREE.Mesh(
+          new THREE.SphereGeometry(0.35, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+          new THREE.MeshLambertMaterial({ color: 0xcccccc, side: THREE.DoubleSide })
+        );
+        bowl.rotation.x = Math.PI;
+        bowl.position.set(x - 0.6, 1.0, z - rd / 4);
+        group.add(bowl);
+
+        // Dough/ingredients in bowl
+        const dough = new THREE.Mesh(
+          new THREE.SphereGeometry(0.25, 8, 6),
+          new THREE.MeshLambertMaterial({ color: 0xeeddcc })
+        );
+        dough.position.set(x - 0.6, 0.95, z - rd / 4);
+        group.add(dough);
+
+        // Drying rack with noodles
+        const rack = new THREE.Mesh(
+          new THREE.BoxGeometry(0.1, 1.5, 0.1),
+          new THREE.MeshLambertMaterial({ color: 0x6a5a4a })
+        );
+        rack.position.set(x + rw / 3, 0.75, z + rd / 4);
+        group.add(rack);
+
+        const rackBar = new THREE.Mesh(
+          new THREE.BoxGeometry(1.0, 0.05, 0.05),
+          new THREE.MeshLambertMaterial({ color: 0x6a5a4a })
+        );
+        rackBar.position.set(x + rw / 3, 1.4, z + rd / 4);
+        group.add(rackBar);
+
+        // Hanging noodles
+        for (let i = 0; i < 5; i++) {
+          const noodles = new THREE.Mesh(
+            new THREE.BoxGeometry(0.08, 0.6, 0.02),
+            new THREE.MeshLambertMaterial({ color: 0xeeddaa })
+          );
+          noodles.position.set(x + rw / 3 - 0.4 + i * 0.2, 1.1, z + rd / 4);
+          group.add(noodles);
+        }
+
+        // Steamer baskets stacked
+        for (let i = 0; i < 3; i++) {
+          const steamer = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.25, 0.25, 0.15, 12),
+            new THREE.MeshLambertMaterial({ color: 0x8a7a5a })
+          );
+          steamer.position.set(x + 0.8, 0.9 + i * 0.16, z - rd / 4);
+          group.add(steamer);
+        }
+
+        // Shelving with supplies
+        const supplyShelf = new THREE.Mesh(
+          new THREE.BoxGeometry(1.5, 1.8, 0.4),
+          new THREE.MeshLambertMaterial({ color: 0x5a5a5a })
+        );
+        supplyShelf.position.set(x - rw / 3, 0.9, z + rd / 3);
+        group.add(supplyShelf);
+
+      } else if (roomType === 'noodle_shop') {
+        // NOODLE SHOP - Counter, cooking area, stools
+        // Service counter
+        const counter = new THREE.Mesh(
+          new THREE.BoxGeometry(rw - 1.5, 1.0, 0.8),
+          new THREE.MeshLambertMaterial({ color: 0x6a5a4a })
+        );
+        counter.position.set(x, 0.5, z - rd / 2 + 0.6);
+        group.add(counter);
+
+        // Counter top
+        const counterTop = new THREE.Mesh(
+          new THREE.BoxGeometry(rw - 1.4, 0.05, 0.9),
+          new THREE.MeshLambertMaterial({ color: 0x8a7a6a })
+        );
+        counterTop.position.set(x, 1.03, z - rd / 2 + 0.6);
+        group.add(counterTop);
+
+        // Cooking pot/wok
+        const wok = new THREE.Mesh(
+          new THREE.SphereGeometry(0.3, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+          new THREE.MeshLambertMaterial({ color: 0x3a3a3a, side: THREE.DoubleSide })
+        );
+        wok.rotation.x = Math.PI;
+        wok.position.set(x - 0.8, 1.15, z - rd / 2 + 0.5);
+        group.add(wok);
+
+        // Steaming effect (simple cylinder)
+        const steam = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.15, 0.25, 0.4, 8),
+          new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.3 })
+        );
+        steam.position.set(x - 0.8, 1.5, z - rd / 2 + 0.5);
+        group.add(steam);
+
+        // Bowl stack
+        for (let i = 0; i < 4; i++) {
+          const bowl = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.12, 0.08, 0.08, 12),
+            new THREE.MeshLambertMaterial({ color: 0xeeeeee })
+          );
+          bowl.position.set(x + 0.5, 1.08 + i * 0.06, z - rd / 2 + 0.4);
+          group.add(bowl);
+        }
+
+        // Chopstick holder
+        const chopstickHolder = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.08, 0.06, 0.2, 8),
+          new THREE.MeshLambertMaterial({ color: 0x5a4a3a })
+        );
+        chopstickHolder.position.set(x + 0.8, 1.15, z - rd / 2 + 0.4);
+        group.add(chopstickHolder);
+
+        // Customer stools
+        for (let i = 0; i < 3; i++) {
+          const stool = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.18, 0.18, 0.45, 8),
+            new THREE.MeshLambertMaterial({ color: 0xaa3333 })
+          );
+          stool.position.set(x - rw / 3 + i * (rw / 3), 0.23, z + rd / 4);
+          group.add(stool);
+        }
+
+        // Menu board on wall
+        const menuBoard = new THREE.Mesh(
+          new THREE.BoxGeometry(1.2, 0.8, 0.05),
+          new THREE.MeshLambertMaterial({ color: 0x2a2a2a })
+        );
+        menuBoard.position.set(x, 2.0, z - rd / 2 + 0.15);
+        group.add(menuBoard);
+
+      } else if (roomType === 'food_stall') {
+        // FOOD STALL / SNACK STAND - Small cooking setup, display case
+        // Small counter/cart
+        const cart = new THREE.Mesh(
+          new THREE.BoxGeometry(1.8, 0.9, 0.7),
+          new THREE.MeshLambertMaterial({ color: 0x7a6a5a })
+        );
+        cart.position.set(x, 0.45, z - rd / 4);
+        group.add(cart);
+
+        // Glass display case
+        const displayCase = new THREE.Mesh(
+          new THREE.BoxGeometry(1.0, 0.5, 0.5),
+          new THREE.MeshLambertMaterial({ color: 0xaaddff, transparent: true, opacity: 0.4 })
+        );
+        displayCase.position.set(x + 0.3, 1.15, z - rd / 4);
+        group.add(displayCase);
+
+        // Food items in display
+        for (let i = 0; i < 4; i++) {
+          const foodItem = new THREE.Mesh(
+            new THREE.SphereGeometry(0.08, 8, 6),
+            new THREE.MeshLambertMaterial({ color: [0xddaa66, 0xcc8844, 0xeecc88, 0xbb7733][i]! })
+          );
+          foodItem.position.set(x + 0.1 + i * 0.18, 0.98, z - rd / 4);
+          group.add(foodItem);
+        }
+
+        // Small burner/hotplate
+        const burner = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.2, 0.2, 0.1, 12),
+          new THREE.MeshLambertMaterial({ color: 0x333333 })
+        );
+        burner.position.set(x - 0.5, 0.95, z - rd / 4);
+        group.add(burner);
+
+        // Pot on burner
+        const pot = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.18, 0.15, 0.25, 12),
+          new THREE.MeshLambertMaterial({ color: 0x666666 })
+        );
+        pot.position.set(x - 0.5, 1.13, z - rd / 4);
+        group.add(pot);
+
+        // Awning/canopy
+        const awning = new THREE.Mesh(
+          new THREE.BoxGeometry(2.2, 0.05, 1.2),
+          new THREE.MeshLambertMaterial({ color: 0xcc4444 })
+        );
+        awning.position.set(x, 2.2, z - rd / 4);
+        group.add(awning);
+
+        // Price sign
+        const sign = new THREE.Mesh(
+          new THREE.BoxGeometry(0.6, 0.4, 0.02),
+          new THREE.MeshLambertMaterial({ color: 0xffee00 })
+        );
+        sign.position.set(x + 0.8, 1.6, z - rd / 4 + 0.3);
+        sign.rotation.y = -0.3;
+        group.add(sign);
+
+      } else if (roomType === 'grocery') {
+        // TINY GROCERY STORE - Shelves with goods, narrow aisles
+        // Shelving units along walls
+        for (let side = 0; side < 2; side++) {
+          const shelfUnit = new THREE.Mesh(
+            new THREE.BoxGeometry(0.4, 2.0, rd - 2),
+            new THREE.MeshLambertMaterial({ color: 0x5a5a5a })
+          );
+          shelfUnit.position.set(x + (side === 0 ? -rw / 2 + 0.4 : rw / 2 - 0.4), 1.0, z);
+          group.add(shelfUnit);
+
+          // Shelf plates
+          for (let s = 0; s < 4; s++) {
+            const shelfPlate = new THREE.Mesh(
+              new THREE.BoxGeometry(0.45, 0.03, rd - 2.2),
+              new THREE.MeshLambertMaterial({ color: 0x6a6a6a })
+            );
+            shelfPlate.position.set(
+              x + (side === 0 ? -rw / 2 + 0.4 : rw / 2 - 0.4),
+              0.3 + s * 0.5,
+              z
+            );
+            group.add(shelfPlate);
+
+            // Products on shelves
+            for (let p = 0; p < 6; p++) {
+              const product = new THREE.Mesh(
+                new THREE.BoxGeometry(0.1 + Math.random() * 0.1, 0.15 + Math.random() * 0.1, 0.08),
+                new THREE.MeshLambertMaterial({
+                  color: [0xdd4444, 0x44dd44, 0x4444dd, 0xdddd44, 0xdd44dd, 0x44dddd][p % 6]!
+                })
+              );
+              product.position.set(
+                x + (side === 0 ? -rw / 2 + 0.4 : rw / 2 - 0.4),
+                0.4 + s * 0.5,
+                z - rd / 3 + p * 0.35
+              );
+              group.add(product);
+            }
+          }
+        }
+
+        // Center display/basket
+        const basket = new THREE.Mesh(
+          new THREE.BoxGeometry(0.8, 0.5, 0.8),
+          new THREE.MeshLambertMaterial({ color: 0x6a5a4a })
+        );
+        basket.position.set(x, 0.25, z + rd / 4);
+        group.add(basket);
+
+        // Items in basket (fruits/vegetables)
+        for (let i = 0; i < 6; i++) {
+          const fruit = new THREE.Mesh(
+            new THREE.SphereGeometry(0.08, 8, 6),
+            new THREE.MeshLambertMaterial({ color: [0xff6600, 0xffff00, 0x00ff00][i % 3]! })
+          );
+          fruit.position.set(
+            x - 0.2 + Math.random() * 0.4,
+            0.55,
+            z + rd / 4 - 0.2 + Math.random() * 0.4
+          );
+          group.add(fruit);
+        }
+
+        // Cash register area
+        const register = new THREE.Mesh(
+          new THREE.BoxGeometry(0.4, 0.25, 0.3),
+          new THREE.MeshLambertMaterial({ color: 0x444444 })
+        );
+        register.position.set(x, 1.1, z - rd / 2 + 0.5);
+        group.add(register);
+
+      } else if (roomType === 'school') {
+        // INFORMAL SCHOOL / EDUCATION SPACE - Desks, blackboard, basic supplies
+        // Teacher's desk
+        const teacherDesk = new THREE.Mesh(
+          new THREE.BoxGeometry(1.4, 0.7, 0.7),
+          new THREE.MeshLambertMaterial({ color: 0x5a4a3a })
+        );
+        teacherDesk.position.set(x, 0.35, z - rd / 2 + 0.6);
+        group.add(teacherDesk);
+
+        // Blackboard
+        const blackboard = new THREE.Mesh(
+          new THREE.BoxGeometry(rw - 2, 1.2, 0.05),
+          new THREE.MeshLambertMaterial({ color: 0x1a3a2a })
+        );
+        blackboard.position.set(x, 1.8, z - rd / 2 + 0.15);
+        group.add(blackboard);
+
+        // Chalk tray
+        const chalkTray = new THREE.Mesh(
+          new THREE.BoxGeometry(rw - 2.2, 0.05, 0.1),
+          new THREE.MeshLambertMaterial({ color: 0x5a4a3a })
+        );
+        chalkTray.position.set(x, 1.15, z - rd / 2 + 0.18);
+        group.add(chalkTray);
+
+        // Student desks (2 rows)
+        for (let row = 0; row < 2; row++) {
+          for (let col = 0; col < 3; col++) {
+            const desk = new THREE.Mesh(
+              new THREE.BoxGeometry(0.8, 0.55, 0.5),
+              new THREE.MeshLambertMaterial({ color: 0x6a5a4a })
+            );
+            desk.position.set(
+              x - rw / 3 + col * (rw / 3),
+              0.28,
+              z + rd / 6 + row * 1.2
+            );
+            group.add(desk);
+
+            // Small stool/chair
+            const chair = new THREE.Mesh(
+              new THREE.BoxGeometry(0.35, 0.35, 0.35),
+              new THREE.MeshLambertMaterial({ color: 0x5a5a5a })
+            );
+            chair.position.set(
+              x - rw / 3 + col * (rw / 3),
+              0.18,
+              z + rd / 6 + row * 1.2 + 0.5
+            );
+            group.add(chair);
+          }
+        }
+
+        // Book pile on teacher's desk
+        for (let b = 0; b < 3; b++) {
+          const book = new THREE.Mesh(
+            new THREE.BoxGeometry(0.2, 0.04, 0.15),
+            new THREE.MeshLambertMaterial({ color: [0x8844aa, 0x44aa88, 0xaa4444][b]! })
+          );
+          book.position.set(x + 0.4, 0.73 + b * 0.04, z - rd / 2 + 0.6);
+          group.add(book);
+        }
+
+      } else if (roomType === 'temple') {
+        // SMALL TEMPLE / SHRINE - Altar, incense, religious items
+        // Main altar table
+        const altar = new THREE.Mesh(
+          new THREE.BoxGeometry(1.8, 0.9, 0.6),
+          new THREE.MeshLambertMaterial({ color: 0x6a2a1a })
+        );
+        altar.position.set(x, 0.45, z - rd / 2 + 0.5);
+        group.add(altar);
+
+        // Altar cloth/covering
+        const altarCloth = new THREE.Mesh(
+          new THREE.BoxGeometry(1.9, 0.02, 0.7),
+          new THREE.MeshLambertMaterial({ color: 0xcc2222 })
+        );
+        altarCloth.position.set(x, 0.91, z - rd / 2 + 0.5);
+        group.add(altarCloth);
+
+        // Deity figure/statue
+        const statue = new THREE.Mesh(
+          new THREE.BoxGeometry(0.3, 0.6, 0.25),
+          new THREE.MeshLambertMaterial({ color: 0xddaa33 })
+        );
+        statue.position.set(x, 1.2, z - rd / 2 + 0.45);
+        group.add(statue);
+
+        // Statue head
+        const statueHead = new THREE.Mesh(
+          new THREE.SphereGeometry(0.12, 8, 8),
+          new THREE.MeshLambertMaterial({ color: 0xddaa33 })
+        );
+        statueHead.position.set(x, 1.55, z - rd / 2 + 0.45);
+        group.add(statueHead);
+
+        // Incense holder
+        const incenseHolder = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.15, 0.12, 0.2, 12),
+          new THREE.MeshLambertMaterial({ color: 0x8a6a4a })
+        );
+        incenseHolder.position.set(x - 0.5, 1.0, z - rd / 2 + 0.5);
+        group.add(incenseHolder);
+
+        // Incense sticks
+        for (let i = 0; i < 3; i++) {
+          const incense = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.008, 0.008, 0.4, 6),
+            new THREE.MeshLambertMaterial({ color: 0xff6633 })
+          );
+          incense.position.set(x - 0.5 + i * 0.05, 1.25, z - rd / 2 + 0.5);
+          group.add(incense);
+        }
+
+        // Offering fruits
+        const fruitPlate = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.2, 0.18, 0.05, 12),
+          new THREE.MeshLambertMaterial({ color: 0xeeeecc })
+        );
+        fruitPlate.position.set(x + 0.5, 0.95, z - rd / 2 + 0.5);
+        group.add(fruitPlate);
+
+        for (let i = 0; i < 3; i++) {
+          const orange = new THREE.Mesh(
+            new THREE.SphereGeometry(0.06, 8, 6),
+            new THREE.MeshLambertMaterial({ color: 0xff8800 })
+          );
+          orange.position.set(x + 0.45 + i * 0.08, 1.02, z - rd / 2 + 0.5);
+          group.add(orange);
+        }
+
+        // Red lantern
+        const lantern = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.15, 0.15, 0.35, 12),
+          new THREE.MeshLambertMaterial({ color: 0xcc2222 })
+        );
+        lantern.position.set(x, 2.3, z);
+        group.add(lantern);
+
+        // Lantern light
+        const lanternLight = new THREE.PointLight(0xff6633, 0.4, 5);
+        lanternLight.position.set(x, 2.2, z);
+        group.add(lanternLight);
+
+        // Prayer mat
+        const mat = new THREE.Mesh(
+          new THREE.BoxGeometry(0.8, 0.02, 1.2),
+          new THREE.MeshLambertMaterial({ color: 0x884422 })
+        );
+        mat.position.set(x, 0.02, z + rd / 4);
+        group.add(mat);
+
+      } else if (roomType === 'infrastructure') {
+        // SHARED INFRASTRUCTURE - Water points, mail, stairwell utility
+        // Water tank/cistern
+        const waterTank = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.5, 0.5, 1.2, 12),
+          new THREE.MeshLambertMaterial({ color: 0x3a5a7a })
+        );
+        waterTank.position.set(x - rw / 3, 0.6, z - rd / 3);
+        group.add(waterTank);
+
+        // Water tap
+        const tap = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.03, 0.03, 0.15, 8),
+          new THREE.MeshLambertMaterial({ color: 0x888888 })
+        );
+        tap.rotation.x = Math.PI / 2;
+        tap.position.set(x - rw / 3 + 0.5, 0.4, z - rd / 3);
+        group.add(tap);
+
+        // Sink/basin below tap
+        const basin = new THREE.Mesh(
+          new THREE.BoxGeometry(0.5, 0.15, 0.4),
+          new THREE.MeshLambertMaterial({ color: 0x888888 })
+        );
+        basin.position.set(x - rw / 3 + 0.5, 0.25, z - rd / 3);
+        group.add(basin);
+
+        // Mailboxes grid
+        const mailboxGrid = new THREE.Mesh(
+          new THREE.BoxGeometry(1.2, 1.5, 0.2),
+          new THREE.MeshLambertMaterial({ color: 0x5a5a5a })
+        );
+        mailboxGrid.position.set(x + rw / 3, 1.0, z - rd / 2 + 0.25);
+        group.add(mailboxGrid);
+
+        // Individual mailbox slots
+        for (let row = 0; row < 4; row++) {
+          for (let col = 0; col < 3; col++) {
+            const slot = new THREE.Mesh(
+              new THREE.BoxGeometry(0.35, 0.3, 0.02),
+              new THREE.MeshLambertMaterial({ color: 0x4a4a4a })
+            );
+            slot.position.set(
+              x + rw / 3 - 0.35 + col * 0.38,
+              0.4 + row * 0.35,
+              z - rd / 2 + 0.36
+            );
+            group.add(slot);
+          }
+        }
+
+        // Electrical panel/junction box
+        const elecPanel = new THREE.Mesh(
+          new THREE.BoxGeometry(0.6, 0.8, 0.15),
+          new THREE.MeshLambertMaterial({ color: 0x666666 })
+        );
+        elecPanel.position.set(x, 1.5, z + rd / 2 - 0.2);
+        group.add(elecPanel);
+
+        // Wires coming out
+        for (let i = 0; i < 4; i++) {
+          const wire = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.015, 0.015, 0.8, 6),
+            new THREE.MeshLambertMaterial({ color: [0x333333, 0xaa0000, 0x0000aa, 0x00aa00][i]! })
+          );
+          wire.position.set(x - 0.2 + i * 0.12, 2.1, z + rd / 2 - 0.2);
+          group.add(wire);
+        }
+
+        // Old fire extinguisher
+        const extinguisher = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.08, 0.08, 0.4, 8),
+          new THREE.MeshLambertMaterial({ color: 0xcc2222 })
+        );
+        extinguisher.position.set(x + rw / 4, 0.2, z + rd / 4);
+        group.add(extinguisher);
+
+        // Mop and bucket
+        const mopBucket = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.15, 0.12, 0.3, 8),
+          new THREE.MeshLambertMaterial({ color: 0x5a5aaa })
+        );
+        mopBucket.position.set(x - rw / 4, 0.15, z + rd / 4);
+        group.add(mopBucket);
+
+        const mopHandle = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.02, 0.02, 1.5, 6),
+          new THREE.MeshLambertMaterial({ color: 0x6a5a4a })
+        );
+        mopHandle.position.set(x - rw / 4 + 0.1, 0.75, z + rd / 4);
+        mopHandle.rotation.z = 0.2;
+        group.add(mopHandle);
       }
 
       // Wall lamp - 95% of rooms have a warm orange wall lamp
