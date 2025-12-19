@@ -113,7 +113,23 @@ const allBuildingMeshes: THREE.Mesh[] = [];
 // ============================================
 // FLOOR ROOM CACHE - Persists room configurations
 // ============================================
-type RoomType = 'bedroom' | 'kitchen' | 'bathroom' | 'living' | 'storage' | 'sewage' | 'boxes' | 'clinic' | 'dental' | 'factory' | 'noodle_shop' | 'food_stall' | 'grocery' | 'school' | 'temple' | 'infrastructure';
+type RoomType =
+  | 'bedroom'
+  | 'kitchen'
+  | 'bathroom'
+  | 'living'
+  | 'storage'
+  | 'sewage'
+  | 'boxes'
+  | 'clinic'
+  | 'dental'
+  | 'factory'
+  | 'noodle_shop'
+  | 'food_stall'
+  | 'grocery'
+  | 'school'
+  | 'temple'
+  | 'infrastructure';
 
 interface FloorRoomConfig {
   roomTypes: RoomType[];
@@ -142,26 +158,33 @@ function getOrCreateFloorConfig(
 
     // Base room types - weighted distribution
     const baseTypes: RoomType[] = [
-      'bedroom', 'bedroom', 'bedroom', 'bedroom',  // Most common - residential
-      'kitchen', 'kitchen',
+      'bedroom',
+      'bedroom',
+      'bedroom',
+      'bedroom', // Most common - residential
+      'kitchen',
+      'kitchen',
       'living',
       'storage',
-      'boxes', 'boxes',  // Random storage rooms
-      'clinic',  // Unlicensed medical clinics
-      'dental',  // Unlicensed dental clinics
-      'factory', 'factory',  // Small factories/workshops
-      'noodle_shop', 'noodle_shop',  // Noodle shops
-      'food_stall',  // Snack stands
-      'grocery',  // Tiny grocery stores
-      'school',  // Informal schools
-      'temple',  // Religious spaces
-      'infrastructure',  // Shared infrastructure (water points, mail, etc.)
+      'boxes',
+      'boxes', // Random storage rooms
+      'clinic', // Unlicensed medical clinics
+      'dental', // Unlicensed dental clinics
+      'factory',
+      'factory', // Small factories/workshops
+      'noodle_shop',
+      'noodle_shop', // Noodle shops
+      'food_stall', // Snack stands
+      'grocery', // Tiny grocery stores
+      'school', // Informal schools
+      'temple', // Religious spaces
+      'infrastructure', // Shared infrastructure (water points, mail, etc.)
     ];
 
     // Bathrooms only on every other floor, sewage rooms occasionally
     const allTypes: RoomType[] = [...baseTypes];
     if (floorNum % 2 === 0) {
-      allTypes.push('bathroom');  // Toilets only on even floors
+      allTypes.push('bathroom'); // Toilets only on even floors
     }
     // Sewage rooms randomly (less common)
     if (floorNum % 3 === 0 || floorNum === 1) {
@@ -2269,7 +2292,8 @@ const historicalCharacters: HistoricalCharacter[] = [
     occupation: 'Missionary',
     story: `I arrived in Hong Kong in 1966 with just ten dollars and a dream. Everyone told me I was foolish—a young English woman with no mission board, no support, walking into the darkest corner of Kowloon. The Walled City was called "Hak Nam"—the City of Darkness. When I first entered those narrow alleys, I understood why. No sunlight reached the lower floors. Water dripped constantly. The air smelled of opium and despair. I started a youth club in a tiny room, offering ping pong and a listening ear. The Triad boys laughed at me, smeared sewage on my walls, destroyed my equipment. But I didn't leave. Slowly, something changed. Drug addicts began finding freedom. Gang members started asking questions. A Triad boss sent guards to protect my club. For decades I watched transformation happen in the most hopeless place imaginable. The Walled City taught me that darkness isn't the absence of light—it's where light matters most. These alleys held more courage and community than any place I've known.`,
     source: 'South China Morning Post',
-    sourceUrl: 'https://www.scmp.com/lifestyle/article/2048647/britons-50-years-helping-hong-kong-addicts-beat-drugs-and-find-god',
+    sourceUrl:
+      'https://www.scmp.com/lifestyle/article/2048647/britons-50-years-helping-hong-kong-addicts-beat-drugs-and-find-god',
     appearance: {
       skinColor: 0xf5d0c5,
       clothColor: 0x4a6a8a,
@@ -2290,7 +2314,8 @@ const historicalCharacters: HistoricalCharacter[] = [
     occupation: 'Resident (Eldest Daughter)',
     story: `Our family of six moved here from a rooftop hut in Hung Hom in the 1960s. That first home was only 70 square feet, shared with seven other families near Tung Tau Chuen Road. There wasn't even space for a dinner table—we ate from a board laid over Mother's knitting machine while sitting on the bed. But we were happy. So many children to play with! Later we moved to a bigger flat on Tai Cheng Street, fourth floor. No running water though. As the eldest daughter, hauling buckets from the communal tap became my job. Up four floors, every single day. My arms grew strong but I stopped growing tall—that's my joke anyway. People outside thought we were poor and miserable. They didn't understand. We celebrated festivals together, watched out for each other's children, shared food when times were hard. The walls pressed close but somehow our hearts had room. When they demolished the City, I cried. Not for the building—for the community we'd never find again.`,
     source: 'The Travel Club',
-    sourceUrl: 'https://www.thetravelclub.org/articles/travelogues/664-kowloon-walled-city-life-in-the-city-of-darkness',
+    sourceUrl:
+      'https://www.thetravelclub.org/articles/travelogues/664-kowloon-walled-city-life-in-the-city-of-darkness',
     appearance: {
       skinColor: 0xe8c4a8,
       clothColor: 0x8a5a6a,
@@ -2354,7 +2379,8 @@ const historicalCharacters: HistoricalCharacter[] = [
     occupation: 'Grocery Store Owner',
     story: `My shop on Lung Chun Back Road was small—barely room for me, my goods, and my cats. Seven cats I had, all rescued from the alleys. People laughed at first, said a grocer shouldn't keep so many animals around food. But those cats kept the rats away, and in the Walled City, rats were bigger than you'd believe. My customers understood. They'd come for rice, oil, vegetables, but they'd stay to pet the cats, share gossip, catch their breath from the endless stairs. The shop became more than a business—it was a rest stop, a meeting point, a place to feel normal. I knew who was sick, who was struggling, whose children had passed their exams. News traveled through my store faster than any newspaper. When someone couldn't pay, I wrote it in my book. Most paid eventually. Those who couldn't, I forgave. We were all surviving together. The City wasn't just buildings stacked on buildings. It was people stacked on people, holding each other up.`,
     source: 'City of Darkness by Greg Girard and Ian Lambot',
-    sourceUrl: 'https://www.mplus.org.hk/en/magazine/exploring-kowloon-walled-city-photographic-journey/',
+    sourceUrl:
+      'https://www.mplus.org.hk/en/magazine/exploring-kowloon-walled-city-photographic-journey/',
     appearance: {
       skinColor: 0xc9a882,
       clothColor: 0x6a5a4a,
@@ -2406,7 +2432,7 @@ const historicalCharacters: HistoricalCharacter[] = [
       age: 'elderly',
     },
     interactions: {
-      greeting: 'Sit, child. My old bones don\'t move so fast anymore.',
+      greeting: "Sit, child. My old bones don't move so fast anymore.",
       backstory: 'Ninety years I have seen. Let me tell you what matters...',
       farewell: 'May your ancestors watch over you.',
     },
@@ -2439,7 +2465,8 @@ const historicalCharacters: HistoricalCharacter[] = [
     occupation: 'Cafe Owner',
     story: `The Chung Fat Cafe sits right at the edge of the City, on Tung Tau Tsuen Road where the walls meet the outside world. That location was no accident—taxi drivers love us. They pull up between fares, step in for hot milk tea and conversation, then disappear back into the streets. My cashier's desk faces the door so I can greet everyone who enters. I know the regulars by name, know their problems and their joys. A cafe in the Walled City is more than a business. We're a bridge between the darkness inside and the bright chaos outside. Drivers bring news from across Hong Kong. Residents come for a taste of normalcy. The tea is strong, the toast is crispy, and the talk is free. Some say the Walled City was lawless, dangerous, unfit for decent people. They never sat in my cafe, never watched neighbors laugh together, never saw the taxi drivers leave bigger tips than necessary because they knew times were hard. This place had heart.`,
     source: 'City of Darkness by Greg Girard and Ian Lambot',
-    sourceUrl: 'https://www.mplus.org.hk/en/magazine/exploring-kowloon-walled-city-photographic-journey/',
+    sourceUrl:
+      'https://www.mplus.org.hk/en/magazine/exploring-kowloon-walled-city-photographic-journey/',
     appearance: {
       skinColor: 0xd4a574,
       clothColor: 0x8a4a4a,
@@ -2451,7 +2478,7 @@ const historicalCharacters: HistoricalCharacter[] = [
     interactions: {
       greeting: 'Tea? Coffee? Sit anywhere—all seats are good seats.',
       backstory: 'Every taxi driver in Kowloon knows this cafe...',
-      farewell: 'Don\'t be a stranger. The kettle\'s always hot.',
+      farewell: "Don't be a stranger. The kettle's always hot.",
     },
   },
   {
@@ -2488,7 +2515,14 @@ const historicalScrollData: Scroll[] = historicalCharacters.map((char, idx) => (
 }));
 
 // Dialogue state for multi-step conversations
-type DialogueStage = 'greeting' | 'backstory' | 'accept' | 'farewell' | 'closed';
+type DialogueStage =
+  | 'greeting'
+  | 'backstory'
+  | 'accept'
+  | 'farewell'
+  | 'closed'
+  | 'bonus_offer'
+  | 'bonus_read';
 let currentDialogueStage: DialogueStage = 'closed';
 let isHoodlumDialogue = false;
 let isHistoricalDialogue = false;
@@ -2517,11 +2551,14 @@ const scrollData: Scroll[] = [...supernaturalScrollData, ...historicalScrollData
 
 // Track collected scrolls by ID
 const collectedScrolls: number[] = [];
-let scrollViewerOpen = false;
-let currentDialogueNPC: NPC | null = null;
-
+// Track collected bonus scrolls (indices from facts.json)
+const collectedBonusScrolls: number[] = [];
+let currentDialogueFactIndex: number | null = null;
 // Global tracker for which scroll IDs are assigned to NPCs across all areas
 const assignedScrollIds: Set<number> = new Set();
+
+let scrollViewerOpen = false;
+let currentDialogueNPC: NPC | null = null;
 
 const outdoorNPCs: NPC[] = [];
 const indoorNPCs: NPC[] = [];
@@ -2530,7 +2567,7 @@ const indoorNPCs: NPC[] = [];
 function createHistoricalMesh(characterId: string): THREE.Group {
   const group = new THREE.Group();
 
-  const char = historicalCharacters.find(c => c.id === characterId);
+  const char = historicalCharacters.find((c) => c.id === characterId);
   if (!char) return createPersonMesh(); // Fallback
 
   const { skinColor, clothColor, pantsColor, hairColor, accessory, gender, age } = char.appearance;
@@ -2617,10 +2654,16 @@ function createHistoricalMesh(characterId: string): THREE.Group {
   // Accessories based on character
   if (accessory === 'hat') {
     // Postman's cap
-    const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.2, 0.1, 12), new THREE.MeshLambertMaterial({ color: 0x2a3a2a }));
+    const cap = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.18, 0.2, 0.1, 12),
+      new THREE.MeshLambertMaterial({ color: 0x2a3a2a })
+    );
     cap.position.y = 1.48;
     group.add(cap);
-    const brim = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.02, 0.15), new THREE.MeshLambertMaterial({ color: 0x2a3a2a }));
+    const brim = new THREE.Mesh(
+      new THREE.BoxGeometry(0.25, 0.02, 0.15),
+      new THREE.MeshLambertMaterial({ color: 0x2a3a2a })
+    );
     brim.position.set(0, 1.44, 0.1);
     group.add(brim);
   } else if (accessory === 'glasses') {
@@ -2637,7 +2680,10 @@ function createHistoricalMesh(characterId: string): THREE.Group {
     group.add(bridge);
   } else if (accessory === 'apron') {
     // Work apron
-    const apron = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.4, 0.02), new THREE.MeshLambertMaterial({ color: 0xeeeeee }));
+    const apron = new THREE.Mesh(
+      new THREE.BoxGeometry(0.35, 0.4, 0.02),
+      new THREE.MeshLambertMaterial({ color: 0xeeeeee })
+    );
     apron.position.set(0, 0.65, 0.14);
     group.add(apron);
   }
@@ -3660,7 +3706,7 @@ function createDogMesh(): THREE.Group {
 
 // Spawn ambient ghosts that appear/disappear
 function spawnAmbientGhosts() {
-  const ghostCount = 20; // Number of ambient ghosts wandering the city
+  const ghostCount = 200; // Number of ambient ghosts wandering the city
 
   for (let i = 0; i < ghostCount; i++) {
     const mesh = createAmbientGhostMesh();
@@ -5744,17 +5790,17 @@ function createFloorView(buildingIdx: number, floor: number) {
         bathroom: roomLit ? 0x6a7a7a : 0x5a6a6a,
         living: roomLit ? 0x5a5a50 : 0x4a4a45,
         storage: 0x3a3a35,
-        sewage: 0x2a3530,  // Dark greenish grimy
-        boxes: 0x3a3530,  // Dusty brown
-        clinic: roomLit ? 0x7a8585 : 0x5a6565,  // Clinical gray-green
-        dental: roomLit ? 0x7a8080 : 0x5a6060,  // Sterile gray
-        factory: 0x4a4545,  // Industrial gray
-        noodle_shop: roomLit ? 0x6a5a4a : 0x5a4a3a,  // Warm wood tones
-        food_stall: roomLit ? 0x6a5545 : 0x5a4540,  // Warm brown
-        grocery: roomLit ? 0x5a5a4a : 0x4a4a3a,  // Neutral
-        school: roomLit ? 0x5a5a55 : 0x4a4a45,  // Neutral gray
-        temple: roomLit ? 0x6a4a3a : 0x5a3a2a,  // Dark red-brown
-        infrastructure: 0x3a4040,  // Dark utility gray
+        sewage: 0x2a3530, // Dark greenish grimy
+        boxes: 0x3a3530, // Dusty brown
+        clinic: roomLit ? 0x7a8585 : 0x5a6565, // Clinical gray-green
+        dental: roomLit ? 0x7a8080 : 0x5a6060, // Sterile gray
+        factory: 0x4a4545, // Industrial gray
+        noodle_shop: roomLit ? 0x6a5a4a : 0x5a4a3a, // Warm wood tones
+        food_stall: roomLit ? 0x6a5545 : 0x5a4540, // Warm brown
+        grocery: roomLit ? 0x5a5a4a : 0x4a4a3a, // Neutral
+        school: roomLit ? 0x5a5a55 : 0x4a4a45, // Neutral gray
+        temple: roomLit ? 0x6a4a3a : 0x5a3a2a, // Dark red-brown
+        infrastructure: 0x3a4040, // Dark utility gray
       };
       const floor = new THREE.Mesh(
         new THREE.PlaneGeometry(rw - 0.5, rd - 0.5),
@@ -6135,14 +6181,15 @@ function createFloorView(buildingIdx: number, floor: number) {
         );
         oldBucket.position.set(x + rw / 4, 0.18, z - rd / 4);
         group.add(oldBucket);
-
       } else if (roomType === 'boxes') {
         // BOXES ROOM - Just random storage boxes scattered around
         for (let i = 0; i < 12; i++) {
           const boxW = 0.3 + Math.random() * 0.5;
           const boxH = 0.25 + Math.random() * 0.5;
           const boxD = 0.25 + Math.random() * 0.4;
-          const boxColor = [0x6a5a4a, 0x7a6a5a, 0x5a4a3a, 0x8a7a6a, 0x4a3a2a][Math.floor(Math.random() * 5)]!;
+          const boxColor = [0x6a5a4a, 0x7a6a5a, 0x5a4a3a, 0x8a7a6a, 0x4a3a2a][
+            Math.floor(Math.random() * 5)
+          ]!;
           const box = new THREE.Mesh(
             new THREE.BoxGeometry(boxW, boxH, boxD),
             new THREE.MeshLambertMaterial({ color: boxColor })
@@ -6166,7 +6213,6 @@ function createFloorView(buildingIdx: number, floor: number) {
         tarp.rotation.x = -0.3;
         tarp.rotation.z = 0.1;
         group.add(tarp);
-
       } else if (roomType === 'clinic') {
         // UNLICENSED MEDICAL CLINIC - Examination table, medicine shelf, basic equipment
         // Examination table/bed
@@ -6236,7 +6282,6 @@ function createFloorView(buildingIdx: number, floor: number) {
         );
         ivPole.position.set(x - rw / 3, 0.9, z - rd / 4);
         group.add(ivPole);
-
       } else if (roomType === 'dental') {
         // UNLICENSED DENTAL CLINIC - Dental chair, instruments, bright light
         // Dental chair base
@@ -6311,7 +6356,6 @@ function createFloorView(buildingIdx: number, floor: number) {
         );
         dentalCabinet.position.set(x - rw / 3, 0.6, z + rd / 3);
         group.add(dentalCabinet);
-
       } else if (roomType === 'factory') {
         // SMALL FACTORY / WORKSHOP - Noodles, fish balls, light manufacturing
         // Work table
@@ -6389,7 +6433,6 @@ function createFloorView(buildingIdx: number, floor: number) {
         );
         supplyShelf.position.set(x - rw / 3, 0.9, z + rd / 3);
         group.add(supplyShelf);
-
       } else if (roomType === 'noodle_shop') {
         // NOODLE SHOP - Counter, cooking area, stools
         // Service counter
@@ -6460,7 +6503,6 @@ function createFloorView(buildingIdx: number, floor: number) {
         );
         menuBoard.position.set(x, 2.0, z - rd / 2 + 0.15);
         group.add(menuBoard);
-
       } else if (roomType === 'food_stall') {
         // FOOD STALL / SNACK STAND - Small cooking setup, display case
         // Small counter/cart
@@ -6521,7 +6563,6 @@ function createFloorView(buildingIdx: number, floor: number) {
         sign.position.set(x + 0.8, 1.6, z - rd / 4 + 0.3);
         sign.rotation.y = -0.3;
         group.add(sign);
-
       } else if (roomType === 'grocery') {
         // TINY GROCERY STORE - Shelves with goods, narrow aisles
         // Shelving units along walls
@@ -6551,7 +6592,7 @@ function createFloorView(buildingIdx: number, floor: number) {
               const product = new THREE.Mesh(
                 new THREE.BoxGeometry(0.1 + Math.random() * 0.1, 0.15 + Math.random() * 0.1, 0.08),
                 new THREE.MeshLambertMaterial({
-                  color: [0xdd4444, 0x44dd44, 0x4444dd, 0xdddd44, 0xdd44dd, 0x44dddd][p % 6]!
+                  color: [0xdd4444, 0x44dd44, 0x4444dd, 0xdddd44, 0xdd44dd, 0x44dddd][p % 6]!,
                 })
               );
               product.position.set(
@@ -6593,7 +6634,6 @@ function createFloorView(buildingIdx: number, floor: number) {
         );
         register.position.set(x, 1.1, z - rd / 2 + 0.5);
         group.add(register);
-
       } else if (roomType === 'school') {
         // INFORMAL SCHOOL / EDUCATION SPACE - Desks, blackboard, basic supplies
         // Teacher's desk
@@ -6627,11 +6667,7 @@ function createFloorView(buildingIdx: number, floor: number) {
               new THREE.BoxGeometry(0.8, 0.55, 0.5),
               new THREE.MeshLambertMaterial({ color: 0x6a5a4a })
             );
-            desk.position.set(
-              x - rw / 3 + col * (rw / 3),
-              0.28,
-              z + rd / 6 + row * 1.2
-            );
+            desk.position.set(x - rw / 3 + col * (rw / 3), 0.28, z + rd / 6 + row * 1.2);
             group.add(desk);
 
             // Small stool/chair
@@ -6639,11 +6675,7 @@ function createFloorView(buildingIdx: number, floor: number) {
               new THREE.BoxGeometry(0.35, 0.35, 0.35),
               new THREE.MeshLambertMaterial({ color: 0x5a5a5a })
             );
-            chair.position.set(
-              x - rw / 3 + col * (rw / 3),
-              0.18,
-              z + rd / 6 + row * 1.2 + 0.5
-            );
+            chair.position.set(x - rw / 3 + col * (rw / 3), 0.18, z + rd / 6 + row * 1.2 + 0.5);
             group.add(chair);
           }
         }
@@ -6657,7 +6689,6 @@ function createFloorView(buildingIdx: number, floor: number) {
           book.position.set(x + 0.4, 0.73 + b * 0.04, z - rd / 2 + 0.6);
           group.add(book);
         }
-
       } else if (roomType === 'temple') {
         // SMALL TEMPLE / SHRINE - Altar, incense, religious items
         // Main altar table
@@ -6747,7 +6778,6 @@ function createFloorView(buildingIdx: number, floor: number) {
         );
         mat.position.set(x, 0.02, z + rd / 4);
         group.add(mat);
-
       } else if (roomType === 'infrastructure') {
         // SHARED INFRASTRUCTURE - Water points, mail, stairwell utility
         // Water tank/cistern
@@ -6790,11 +6820,7 @@ function createFloorView(buildingIdx: number, floor: number) {
               new THREE.BoxGeometry(0.35, 0.3, 0.02),
               new THREE.MeshLambertMaterial({ color: 0x4a4a4a })
             );
-            slot.position.set(
-              x + rw / 3 - 0.35 + col * 0.38,
-              0.4 + row * 0.35,
-              z - rd / 2 + 0.36
-            );
+            slot.position.set(x + rw / 3 - 0.35 + col * 0.38, 0.4 + row * 0.35, z - rd / 2 + 0.36);
             group.add(slot);
           }
         }
@@ -9133,7 +9159,9 @@ const npcDialogueClose = document.getElementById('npc-dialogue-close') as HTMLBu
 
 function updateScrollCount() {
   if (scrollCountEl) {
-    scrollCountEl.textContent = `${collectedScrolls.length}/10`;
+    // Show main scrolls (x/10) and bonus scrolls (y/60)
+    const bonusTotal = factsData.length > 0 ? factsData.length : 60;
+    scrollCountEl.innerHTML = `SCROLLS: ${collectedScrolls.length}/10<br><span style="font-size: 0.6em; color: #aaddff; opacity: 0.8;">BONUS: ${collectedBonusScrolls.length}/${bonusTotal}</span>`;
   }
 }
 
@@ -9229,16 +9257,37 @@ function showNPCDialogue(npc: NPC) {
     }
   } else {
     // Regular NPC dialogue - share random facts from facts.json
-    currentDialogueStage = 'farewell'; // So pressing button closes it
-    let randomDialogue = '"..."';
-    if (factsData.length > 0) {
-      const randomFact = factsData[Math.floor(Math.random() * factsData.length)];
-      randomDialogue = `"${randomFact?.fact ?? '...'}"`;
+    // Check for uncollected bonus scrolls
+    const uncollectedIndices = factsData
+      .map((_, i) => i)
+      .filter((i) => !collectedBonusScrolls.includes(i));
+
+    // 60% chance to offer a new fact if available, otherwise just chat
+    const offerBonus = uncollectedIndices.length > 0 && Math.random() < 0.6;
+
+    if (offerBonus) {
+      const randIdx = Math.floor(Math.random() * uncollectedIndices.length);
+      const factIndex = uncollectedIndices[randIdx] ?? -1;
+
+      currentDialogueStage = 'bonus_offer';
+      currentDialogueFactIndex = factIndex;
+
+      npcDialogueHeader.textContent = 'RESIDENT (HAS STORY)';
+      npcDialogueText.textContent = '"I remember something regarding the history of this place..."';
+      npcDialogueAccept.textContent = 'LISTEN';
+    } else {
+      // Just show a random fact (could be one already known or just generic)
+      currentDialogueStage = 'farewell';
+      let randomDialogue = '"The walls have ears in this city..."';
+      if (factsData.length > 0) {
+        const randomFact = factsData[Math.floor(Math.random() * factsData.length)];
+        randomDialogue = `"${randomFact?.fact ?? '...'}"`;
+      }
+      npcDialogueHeader.textContent = 'RESIDENT';
+      npcDialogueText.textContent = randomDialogue;
+      npcDialogueAccept.textContent = 'OK';
     }
-    npcDialogueHeader.textContent = 'RESIDENT';
-    npcDialogueText.textContent = randomDialogue;
     npcDialogueAccept.classList.remove('hidden');
-    npcDialogueAccept.textContent = 'OK';
   }
 
   npcDialogue.classList.add('visible');
@@ -9331,17 +9380,47 @@ function advanceDialogue() {
   }
 
   // Handle regular NPC dialogue (no characterId or no scroll) - just close
+  // Handle regular NPC dialogue (no characterId or no scroll)
   if (
     !currentDialogueNPC ||
     !currentDialogueNPC.characterId ||
     currentDialogueNPC.characterId === 'hoodlum'
   ) {
+    // Check if we are in a bonus scroll flow
+    if (currentDialogueStage === 'bonus_offer') {
+      currentDialogueStage = 'bonus_read';
+
+      // Ensure index is valid number
+      const idx = currentDialogueFactIndex ?? -1;
+      const fact = factsData[idx];
+
+      if (idx >= 0 && fact) {
+        npcDialogueHeader.textContent = 'BONUS SCROLL FOUND';
+        npcDialogueText.innerHTML = `"${fact.fact}"<br><br><span style="font-size: 0.8em; color: #88ccff;">Source: Historical Archives</span>`;
+        npcDialogueAccept.textContent = 'KEEP SCROLL';
+
+        // Mark as collected logic
+        if (!collectedBonusScrolls.includes(idx)) {
+          collectedBonusScrolls.push(idx);
+          updateScrollCount();
+        }
+      } else {
+        closeNPCDialogue();
+      }
+      return;
+    } else if (currentDialogueStage === 'bonus_read') {
+      closeNPCDialogue();
+      return;
+    }
+
     closeNPCDialogue();
     return;
   }
 
   // Check if this is a historical or supernatural character
-  const supernaturalChar = supernaturalCharacters.find((c) => c.id === currentDialogueNPC?.characterId);
+  const supernaturalChar = supernaturalCharacters.find(
+    (c) => c.id === currentDialogueNPC?.characterId
+  );
   const historicalChar = historicalCharacters.find((c) => c.id === currentDialogueNPC?.characterId);
 
   if (supernaturalChar) {
