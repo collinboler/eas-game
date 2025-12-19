@@ -17,6 +17,32 @@ scene.add(indoorScene);
 indoorScene.visible = false;
 
 // ============================================
+// BACKGROUND MUSIC
+// ============================================
+const backgroundMusic = new Audio('music.mp3');
+backgroundMusic.loop = true;
+backgroundMusic.volume = 0.3;
+
+// ============================================
+// FACTS DATA - Loaded from facts.json for NPC dialogue
+// ============================================
+interface FactEntry {
+  fact: string;
+}
+let factsData: FactEntry[] = [];
+
+// Load facts from facts.json
+fetch('facts.json')
+  .then((response) => response.json())
+  .then((data: FactEntry[]) => {
+    factsData = data;
+    console.log(`Loaded ${factsData.length} facts for NPCs`);
+  })
+  .catch((err) => {
+    console.error('Failed to load facts.json:', err);
+  });
+
+// ============================================
 // CAMERA - Looking down at the street
 // ============================================
 const aspect = window.innerWidth / window.innerHeight;
@@ -1769,7 +1795,7 @@ streetZPositions.forEach((stallZ) => {
     // Calculate actual seller world position (seller is behind the stall)
     const stallRotated = Math.random() > 0.5; // Same logic as in createShopStall
     const sellerOffsetZ = stallRotated ? 0.8 : -0.8;
-    
+
     shopStalls.push({
       type,
       x: xPos,
@@ -1868,20 +1894,20 @@ interface UndergroundEntranceData {
 const drainPositions: UndergroundEntranceData[] = [
   // Index 0: OUTDOOR entrance near player spawn (the only street-level entrance)
   { x: 0, z: -8, buildingIdx: -1 },
-  
+
   // Indices 1-5: Underground exits that lead INTO buildings (evenly dispersed)
   { x: -20, z: -16, buildingIdx: 29 }, // Front-left area - Building at x=-20, z=-16
-  { x: 20, z: -16, buildingIdx: 33 },  // Front-right area - Building at x=20, z=-16
-  { x: 0, z: -40, buildingIdx: 17 },   // Center - Building at x=0, z=-40
-  { x: -30, z: -52, buildingIdx: 7 },  // Back-left - Building at x=-30, z=-52
-  { x: 30, z: -52, buildingIdx: 13 },  // Back-right - Building at x=30, z=-52
+  { x: 20, z: -16, buildingIdx: 33 }, // Front-right area - Building at x=20, z=-16
+  { x: 0, z: -40, buildingIdx: 17 }, // Center - Building at x=0, z=-40
+  { x: -30, z: -52, buildingIdx: 7 }, // Back-left - Building at x=-30, z=-52
+  { x: 30, z: -52, buildingIdx: 13 }, // Back-right - Building at x=30, z=-52
 ];
 
 // Create visual markers for entrances
 drainPositions.forEach((pos, idx) => {
   const drain = createUndergroundEntrance(pos.x, pos.z);
   // Only the outdoor entrance (index 0) is visible on the street
-  drain.visible = (pos.buildingIdx === -1);
+  drain.visible = pos.buildingIdx === -1;
   outdoorScene.add(drain);
   undergroundEntrances.push({ x: pos.x, z: pos.z, mesh: drain });
 });
@@ -1989,7 +2015,8 @@ const supernaturalCharacters: SupernaturalCharacter[] = [
     id: 'judge_bao',
     name: 'Judge Bao (Bao Zheng)',
     story: 'Judge Bao Selling Rice in Chenzhou (Sept 17)',
-    scrollQuote: 'The law is not established for the sake of the powerful, nor does it bend for the wealthy. It is set down so that right and wrong may be distinguished clearly, and so that Heaven may judge through human hands.',
+    scrollQuote:
+      'The law is not established for the sake of the powerful, nor does it bend for the wealthy. It is set down so that right and wrong may be distinguished clearly, and so that Heaven may judge through human hands.',
     source: 'Judge Bao case stories',
     interactions: {
       greeting: 'You stand before the law. Speak carefully—truth echoes longer than words.',
@@ -2002,7 +2029,8 @@ const supernaturalCharacters: SupernaturalCharacter[] = [
     id: 'phantom_heroine',
     name: 'The Phantom Heroine',
     story: 'The Phantom Heroine: Ghosts and Gender (Sept 29)',
-    scrollQuote: 'Though my bones lie cold and my name has faded among the living, my grievance is not buried. I return because what was done to me was never answered, and because silence would be the greater injustice.',
+    scrollQuote:
+      'Though my bones lie cold and my name has faded among the living, my grievance is not buried. I return because what was done to me was never answered, and because silence would be the greater injustice.',
     source: 'Seventeenth-century chuanqi ghost tales',
     interactions: {
       greeting: 'Do not fear me. Fear what was done while I still breathed.',
@@ -2015,7 +2043,8 @@ const supernaturalCharacters: SupernaturalCharacter[] = [
     id: 'corporeal_ghost',
     name: 'The Corporeal Female Ghost',
     story: "The Ghost's Body (Sept 29 / Oct 1)",
-    scrollQuote: 'She ate with the living and spoke with the living, casting a shadow where she stood. Yet when one drew near, no breath warmed her body, and those who touched her felt only the chill of death.',
+    scrollQuote:
+      'She ate with the living and spoke with the living, casting a shadow where she stood. Yet when one drew near, no breath warmed her body, and those who touched her felt only the chill of death.',
     source: "The Ghost's Body",
     interactions: {
       greeting: 'You expected mist and shadow. Instead, you found flesh.',
@@ -2028,7 +2057,8 @@ const supernaturalCharacters: SupernaturalCharacter[] = [
     id: 'shen_xiu',
     name: 'Shen Xiu',
     story: 'Shen Xiu (Sept 10)',
-    scrollQuote: 'The dead may not speak in court, nor may they plead their case before men. Yet Heaven hears what the living refuse to hear, and it does not forget injustice merely because a body has perished.',
+    scrollQuote:
+      'The dead may not speak in court, nor may they plead their case before men. Yet Heaven hears what the living refuse to hear, and it does not forget injustice merely because a body has perished.',
     source: 'Stories Old and New (Jingu qiguan)',
     interactions: {
       greeting: 'I have already died once. You need not bow.',
@@ -2041,7 +2071,8 @@ const supernaturalCharacters: SupernaturalCharacter[] = [
     id: 'magistrate_teng_ghost',
     name: 'The Wronged Ghost',
     story: 'Magistrate Teng (Sept 8)',
-    scrollQuote: 'When human judgment failed and the magistrate closed his ears, the spirit came forth to accuse. What could not be spoken among the living was declared openly among the dead.',
+    scrollQuote:
+      'When human judgment failed and the magistrate closed his ears, the spirit came forth to accuse. What could not be spoken among the living was declared openly among the dead.',
     source: 'Magistrate Teng, Stories Old and New',
     interactions: {
       greeting: 'The living ignored me. You did not.',
@@ -2054,7 +2085,8 @@ const supernaturalCharacters: SupernaturalCharacter[] = [
     id: 'underworld_bureaucrat',
     name: 'Underworld Bureaucrat',
     story: 'The Chinese Deathscape (Oct 20)',
-    scrollQuote: 'In death, as in life, there are offices to pass through and registers to be checked. Merit and crime are recorded without omission, and no soul departs until its account is settled.',
+    scrollQuote:
+      'In death, as in life, there are offices to pass through and registers to be checked. Merit and crime are recorded without omission, and no soul departs until its account is settled.',
     source: 'The Chinese Deathscape, Introduction',
     interactions: {
       greeting: 'State your name. The dead queue as well.',
@@ -2067,7 +2099,8 @@ const supernaturalCharacters: SupernaturalCharacter[] = [
     id: 'hungry_ghost',
     name: 'Hungry Ghost',
     story: 'The Chinese Deathscape (Oct 20)',
-    scrollQuote: 'With throats no wider than needles and bellies like great drums, they hunger without relief. Food turns to flame before it can be swallowed, and desire itself becomes punishment.',
+    scrollQuote:
+      'With throats no wider than needles and bellies like great drums, they hunger without relief. Food turns to flame before it can be swallowed, and desire itself becomes punishment.',
     source: 'The Chinese Deathscape',
     interactions: {
       greeting: 'Food… no, not food—memory.',
@@ -2080,7 +2113,8 @@ const supernaturalCharacters: SupernaturalCharacter[] = [
     id: 'qutu_zhongren',
     name: 'Qutu Zhongren',
     story: 'Qutu Zhongren Cruelly Kills Other Creatures (Oct 22)',
-    scrollQuote: 'Qutu Zhongren took pleasure not merely in killing, but in cruelty itself. He delighted in suffering, and his heart was unmoved by pleading, blood, or death.',
+    scrollQuote:
+      'Qutu Zhongren took pleasure not merely in killing, but in cruelty itself. He delighted in suffering, and his heart was unmoved by pleading, blood, or death.',
     source: 'Slapping the Table in Amazement',
     interactions: {
       greeting: 'Do you hear them? They never stop.',
@@ -2093,7 +2127,8 @@ const supernaturalCharacters: SupernaturalCharacter[] = [
     id: 'fox_spirit',
     name: 'Fox Spirit (Huli Jing)',
     story: 'Alien Kind: Foxes and Late Imperial Chinese Narrative (Nov 3)',
-    scrollQuote: 'Do not ask whether I am human or spirit. Ask only whether I am sincere, for sincerity is rarer than either form and far more dangerous.',
+    scrollQuote:
+      'Do not ask whether I am human or spirit. Ask only whether I am sincere, for sincerity is rarer than either form and far more dangerous.',
     source: 'Late-imperial fox-spirit tales',
     interactions: {
       greeting: "Relax. If I meant to harm you, you'd never know.",
@@ -2106,7 +2141,8 @@ const supernaturalCharacters: SupernaturalCharacter[] = [
     id: 'ghost_witness',
     name: 'Ghost Witness',
     story: 'Stories Old and New (judicial ghost motif)',
-    scrollQuote: 'The ghost testified clearly, naming names and crimes without hesitation, and when the truth was revealed, the case was finally resolved and the living left without excuse.',
+    scrollQuote:
+      'The ghost testified clearly, naming names and crimes without hesitation, and when the truth was revealed, the case was finally resolved and the living left without excuse.',
     source: 'Stories Old and New (Jingu qiguan)',
     interactions: {
       greeting: 'I was summoned.',
@@ -2317,7 +2353,7 @@ function createAmbientGhostMesh(): THREE.Group {
 // Create supernatural character meshes - human-like figures with unique characteristics
 function createSupernaturalMesh(characterId: string): THREE.Group {
   const group = new THREE.Group();
-  
+
   // Glow group - contains all the glow shells (separate so we can control them)
   const glowGroup = new THREE.Group();
   glowGroup.name = 'glowGroup';
@@ -2739,7 +2775,10 @@ function createSupernaturalMesh(characterId: string): THREE.Group {
       tail.position.set(0, 0.4, -0.2);
       tail.rotation.x = -0.6;
       group.add(tail);
-      const tailTip = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 6), createGhostMat(0xeeeecc, 0.8));
+      const tailTip = new THREE.Mesh(
+        new THREE.SphereGeometry(0.06, 6, 6),
+        createGhostMat(0xeeeecc, 0.8)
+      );
       tailTip.position.set(0, 0.55, -0.38);
       group.add(tailTip);
       break;
@@ -3205,7 +3244,10 @@ function spawnSupernaturalCharacters() {
     const char = supernaturalCharacters[i];
     if (!char) continue;
 
-    const location = spawnLocations[i] ?? { x: Math.random() * 40 - 20, z: -40 + Math.random() * 30 };
+    const location = spawnLocations[i] ?? {
+      x: Math.random() * 40 - 20,
+      z: -40 + Math.random() * 30,
+    };
     const mesh = createSupernaturalMesh(char.id);
 
     mesh.position.set(location.x, 0.15, location.z); // Slightly floating
@@ -3904,7 +3946,10 @@ function updateSupernaturalCharacters() {
       // Find the glow group and update all glow shells inside it
       if (child instanceof THREE.Group && child.name === 'glowGroup') {
         child.traverse((glowChild) => {
-          if (glowChild instanceof THREE.Mesh && glowChild.material instanceof THREE.MeshBasicMaterial) {
+          if (
+            glowChild instanceof THREE.Mesh &&
+            glowChild.material instanceof THREE.MeshBasicMaterial
+          ) {
             if (hasUncollectedScroll) {
               // Bright pulsing glow for uncollected
               glowChild.material.opacity = 0.25 + pulseValue * 0.2;
@@ -5004,7 +5049,11 @@ function createFloorView(buildingIdx: number, floor: number) {
         const edgeW = 0.3 + Math.random() * 0.4;
         const edgeH = 0.15 + Math.random() * 0.1;
         const edge = new THREE.Mesh(new THREE.BoxGeometry(edgeW, edgeH, edgeW), edgeMat);
-        edge.position.set(holeX + Math.cos(angle) * dist, edgeH / 2 + 0.02, holeZ + Math.sin(angle) * dist);
+        edge.position.set(
+          holeX + Math.cos(angle) * dist,
+          edgeH / 2 + 0.02,
+          holeZ + Math.sin(angle) * dist
+        );
         edge.rotation.y = Math.random() * Math.PI;
         group.add(edge);
       }
@@ -6929,13 +6978,13 @@ function exitUnderground(exitDrainIdx: number) {
     state.currentBuilding = buildingIdx;
     state.currentFloor = 0;
     state.currentDrain = -1;
-    
+
     outdoorScene.visible = false;
     indoorScene.visible = true;
     // playerGroup is already in indoorScene
-    
+
     floor = createFloorView(buildingIdx, 0);
-    
+
     // Spawn near the underground hole
     const hw = floor.w / 2;
     const hd = floor.d / 2;
@@ -7451,6 +7500,8 @@ function setupCustomization() {
     if (instructions) {
       instructions.classList.add('hidden');
       started = true;
+      // Start background music when game begins
+      backgroundMusic.play().catch((e) => console.log('Music autoplay blocked:', e));
     }
     // Stop preview if running
     previewAnimating = false;
@@ -7482,6 +7533,8 @@ window.addEventListener('keydown', (e) => {
       if (instructions) {
         instructions.classList.add('hidden');
         started = true;
+        // Start background music when game begins
+        backgroundMusic.play().catch((e) => console.log('Music autoplay blocked:', e));
       }
     }
     return;
@@ -7640,23 +7693,15 @@ function showNPCDialogue(npc: NPC) {
       npcDialogueAccept.textContent = 'FAREWELL';
     }
   } else {
-    // Regular NPC dialogue (no scrolls from regular NPCs)
+    // Regular NPC dialogue - share random facts from facts.json
     currentDialogueStage = 'farewell'; // So pressing button closes it
-    const genericDialogues = [
-      '"The walls have ears here. Be careful who you trust."',
-      '"I\'ve lived here for forty years. The city knows me."',
-      '"Looking for something? You won\'t find it standing there."',
-      '"The dentist on the third floor is good. No questions asked."',
-      '"Stay out of the underground unless you know the way out."',
-      '"The noodles from Mr. Chen\'s stall are the best in Kowloon."',
-      '"Don\'t bother the animals. Some of them aren\'t what they seem."',
-      '"Have you seen the ghosts? They wander these streets at night..."',
-      '"Strange spirits roam Kowloon. They carry ancient wisdom."',
-      '"The supernatural ones... they have scrolls. Seek them out."',
-    ];
-    const randomDialogue = genericDialogues[Math.floor(Math.random() * genericDialogues.length)];
+    let randomDialogue = '"..."';
+    if (factsData.length > 0) {
+      const randomFact = factsData[Math.floor(Math.random() * factsData.length)];
+      randomDialogue = `"${randomFact?.fact ?? '...'}"`;
+    }
     npcDialogueHeader.textContent = 'RESIDENT';
-    npcDialogueText.textContent = randomDialogue ?? '"..."';
+    npcDialogueText.textContent = randomDialogue;
     npcDialogueAccept.classList.remove('hidden');
     npcDialogueAccept.textContent = 'OK';
   }
@@ -7686,7 +7731,8 @@ function showHoodlumDialogue() {
   ];
 
   npcDialogueHeader.textContent = 'SHADY FIGURE';
-  npcDialogueText.textContent = shadyDialogues[Math.floor(Math.random() * shadyDialogues.length)] ?? '"..."';
+  npcDialogueText.textContent =
+    shadyDialogues[Math.floor(Math.random() * shadyDialogues.length)] ?? '"..."';
   npcDialogueAccept.classList.remove('hidden');
   npcDialogueAccept.textContent = 'BACK AWAY';
   npcDialogue.classList.add('visible');
@@ -7750,7 +7796,11 @@ function advanceDialogue() {
   }
 
   // Handle regular NPC dialogue (no characterId or no scroll) - just close
-  if (!currentDialogueNPC || !currentDialogueNPC.characterId || currentDialogueNPC.characterId === 'hoodlum') {
+  if (
+    !currentDialogueNPC ||
+    !currentDialogueNPC.characterId ||
+    currentDialogueNPC.characterId === 'hoodlum'
+  ) {
     closeNPCDialogue();
     return;
   }
@@ -8677,7 +8727,11 @@ function update() {
 
     // Show prompt when near a person NPC (priority over building)
     if (nearestPersonNPC && nearestPersonDist < 2.5) {
-      if (nearestPersonNPC.hasScroll && !nearestPersonNPC.scrollCollected && nearestPersonNPC.characterName) {
+      if (
+        nearestPersonNPC.hasScroll &&
+        !nearestPersonNPC.scrollCollected &&
+        nearestPersonNPC.characterName
+      ) {
         // Supernatural character with uncollected scroll
         prompt = `speak with ${nearestPersonNPC.characterName}`;
       } else if (nearestPersonNPC.hasScroll && !nearestPersonNPC.scrollCollected) {
@@ -8706,7 +8760,7 @@ function update() {
       const drainData = drainPositions[i];
       // Only check outdoor entrances (buildingIdx === -1)
       if (!drainData || drainData.buildingIdx !== -1) continue;
-      
+
       const drain = undergroundEntrances[i];
       if (!drain) continue;
       const dist = Math.sqrt(Math.pow(player.x - drain.x, 2) + Math.pow(player.z - drain.z, 2));
@@ -9127,16 +9181,19 @@ function update() {
       player.z > stairZEnd - 1 &&
       player.z < stairZEnd + 2;
     const nearExit = floor.ground && Math.abs(player.x) < 4 && player.z > hd - 3;
-    
+
     // Check for underground entrance (only on ground floor of buildings that have one)
     const undergroundEntryForThisBuilding = drainPositions.find(
       (drain) => drain.buildingIdx === state.currentBuilding
     );
     const holeX = -hw + 8;
     const holeZ = -hd + 8;
-    const nearUndergroundHole = floor.ground && undergroundEntryForThisBuilding &&
-      Math.abs(player.x - holeX) < 2 && Math.abs(player.z - holeZ) < 2;
-    
+    const nearUndergroundHole =
+      floor.ground &&
+      undergroundEntryForThisBuilding &&
+      Math.abs(player.x - holeX) < 2 &&
+      Math.abs(player.z - holeZ) < 2;
+
     const nearJumpDown = floor.top && Math.abs(player.x) < 4 && player.z > hd - 5;
     const nearJumpLeft = floor.leftRoof && player.x < -hw + 6;
     const nearJumpRight = floor.rightRoof && player.x > hw - 6;
