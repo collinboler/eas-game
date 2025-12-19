@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 // ============================================
 // KOWLOON WALLED CITY
@@ -56,6 +57,78 @@ sun.position.set(10, 20, 10);
 outdoorScene.add(sun);
 
 // ============================================
+// GLB MODEL - Kowloon Walled City 3D Model
+// ============================================
+const glbModelGroup = new THREE.Group();
+glbModelGroup.name = 'kowloonGLBModel';
+outdoorScene.add(glbModelGroup);
+
+// Track loading state
+let glbModelLoaded = false;
+let glbModel: THREE.Group | null = null;
+
+// Load the Kowloon Walled City GLB model
+const gltfLoader = new GLTFLoader();
+gltfLoader.load(
+  'kowloonwalledcitymodel.glb',
+  (gltf) => {
+    glbModel = gltf.scene;
+    glbModelLoaded = true;
+    
+    // Log model info for debugging
+    console.log('Kowloon GLB model loaded successfully!');
+    
+    // Compute the bounding box to understand the model's size
+    const box = new THREE.Box3().setFromObject(glbModel);
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    console.log('Model size:', size);
+    console.log('Model center:', center);
+    
+    // Initial positioning and scaling
+    // Adjust these values based on the model's actual dimensions
+    // The current city spans roughly x: -40 to 40, z: -80 to 10
+    const targetWidth = 80; // Match procedural city width
+    const scaleFactor = targetWidth / Math.max(size.x, size.z);
+    
+    glbModel.scale.set(scaleFactor, scaleFactor, scaleFactor);
+    
+    // Center the model over the city area
+    glbModel.position.set(
+      -center.x * scaleFactor,
+      0, // Ground level
+      -center.z * scaleFactor - 35 // Shift to match city center
+    );
+    
+    // Rotate if needed (many models face different directions)
+    // glbModel.rotation.y = Math.PI; // Uncomment if model faces wrong way
+    
+    glbModelGroup.add(glbModel);
+    
+    // Log all mesh names in the model for future reference
+    glbModel.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        console.log('Mesh found:', child.name);
+      }
+    });
+  },
+  (progress) => {
+    const percent = (progress.loaded / progress.total * 100).toFixed(1);
+    console.log(`Loading Kowloon model: ${percent}%`);
+  },
+  (error) => {
+    console.error('Error loading Kowloon GLB model:', error);
+  }
+);
+
+// ============================================
+// PROCEDURAL CITY GROUP - Can be toggled off when GLB loads
+// ============================================
+const proceduralCityGroup = new THREE.Group();
+proceduralCityGroup.name = 'proceduralCity';
+outdoorScene.add(proceduralCityGroup);
+
+// ============================================
 // KOWLOON CITY LAYOUT - Dense buildings with alleyways
 // ============================================
 const ground = new THREE.Mesh(
@@ -64,7 +137,7 @@ const ground = new THREE.Mesh(
 );
 ground.rotation.x = -Math.PI / 2;
 ground.position.set(0, 0, -35);  // Centered on the expanded city
-outdoorScene.add(ground);
+proceduralCityGroup.add(ground);
 
 // ============================================
 // BUILDING DATA
@@ -666,7 +739,7 @@ function createCityBuilding(config: typeof cityLayout[0], index: number) {
   buildingsData.push({ x, z, floors, group, width: w, depth: d });
   
   group.position.set(x, 0, z);
-  outdoorScene.add(group);
+  proceduralCityGroup.add(group);
 }
 
 // Create all city buildings
@@ -681,14 +754,14 @@ for (let i = 0; i < 20; i++) {
   alley.rotation.x = -Math.PI / 2;
   alley.position.set(-30 + Math.random() * 60, 0.01, -35 + Math.random() * 30);
   alley.rotation.z = Math.random() * 0.3;
-  outdoorScene.add(alley);
+  proceduralCityGroup.add(alley);
 }
 
 // Ambient city lights
 for (let i = 0; i < 8; i++) {
   const light = new THREE.PointLight(0xffddaa, 0.3, 15);
   light.position.set(-25 + i * 8, 3, -20 + (i % 3) * 10);
-  outdoorScene.add(light);
+  proceduralCityGroup.add(light);
 }
 
 // ============================================
@@ -1587,7 +1660,7 @@ alleyZPositions.forEach((alleyZ, rowIndex) => {
     else type = 'drugs'; // Rarer
     
     const stallGroup = createShopStall(xPos, alleyZ, type);
-    outdoorScene.add(stallGroup);
+    proceduralCityGroup.add(stallGroup);
     
     shopStalls.push({
       type,
@@ -1699,7 +1772,7 @@ const drainPositions = [
 
 drainPositions.forEach(pos => {
   const drain = createUndergroundEntrance(pos.x, pos.z);
-  outdoorScene.add(drain);
+  proceduralCityGroup.add(drain);
   undergroundEntrances.push({ x: pos.x, z: pos.z, mesh: drain });
 });
 
@@ -1743,7 +1816,7 @@ interface NPC {
   targetX: number;
   targetZ: number;
   speed: number;
-  type: 'person' | 'fox' | 'monkey' | 'squirrel' | 'mouse' | 'dog';
+  type: 'person' | 'fox' | 'monkey' | 'squirrel' | 'mouse' | 'dog' | 'ghost';
   indoor: boolean;
   buildingIdx: number;
   floorIdx: number;
@@ -1753,10 +1826,469 @@ interface NPC {
   transformTimer?: number;
   shakeTimer?: number;
   originalMesh?: THREE.Group;
+  // Ghost-specific properties
+  isGhost?: boolean;
+  ghostName?: string; // For named ghosts
+  ghostAppearTimer?: number; // When ghost appeared
+  ghostDuration?: number; // How long ghost stays visible (ms)
+  transformedToGhost?: boolean; // For foxes that transform into ghosts
+}
+
+// Ghost types for named characters
+type GhostType = 'generic' | 'magistrate_teng' | 'wronged_spirit' | 'shen_xiu' | 
+                 'judge_bao' | 'phantom_heroine' | 'qutu_zhongren';
+
+// Ghost tracking
+interface Ghost {
+  mesh: THREE.Group;
+  x: number;
+  z: number;
+  targetX: number;
+  targetZ: number;
+  speed: number;
+  ghostType: GhostType;
+  appearTime: number;
+  duration: number;
+  floatOffset: number;
+  indoor: boolean;
 }
 
 const outdoorNPCs: NPC[] = [];
 const indoorNPCs: NPC[] = [];
+const outdoorGhosts: Ghost[] = [];
+const indoorGhosts: Ghost[] = [];
+
+// ============================================
+// GHOST CREATION FUNCTIONS
+// ============================================
+
+// Create a generic ghost mesh - human-shaped, transparent, ghastly
+function createGhostMesh(ghostType: GhostType = 'generic'): THREE.Group {
+  const group = new THREE.Group();
+  
+  // Ghost color palette based on type - pale, deathly colors
+  let bodyColor = 0xccddee; // Default pale blue-white
+  let skinColor = 0xaabbcc; // Ghostly pale skin
+  let clothColor = 0x99aabb; // Faded clothing
+  let eyeColor = 0x111133; // Dark hollow eyes
+  let hairColor = 0x334455; // Dark ghostly hair
+  let hasSpecialFeatures = false;
+  
+  switch (ghostType) {
+    case 'magistrate_teng':
+      bodyColor = 0xccbbaa; // Aged parchment robes
+      clothColor = 0x886644; // Old official robes
+      skinColor = 0xbbaa99;
+      hasSpecialFeatures = true;
+      break;
+    case 'wronged_spirit':
+      bodyColor = 0xaabbdd; // Pale blue - sorrowful
+      skinColor = 0x99aacc;
+      clothColor = 0x778899;
+      eyeColor = 0x880000; // Red eyes from crying blood
+      break;
+    case 'shen_xiu':
+      bodyColor = 0xddccbb; // More flesh-like
+      skinColor = 0xccbbaa;
+      clothColor = 0x998877;
+      break;
+    case 'judge_bao':
+      bodyColor = 0x334455; // Dark judicial robes
+      clothColor = 0x222233;
+      skinColor = 0x889999;
+      hasSpecialFeatures = true;
+      break;
+    case 'phantom_heroine':
+      bodyColor = 0xeeddee; // Feminine pale pink-white
+      skinColor = 0xddccdd;
+      clothColor = 0xccbbcc;
+      hairColor = 0x222233; // Long dark hair
+      break;
+    case 'qutu_zhongren':
+      bodyColor = 0x553333; // Dark demonic
+      skinColor = 0x664444;
+      clothColor = 0x442222;
+      eyeColor = 0xff2200; // Burning eyes
+      break;
+  }
+  
+  // Ghost material - semi-transparent
+  const ghostBodyMat = new THREE.MeshBasicMaterial({ 
+    color: clothColor, 
+    transparent: true, 
+    opacity: 0.45
+  });
+  
+  const ghostSkinMat = new THREE.MeshBasicMaterial({ 
+    color: skinColor, 
+    transparent: true, 
+    opacity: 0.5
+  });
+  
+  // Torso (like person mesh)
+  const torso = new THREE.Mesh(
+    new THREE.BoxGeometry(0.4, 0.5, 0.25),
+    ghostBodyMat.clone()
+  );
+  torso.position.y = 0.75;
+  group.add(torso);
+  
+  // Left leg
+  const leftLeg = new THREE.Mesh(
+    new THREE.BoxGeometry(0.14, 0.5, 0.16),
+    ghostBodyMat.clone()
+  );
+  leftLeg.position.set(-0.1, 0.25, 0);
+  group.add(leftLeg);
+  
+  // Right leg
+  const rightLeg = new THREE.Mesh(
+    new THREE.BoxGeometry(0.14, 0.5, 0.16),
+    ghostBodyMat.clone()
+  );
+  rightLeg.position.set(0.1, 0.25, 0);
+  group.add(rightLeg);
+  
+  // Head
+  const head = new THREE.Mesh(
+    new THREE.BoxGeometry(0.32, 0.32, 0.28),
+    ghostSkinMat.clone()
+  );
+  head.position.y = 1.2;
+  group.add(head);
+  
+  // Hair
+  const hair = new THREE.Mesh(
+    new THREE.BoxGeometry(0.34, 0.12, 0.3),
+    new THREE.MeshBasicMaterial({ color: hairColor, transparent: true, opacity: 0.5 })
+  );
+  hair.position.y = 1.42;
+  group.add(hair);
+  
+  // Hollow dark eyes
+  const eyeMat = new THREE.MeshBasicMaterial({ color: eyeColor, transparent: true, opacity: 0.8 });
+  const leftEye = new THREE.Mesh(
+    new THREE.SphereGeometry(0.05, 6, 6),
+    eyeMat
+  );
+  leftEye.position.set(-0.08, 1.22, 0.14);
+  group.add(leftEye);
+  
+  const rightEye = new THREE.Mesh(
+    new THREE.SphereGeometry(0.05, 6, 6),
+    eyeMat.clone()
+  );
+  rightEye.position.set(0.08, 1.22, 0.14);
+  group.add(rightEye);
+  
+  // Left arm
+  const leftArm = new THREE.Mesh(
+    new THREE.BoxGeometry(0.1, 0.4, 0.1),
+    ghostBodyMat.clone()
+  );
+  leftArm.position.set(-0.28, 0.7, 0);
+  group.add(leftArm);
+  
+  // Right arm
+  const rightArm = new THREE.Mesh(
+    new THREE.BoxGeometry(0.1, 0.4, 0.1),
+    ghostBodyMat.clone()
+  );
+  rightArm.position.set(0.28, 0.7, 0);
+  group.add(rightArm);
+  
+  // Hands
+  const leftHand = new THREE.Mesh(
+    new THREE.BoxGeometry(0.08, 0.1, 0.08),
+    ghostSkinMat.clone()
+  );
+  leftHand.position.set(-0.28, 0.45, 0);
+  group.add(leftHand);
+  
+  const rightHand = new THREE.Mesh(
+    new THREE.BoxGeometry(0.08, 0.1, 0.08),
+    ghostSkinMat.clone()
+  );
+  rightHand.position.set(0.28, 0.45, 0);
+  group.add(rightHand);
+  
+  // Special features for named ghosts
+  if (hasSpecialFeatures) {
+    if (ghostType === 'magistrate_teng' || ghostType === 'judge_bao') {
+      // Official hat/crown
+      const hat = new THREE.Mesh(
+        new THREE.BoxGeometry(0.45, 0.12, 0.32),
+        new THREE.MeshBasicMaterial({ color: 0x222222, transparent: true, opacity: 0.5 })
+      );
+      hat.position.y = 1.48;
+      group.add(hat);
+      
+      // Hat wings (official's cap)
+      const leftWing = new THREE.Mesh(
+        new THREE.BoxGeometry(0.25, 0.04, 0.08),
+        new THREE.MeshBasicMaterial({ color: 0x222222, transparent: true, opacity: 0.5 })
+      );
+      leftWing.position.set(-0.32, 1.48, 0);
+      leftWing.rotation.z = -0.2;
+      group.add(leftWing);
+      
+      const rightWing = new THREE.Mesh(
+        new THREE.BoxGeometry(0.25, 0.04, 0.08),
+        new THREE.MeshBasicMaterial({ color: 0x222222, transparent: true, opacity: 0.5 })
+      );
+      rightWing.position.set(0.32, 1.48, 0);
+      rightWing.rotation.z = 0.2;
+      group.add(rightWing);
+    }
+  }
+  
+  // Long hair for phantom heroine
+  if (ghostType === 'phantom_heroine') {
+    const longHair = new THREE.Mesh(
+      new THREE.BoxGeometry(0.36, 0.7, 0.12),
+      new THREE.MeshBasicMaterial({ color: 0x111122, transparent: true, opacity: 0.55 })
+    );
+    longHair.position.set(0, 0.85, -0.12);
+    group.add(longHair);
+  }
+  
+  // Demonic features for Qutu Zhongren
+  if (ghostType === 'qutu_zhongren') {
+    // Horns
+    const leftHorn = new THREE.Mesh(
+      new THREE.ConeGeometry(0.06, 0.25, 6),
+      new THREE.MeshBasicMaterial({ color: 0x220000, transparent: true, opacity: 0.7 })
+    );
+    leftHorn.position.set(-0.12, 1.5, 0);
+    leftHorn.rotation.z = 0.3;
+    group.add(leftHorn);
+    
+    const rightHorn = new THREE.Mesh(
+      new THREE.ConeGeometry(0.06, 0.25, 6),
+      new THREE.MeshBasicMaterial({ color: 0x220000, transparent: true, opacity: 0.7 })
+    );
+    rightHorn.position.set(0.12, 1.5, 0);
+    rightHorn.rotation.z = -0.3;
+    group.add(rightHorn);
+    
+    // Claws
+    for (let i = 0; i < 3; i++) {
+      const leftClaw = new THREE.Mesh(
+        new THREE.ConeGeometry(0.02, 0.1, 4),
+        new THREE.MeshBasicMaterial({ color: 0x111111, transparent: true, opacity: 0.8 })
+      );
+      leftClaw.position.set(-0.4 - i * 0.03, 0.25, 0.02);
+      leftClaw.rotation.x = -Math.PI / 2;
+      group.add(leftClaw);
+      
+      const rightClaw = new THREE.Mesh(
+        new THREE.ConeGeometry(0.02, 0.1, 4),
+        new THREE.MeshBasicMaterial({ color: 0x111111, transparent: true, opacity: 0.8 })
+      );
+      rightClaw.position.set(0.4 + i * 0.03, 0.25, 0.02);
+      rightClaw.rotation.x = -Math.PI / 2;
+      group.add(rightClaw);
+    }
+  }
+  
+  // Store ghost type for animation
+  group.userData.ghostType = ghostType;
+  
+  return group;
+}
+
+// Named ghost definitions
+const namedGhosts: { type: GhostType; name: string; description: string }[] = [
+  { type: 'magistrate_teng', name: '滕大人', description: 'Magistrate Teng - Judicial Revenant' },
+  { type: 'wronged_spirit', name: '冤魂', description: 'Wronged Spirit - Ghost Witness' },
+  { type: 'shen_xiu', name: '沈秀', description: 'Shen Xiu - Returning Soul' },
+  { type: 'judge_bao', name: '包公', description: 'Judge Bao - Cosmic Magistrate' },
+  { type: 'phantom_heroine', name: '女鬼', description: 'Phantom Heroine - Wronged Woman' },
+  { type: 'qutu_zhongren', name: '屠忠仁', description: 'Qutu Zhongren - Human Demon' },
+];
+
+// Spawn a ghost that appears for a limited time
+function spawnGhost(isIndoor: boolean = false, specificType?: GhostType): Ghost {
+  // Choose ghost type - mix of generic and named
+  let ghostType: GhostType = 'generic';
+  if (specificType) {
+    ghostType = specificType;
+  } else if (Math.random() < 0.3 && namedGhosts.length > 0) {
+    // 30% chance of named ghost
+    const namedGhost = namedGhosts[Math.floor(Math.random() * namedGhosts.length)];
+    if (namedGhost) {
+      ghostType = namedGhost.type;
+    }
+  }
+  
+  const mesh = createGhostMesh(ghostType);
+  
+  // Random position
+  let x: number, z: number;
+  if (isIndoor) {
+    x = -8 + Math.random() * 16;
+    z = -8 + Math.random() * 16;
+  } else {
+    x = -35 + Math.random() * 70;
+    z = -70 + Math.random() * 75;
+  }
+  
+  mesh.position.set(x, 0.5, z); // Slightly elevated - floating
+  
+  if (isIndoor) {
+    indoorScene.add(mesh);
+  } else {
+    outdoorScene.add(mesh);
+  }
+  
+  const ghost: Ghost = {
+    mesh,
+    x,
+    z,
+    targetX: x + (Math.random() - 0.5) * 10,
+    targetZ: z + (Math.random() - 0.5) * 10,
+    speed: 0.02 + Math.random() * 0.02, // Slow, drifting movement
+    ghostType,
+    appearTime: Date.now(),
+    duration: 8000 + Math.random() * 4000, // 8-12 seconds visible
+    floatOffset: Math.random() * Math.PI * 2,
+    indoor: isIndoor
+  };
+  
+  if (isIndoor) {
+    indoorGhosts.push(ghost);
+  } else {
+    outdoorGhosts.push(ghost);
+  }
+  
+  return ghost;
+}
+
+// Remove a ghost
+function removeGhost(ghost: Ghost, isIndoor: boolean) {
+  const scene = isIndoor ? indoorScene : outdoorScene;
+  const ghostArray = isIndoor ? indoorGhosts : outdoorGhosts;
+  
+  scene.remove(ghost.mesh);
+  const idx = ghostArray.indexOf(ghost);
+  if (idx !== -1) {
+    ghostArray.splice(idx, 1);
+  }
+}
+
+// Update all ghosts - floating animation, opacity pulsing, despawning
+function updateGhosts() {
+  const now = Date.now();
+  
+  // Update outdoor ghosts
+  for (let i = outdoorGhosts.length - 1; i >= 0; i--) {
+    const ghost = outdoorGhosts[i];
+    if (ghost) updateSingleGhost(ghost, now, false);
+  }
+  
+  // Update indoor ghosts (only if in indoor mode)
+  if (state.mode === 'indoor') {
+    for (let i = indoorGhosts.length - 1; i >= 0; i--) {
+      const ghost = indoorGhosts[i];
+      if (ghost) updateSingleGhost(ghost, now, true);
+    }
+  }
+  
+  // Randomly spawn new ghosts to maintain ~20 outdoor ghosts
+  if (outdoorGhosts.length < 20 && Math.random() < 0.02) { // ~2% chance per frame
+    spawnGhost(false);
+  }
+  
+  // Occasionally spawn indoor ghosts
+  if (state.mode === 'indoor' && indoorGhosts.length < 3 && Math.random() < 0.005) {
+    spawnGhost(true);
+  }
+}
+
+function updateSingleGhost(ghost: Ghost, now: number, isIndoor: boolean) {
+  const elapsed = now - ghost.appearTime;
+  
+  // Check if ghost should disappear
+  if (elapsed > ghost.duration) {
+    // Fade out effect
+    ghost.mesh.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        const mat = (child as THREE.Mesh).material as THREE.MeshBasicMaterial;
+        if (mat.opacity !== undefined) {
+          mat.opacity *= 0.9;
+          if (mat.opacity < 0.01) {
+            removeGhost(ghost, isIndoor);
+            return;
+          }
+        }
+      }
+    });
+    return;
+  }
+  
+  // Floating animation
+  const floatY = 0.5 + Math.sin(now / 800 + ghost.floatOffset) * 0.3;
+  ghost.mesh.position.y = floatY;
+  
+  // Gentle swaying
+  ghost.mesh.rotation.z = Math.sin(now / 1200 + ghost.floatOffset) * 0.1;
+  ghost.mesh.rotation.x = Math.sin(now / 1500 + ghost.floatOffset) * 0.05;
+  
+  // Opacity pulsing
+  const opacityPulse = 0.4 + Math.sin(now / 600 + ghost.floatOffset) * 0.15;
+  ghost.mesh.traverse((child) => {
+    if ((child as THREE.Mesh).isMesh) {
+      const mat = (child as THREE.Mesh).material as THREE.MeshBasicMaterial;
+      if (mat.opacity !== undefined && mat.opacity > 0.1) {
+        // Scale base opacity by pulse
+        const baseOpacity = mat.userData?.baseOpacity ?? mat.opacity;
+        if (!mat.userData) mat.userData = {};
+        mat.userData.baseOpacity = baseOpacity;
+        mat.opacity = baseOpacity * (opacityPulse / 0.5);
+      }
+    }
+  });
+  
+  // Slow drifting movement toward target
+  const dx = ghost.targetX - ghost.x;
+  const dz = ghost.targetZ - ghost.z;
+  const dist = Math.sqrt(dx * dx + dz * dz);
+  
+  if (dist > 0.5) {
+    ghost.x += (dx / dist) * ghost.speed;
+    ghost.z += (dz / dist) * ghost.speed;
+    ghost.mesh.position.x = ghost.x;
+    ghost.mesh.position.z = ghost.z;
+    
+    // Face movement direction
+    ghost.mesh.rotation.y = Math.atan2(dx, dz);
+  } else {
+    // Pick new target
+    if (isIndoor) {
+      ghost.targetX = -8 + Math.random() * 16;
+      ghost.targetZ = -8 + Math.random() * 16;
+    } else {
+      ghost.targetX = ghost.x + (Math.random() - 0.5) * 15;
+      ghost.targetZ = ghost.z + (Math.random() - 0.5) * 15;
+      // Keep within bounds
+      ghost.targetX = Math.max(-35, Math.min(35, ghost.targetX));
+      ghost.targetZ = Math.max(-70, Math.min(5, ghost.targetZ));
+    }
+  }
+}
+
+// Initialize ghosts on game start
+function initializeGhosts() {
+  // Spawn initial 20 outdoor ghosts
+  for (let i = 0; i < 20; i++) {
+    spawnGhost(false);
+  }
+  
+  // Spawn the 6 named ghosts guaranteed
+  for (const named of namedGhosts) {
+    spawnGhost(false, named.type);
+  }
+}
 
 // Create a person mesh - same style as player character
 function createPersonMesh(): THREE.Group {
@@ -2636,22 +3168,43 @@ function updateNPCs() {
         const currentScene = npc.indoor ? indoorScene : outdoorScene;
         
         if (!npc.isTransformed) {
-          // Transform fox -> human
+          // Transform fox -> human OR ghost/demon (25% chance of ghost)
           npc.originalMesh = npc.mesh;
           currentScene.remove(npc.mesh);
           
-          const humanMesh = createPersonMesh();
-          humanMesh.position.set(npc.x, 0, npc.z);
-          humanMesh.rotation.y = npc.mesh.rotation.y;
-          currentScene.add(humanMesh);
-          npc.mesh = humanMesh;
-          npc.isTransformed = true;
-          npc.speed = 0.04; // Human speed
+          const transformToGhost = Math.random() < 0.25;
           
-          // Stay human for 3-8 seconds
-          npc.transformTimer = now + 3000 + Math.random() * 5000;
+          if (transformToGhost) {
+            // Transform into a ghost/demon!
+            const ghostTypes: GhostType[] = ['generic', 'wronged_spirit', 'phantom_heroine', 'qutu_zhongren'];
+            const ghostType = ghostTypes[Math.floor(Math.random() * ghostTypes.length)];
+            const ghostMesh = createGhostMesh(ghostType);
+            ghostMesh.position.set(npc.x, 0.5, npc.z);
+            ghostMesh.rotation.y = npc.mesh.rotation.y;
+            currentScene.add(ghostMesh);
+            npc.mesh = ghostMesh;
+            npc.isTransformed = true;
+            npc.transformedToGhost = true;
+            npc.speed = 0.025; // Ghost speed - slow and drifting
+            
+            // Stay as ghost for 5-12 seconds
+            npc.transformTimer = now + 5000 + Math.random() * 7000;
+          } else {
+            // Transform into human
+            const humanMesh = createPersonMesh();
+            humanMesh.position.set(npc.x, 0, npc.z);
+            humanMesh.rotation.y = npc.mesh.rotation.y;
+            currentScene.add(humanMesh);
+            npc.mesh = humanMesh;
+            npc.isTransformed = true;
+            npc.transformedToGhost = false;
+            npc.speed = 0.04; // Human speed
+            
+            // Stay human for 3-8 seconds
+            npc.transformTimer = now + 3000 + Math.random() * 5000;
+          }
         } else {
-          // Transform human -> fox
+          // Transform back to fox (from human or ghost)
           currentScene.remove(npc.mesh);
           
           const foxMesh = createFoxMesh();
@@ -2660,6 +3213,7 @@ function updateNPCs() {
           currentScene.add(foxMesh);
           npc.mesh = foxMesh;
           npc.isTransformed = false;
+          npc.transformedToGhost = false;
           npc.speed = 0.08; // Fox speed
           
           // Next transformation in 10-30 seconds
@@ -2668,6 +3222,13 @@ function updateNPCs() {
         
         npc.shakeTimer = 0;
       }
+    }
+    
+    // Ghost-transformed fox floating animation
+    if (npc.transformedToGhost && npc.isTransformed) {
+      const floatY = 0.5 + Math.sin(Date.now() / 800) * 0.3;
+      npc.mesh.position.y = floatY;
+      npc.mesh.rotation.z = Math.sin(Date.now() / 1200) * 0.1;
     }
     
     // Simple walk animation (bobbing) - different speeds for different animals
@@ -2690,6 +3251,9 @@ function updateNPCs() {
 
 // Initialize outdoor NPCs
 spawnOutdoorNPCs();
+
+// Initialize ghosts (20 generic + 6 named)
+initializeGhosts();
 
 // ============================================
 // INDOOR SCENE
@@ -5926,6 +6490,24 @@ window.addEventListener('keydown', e => {
     keys.action = true;
     keys.actionPressed = true; // One-shot trigger
   }
+  
+  // Toggle between GLB model and procedural city with 'G' key
+  if (e.code === 'KeyG' && glbModelLoaded) {
+    if (glbModelGroup.visible && proceduralCityGroup.visible) {
+      // Both visible - hide procedural
+      proceduralCityGroup.visible = false;
+      console.log('Showing GLB model only');
+    } else if (glbModelGroup.visible && !proceduralCityGroup.visible) {
+      // Only GLB visible - show both
+      proceduralCityGroup.visible = true;
+      console.log('Showing both GLB and procedural');
+    } else {
+      // Only procedural visible - show GLB only
+      glbModelGroup.visible = true;
+      proceduralCityGroup.visible = false;
+      console.log('Showing GLB model only');
+    }
+  }
 });
 
 window.addEventListener('keyup', e => {
@@ -7146,6 +7728,7 @@ function animate() {
   if (!isJumping) {
     update();
     updateNPCs();
+    updateGhosts();
   }
   
   updateCamera();

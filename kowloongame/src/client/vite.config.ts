@@ -4,6 +4,7 @@ import { defineConfig } from 'vite';
 export default defineConfig({
   plugins: [],
   logLevel: 'warn',
+  publicDir: 'public', // Serve static assets from public folder
   build: {
     outDir: '../../dist/client',
     emptyOutDir: true,
