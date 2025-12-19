@@ -1,6 +1,7 @@
 # 九龍城寨：幽靈經卷
 
 # Kowloon Walled City: The Ghost Scrolls
+Hosted at: [r/kowloongame](https://www.reddit.com/r/kowloongame/)
 
 > _A 3D exploration game set in Hong Kong's legendary Kowloon Walled City, where players collect 10 sacred scrolls (and a few bonus scrolls) from supernatural beings, while learning about the city from it's inhabitants
 
