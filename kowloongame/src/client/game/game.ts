@@ -110,6 +110,64 @@ interface BuildingData {
 const buildingsData: BuildingData[] = [];
 const allBuildingMeshes: THREE.Mesh[] = [];
 
+// ============================================
+// FLOOR ROOM CACHE - Persists room configurations
+// ============================================
+type RoomType = 'bedroom' | 'kitchen' | 'bathroom' | 'living' | 'storage';
+
+interface FloorRoomConfig {
+  roomTypes: RoomType[];
+  seed: number; // For consistent random generation
+}
+
+// Cache: buildingIdx -> floorNum -> FloorRoomConfig
+const floorRoomCache: Map<string, FloorRoomConfig> = new Map();
+
+function getFloorCacheKey(buildingIdx: number, floorNum: number): string {
+  return `${buildingIdx}-${floorNum}`;
+}
+
+function getOrCreateFloorConfig(
+  buildingIdx: number,
+  floorNum: number,
+  numRooms: number
+): FloorRoomConfig {
+  const key = getFloorCacheKey(buildingIdx, floorNum);
+  let config = floorRoomCache.get(key);
+
+  if (!config) {
+    // Generate room types based on a seed for consistency
+    const seed = buildingIdx * 1000 + floorNum;
+    const roomTypes: RoomType[] = [];
+    const allTypes: RoomType[] = [
+      'bedroom',
+      'bedroom',
+      'bedroom',
+      'kitchen',
+      'bathroom',
+      'living',
+      'storage',
+    ];
+
+    // Use seeded random for consistency
+    let rand = seed;
+    const seededRandom = () => {
+      rand = (rand * 1103515245 + 12345) & 0x7fffffff;
+      return rand / 0x7fffffff;
+    };
+
+    for (let i = 0; i < numRooms; i++) {
+      const typeIdx = Math.floor(seededRandom() * allTypes.length);
+      roomTypes.push(allTypes[typeIdx]!);
+    }
+
+    config = { roomTypes, seed };
+    floorRoomCache.set(key, config);
+  }
+
+  return config;
+}
+
 // Convert number to Chinese characters
 function toChineseNumber(num: number): string {
   const digits = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
@@ -141,47 +199,50 @@ function toChineseNumber(num: number): string {
 // Buildings are connected horizontally and vertically - Kowloon Walled City style
 // Each building section has a door entrance on the front face
 // Buildings are 10 units wide (touching neighbors) and 12 units deep (merging rows)
+// Max 14 floors - historically accurate due to Kai Tak Airport flight path
+// Heights now vary from 8-14 for visual variety
+const MAX_FLOORS = 14;
 const cityLayout = [
   // Row 1 (far back) - z = -64 (merged pairs of original rows)
-  { x: -30, z: -64, w: 10, d: 12, floors: 15 },
-  { x: -20, z: -64, w: 10, d: 12, floors: 17 },
-  { x: -10, z: -64, w: 10, d: 12, floors: 14 },
-  { x: 0, z: -64, w: 10, d: 12, floors: 19 },
-  { x: 10, z: -64, w: 10, d: 12, floors: 14 },
-  { x: 20, z: -64, w: 10, d: 12, floors: 16 },
-  { x: 30, z: -64, w: 10, d: 12, floors: 15 },
+  { x: -30, z: -64, w: 10, d: 12, floors: 12 },
+  { x: -20, z: -64, w: 10, d: 12, floors: 14 },
+  { x: -10, z: -64, w: 10, d: 12, floors: 10 },
+  { x: 0, z: -64, w: 10, d: 12, floors: 13 },
+  { x: 10, z: -64, w: 10, d: 12, floors: 11 },
+  { x: 20, z: -64, w: 10, d: 12, floors: 14 },
+  { x: 30, z: -64, w: 10, d: 12, floors: 9 },
   // Row 2 - z = -52 (merged)
-  { x: -30, z: -52, w: 10, d: 12, floors: 16 },
-  { x: -20, z: -52, w: 10, d: 12, floors: 12 },
-  { x: -10, z: -52, w: 10, d: 12, floors: 20 },
-  { x: 0, z: -52, w: 10, d: 12, floors: 12 },
-  { x: 10, z: -52, w: 10, d: 12, floors: 17 },
-  { x: 20, z: -52, w: 10, d: 12, floors: 14 },
-  { x: 30, z: -52, w: 10, d: 12, floors: 14 },
+  { x: -30, z: -52, w: 10, d: 12, floors: 10 },
+  { x: -20, z: -52, w: 10, d: 12, floors: 8 },
+  { x: -10, z: -52, w: 10, d: 12, floors: 14 },
+  { x: 0, z: -52, w: 10, d: 12, floors: 11 },
+  { x: 10, z: -52, w: 10, d: 12, floors: 13 },
+  { x: 20, z: -52, w: 10, d: 12, floors: 9 },
+  { x: 30, z: -52, w: 10, d: 12, floors: 12 },
   // Row 3 - z = -40 (merged)
   { x: -30, z: -40, w: 10, d: 12, floors: 14 },
-  { x: -20, z: -40, w: 10, d: 12, floors: 17 },
-  { x: -10, z: -40, w: 10, d: 12, floors: 15 },
-  { x: 0, z: -40, w: 10, d: 12, floors: 20 },
-  { x: 10, z: -40, w: 10, d: 12, floors: 12 },
-  { x: 20, z: -40, w: 10, d: 12, floors: 17 },
-  { x: 30, z: -40, w: 10, d: 12, floors: 14 },
+  { x: -20, z: -40, w: 10, d: 12, floors: 11 },
+  { x: -10, z: -40, w: 10, d: 12, floors: 9 },
+  { x: 0, z: -40, w: 10, d: 12, floors: 14 },
+  { x: 10, z: -40, w: 10, d: 12, floors: 10 },
+  { x: 20, z: -40, w: 10, d: 12, floors: 13 },
+  { x: 30, z: -40, w: 10, d: 12, floors: 8 },
   // Row 4 - z = -28 (merged)
-  { x: -30, z: -28, w: 10, d: 12, floors: 16 },
+  { x: -30, z: -28, w: 10, d: 12, floors: 11 },
   { x: -20, z: -28, w: 10, d: 12, floors: 14 },
-  { x: -10, z: -28, w: 10, d: 12, floors: 16 },
-  { x: 0, z: -28, w: 10, d: 12, floors: 21 },
-  { x: 10, z: -28, w: 10, d: 12, floors: 14 },
-  { x: 20, z: -28, w: 10, d: 12, floors: 16 },
-  { x: 30, z: -28, w: 10, d: 12, floors: 15 },
+  { x: -10, z: -28, w: 10, d: 12, floors: 12 },
+  { x: 0, z: -28, w: 10, d: 12, floors: 9 },
+  { x: 10, z: -28, w: 10, d: 12, floors: 13 },
+  { x: 20, z: -28, w: 10, d: 12, floors: 10 },
+  { x: 30, z: -28, w: 10, d: 12, floors: 14 },
   // Row 5 (front) - z = -16
-  { x: -30, z: -16, w: 10, d: 12, floors: 15 },
-  { x: -20, z: -16, w: 10, d: 12, floors: 18 },
-  { x: -10, z: -16, w: 10, d: 12, floors: 12 },
-  { x: 0, z: -16, w: 10, d: 12, floors: 19 },
-  { x: 10, z: -16, w: 10, d: 12, floors: 16 },
-  { x: 20, z: -16, w: 10, d: 12, floors: 13 },
-  { x: 30, z: -16, w: 10, d: 12, floors: 17 },
+  { x: -30, z: -16, w: 10, d: 12, floors: 13 },
+  { x: -20, z: -16, w: 10, d: 12, floors: 10 },
+  { x: -10, z: -16, w: 10, d: 12, floors: 8 },
+  { x: 0, z: -16, w: 10, d: 12, floors: 14 },
+  { x: 10, z: -16, w: 10, d: 12, floors: 11 },
+  { x: 20, z: -16, w: 10, d: 12, floors: 9 },
+  { x: 30, z: -16, w: 10, d: 12, floors: 12 },
 ];
 
 function createCityBuilding(config: (typeof cityLayout)[0], index: number) {
@@ -4096,9 +4157,38 @@ function createFloorView(buildingIdx: number, floor: number) {
     // Low wall around edge
     const edgeMat = new THREE.MeshLambertMaterial({ color: 0x444444 });
     const edgeH = 1.2;
-    const backEdge = new THREE.Mesh(new THREE.BoxGeometry(w, edgeH, 0.4), edgeMat);
-    backEdge.position.set(0, edgeH / 2, -d / 2 + 0.2);
-    group.add(backEdge);
+
+    // Back edge - with gap for north jump if north building exists
+    if (hasNorthBuilding) {
+      // Left portion of back edge
+      const backEdgeL = new THREE.Mesh(new THREE.BoxGeometry(w / 2 - 4, edgeH, 0.4), edgeMat);
+      backEdgeL.position.set(-w / 4 - 2, edgeH / 2, -d / 2 + 0.2);
+      group.add(backEdgeL);
+      // Right portion of back edge
+      const backEdgeR = new THREE.Mesh(new THREE.BoxGeometry(w / 2 - 4, edgeH, 0.4), edgeMat);
+      backEdgeR.position.set(w / 4 + 2, edgeH / 2, -d / 2 + 0.2);
+      group.add(backEdgeR);
+      // Gap in middle - shows adjacent building roof for jump north
+      const adjRoofN = new THREE.Mesh(
+        new THREE.BoxGeometry(8, 0.3, 8),
+        new THREE.MeshLambertMaterial({ color: 0x444444 })
+      );
+      adjRoofN.position.set(0, -0.5, -d / 2 - 3);
+      group.add(adjRoofN);
+      // Dark gap between buildings
+      const gapN = new THREE.Mesh(
+        new THREE.PlaneGeometry(6, 3),
+        new THREE.MeshBasicMaterial({ color: 0x0a0a0a })
+      );
+      gapN.rotation.x = -Math.PI / 2;
+      gapN.position.set(0, -0.3, -d / 2);
+      group.add(gapN);
+    } else {
+      // Full back wall if no north building
+      const backEdge = new THREE.Mesh(new THREE.BoxGeometry(w, edgeH, 0.4), edgeMat);
+      backEdge.position.set(0, edgeH / 2, -d / 2 + 0.2);
+      group.add(backEdge);
+    }
 
     // ========== ANTENNA FOREST (KWC signature) ==========
     const antennaMat = new THREE.MeshLambertMaterial({ color: 0x555555 });
@@ -4365,21 +4455,37 @@ function createFloorView(buildingIdx: number, floor: number) {
       group.add(pipe);
     }
 
-    // Front edge - low wall with gap to look/jump down
-    const frontEdgeL = new THREE.Mesh(new THREE.BoxGeometry(w / 2 - 4, edgeH, 0.4), edgeMat);
-    frontEdgeL.position.set(-w / 4 - 2, edgeH / 2, d / 2 - 0.2);
-    group.add(frontEdgeL);
-    const frontEdgeR = new THREE.Mesh(new THREE.BoxGeometry(w / 2 - 4, edgeH, 0.4), edgeMat);
-    frontEdgeR.position.set(w / 4 + 2, edgeH / 2, d / 2 - 0.2);
-    group.add(frontEdgeR);
-    // Gap in middle - can see street below (just dark area)
-    const streetBelow = new THREE.Mesh(
-      new THREE.PlaneGeometry(6, 3),
-      new THREE.MeshBasicMaterial({ color: 0x111111 })
-    );
-    streetBelow.rotation.x = -Math.PI / 2;
-    streetBelow.position.set(0, -0.5, d / 2);
-    group.add(streetBelow);
+    // Front edge - low wall with gap to jump south (to adjacent building)
+    if (hasSouthBuilding) {
+      // Left portion of front edge
+      const frontEdgeL = new THREE.Mesh(new THREE.BoxGeometry(w / 2 - 4, edgeH, 0.4), edgeMat);
+      frontEdgeL.position.set(-w / 4 - 2, edgeH / 2, d / 2 - 0.2);
+      group.add(frontEdgeL);
+      // Right portion of front edge
+      const frontEdgeR = new THREE.Mesh(new THREE.BoxGeometry(w / 2 - 4, edgeH, 0.4), edgeMat);
+      frontEdgeR.position.set(w / 4 + 2, edgeH / 2, d / 2 - 0.2);
+      group.add(frontEdgeR);
+      // Gap in middle - shows adjacent building roof for jump south
+      const adjRoofS = new THREE.Mesh(
+        new THREE.BoxGeometry(8, 0.3, 8),
+        new THREE.MeshLambertMaterial({ color: 0x444444 })
+      );
+      adjRoofS.position.set(0, -0.5, d / 2 + 3);
+      group.add(adjRoofS);
+      // Dark gap between buildings
+      const gapS = new THREE.Mesh(
+        new THREE.PlaneGeometry(6, 3),
+        new THREE.MeshBasicMaterial({ color: 0x0a0a0a })
+      );
+      gapS.rotation.x = -Math.PI / 2;
+      gapS.position.set(0, -0.3, d / 2);
+      group.add(gapS);
+    } else {
+      // Full front wall if no south building
+      const frontEdgeFull = new THREE.Mesh(new THREE.BoxGeometry(w, edgeH, 0.4), edgeMat);
+      frontEdgeFull.position.set(0, edgeH / 2, d / 2 - 0.2);
+      group.add(frontEdgeFull);
+    }
 
     // Left edge with adjacent building visible
     if (hasLeftBuilding) {
@@ -5151,16 +5257,29 @@ function createFloorView(buildingIdx: number, floor: number) {
     group.add(vCorridor2);
 
     // ========== ROOMS IN GRID BLOCKS ==========
-    // Helper function to create a room
-    function createRoom(x: number, z: number, rotated: boolean, colorIdx: number) {
+    // Helper function to create a room with different types
+    function createRoom(
+      x: number,
+      z: number,
+      rotated: boolean,
+      colorIdx: number,
+      roomType: RoomType
+    ) {
       const roomLit = Math.random() > 0.35;
       const rw = rotated ? roomSize : roomSize;
       const rd = rotated ? roomSize : roomSize;
 
-      // Room floor
+      // Room floor - different colors based on room type
+      const floorColors: Record<RoomType, number> = {
+        bedroom: roomLit ? 0x5a5545 : 0x4a4540,
+        kitchen: roomLit ? 0x5a5a55 : 0x4a4a45,
+        bathroom: roomLit ? 0x6a7a7a : 0x5a6a6a,
+        living: roomLit ? 0x5a5a50 : 0x4a4a45,
+        storage: 0x3a3a35,
+      };
       const floor = new THREE.Mesh(
         new THREE.PlaneGeometry(rw - 0.5, rd - 0.5),
-        new THREE.MeshLambertMaterial({ color: roomLit ? 0x5a5545 : 0x4a4540 })
+        new THREE.MeshLambertMaterial({ color: floorColors[roomType] })
       );
       floor.rotation.x = -Math.PI / 2;
       floor.position.set(x, 0.02, z);
@@ -5211,121 +5330,278 @@ function createFloorView(buildingIdx: number, floor: number) {
       doorFrame.position.set(x, 1.25, z + rd / 2 - wallThick / 2);
       group.add(doorFrame);
 
-      // BED with legs (more 3D)
-      const bedW = rotated ? 1.4 : 2.2;
-      const bedD = rotated ? 2.2 : 1.4;
-      const bedX = x - rw / 2 + bedW / 2 + 0.5;
-      const bedZ = z - rd / 2 + bedD / 2 + 0.5;
+      // ========== FURNITURE BASED ON ROOM TYPE ==========
+      if (roomType === 'bedroom') {
+        // BED with legs
+        const bedW = rotated ? 1.4 : 2.2;
+        const bedD = rotated ? 2.2 : 1.4;
+        const bedX = x - rw / 2 + bedW / 2 + 0.5;
+        const bedZ = z - rd / 2 + bedD / 2 + 0.5;
 
-      // Bed frame (raised)
-      const bedFrame = new THREE.Mesh(
-        new THREE.BoxGeometry(bedW, 0.25, bedD),
-        new THREE.MeshLambertMaterial({ color: 0x4a3a2a })
-      );
-      bedFrame.position.set(bedX, 0.35, bedZ);
-      group.add(bedFrame);
-
-      // Bed legs (visible from 2.5D angle)
-      const legH = 0.22;
-      const legMat = new THREE.MeshLambertMaterial({ color: 0x3a2a1a });
-      const legPositions = [
-        [bedX - bedW / 2 + 0.1, legH / 2, bedZ - bedD / 2 + 0.1],
-        [bedX + bedW / 2 - 0.1, legH / 2, bedZ - bedD / 2 + 0.1],
-        [bedX - bedW / 2 + 0.1, legH / 2, bedZ + bedD / 2 - 0.1],
-        [bedX + bedW / 2 - 0.1, legH / 2, bedZ + bedD / 2 - 0.1],
-      ];
-      legPositions.forEach((pos) => {
-        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.1, legH, 0.1), legMat);
-        leg.position.set(pos[0], pos[1], pos[2]);
-        group.add(leg);
-      });
-
-      // Mattress
-      const mattress = new THREE.Mesh(
-        new THREE.BoxGeometry(bedW - 0.1, 0.2, bedD - 0.1),
-        new THREE.MeshLambertMaterial({ color: 0x887766 })
-      );
-      mattress.position.set(bedX, 0.57, bedZ);
-      group.add(mattress);
-
-      // Blanket (puffy)
-      const blanketColors = [0x7a6555, 0x665544, 0x887766, 0x556655, 0x775566, 0x667755];
-      const blanket = new THREE.Mesh(
-        new THREE.BoxGeometry(bedW - 0.2, 0.2, bedD * 0.65),
-        new THREE.MeshLambertMaterial({ color: blanketColors[colorIdx % 6] })
-      );
-      blanket.position.set(bedX, 0.75, bedZ + bedD * 0.15);
-      group.add(blanket);
-
-      // Pillow (fluffy)
-      const pillow = new THREE.Mesh(
-        new THREE.BoxGeometry(rotated ? 0.9 : 0.6, 0.25, rotated ? 0.5 : 0.9),
-        new THREE.MeshLambertMaterial({ color: 0xddccbb })
-      );
-      pillow.position.set(
-        bedX - (rotated ? 0 : bedW / 2 - 0.45),
-        0.75,
-        bedZ - (rotated ? bedD / 2 - 0.35 : 0)
-      );
-      group.add(pillow);
-
-      // Small nightstand/dresser beside bed
-      const dresserX = bedX + bedW / 2 + 0.4;
-      const dresserZ = bedZ - bedD / 2 + 0.4;
-      const dresser = new THREE.Mesh(
-        new THREE.BoxGeometry(0.5, 0.7, 0.4),
-        new THREE.MeshLambertMaterial({ color: 0x4a3a2a })
-      );
-      dresser.position.set(dresserX, 0.35, dresserZ);
-      group.add(dresser);
-
-      // Dresser drawers (detail)
-      const drawer = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.4, 0.25),
-        new THREE.MeshBasicMaterial({ color: 0x3a2a1a })
-      );
-      drawer.position.set(dresserX, 0.3, dresserZ + 0.21);
-      group.add(drawer);
-
-      // Item on dresser (50% chance)
-      if (Math.random() > 0.5) {
-        const item = new THREE.Mesh(
-          new THREE.BoxGeometry(0.15, 0.2, 0.15),
-          new THREE.MeshLambertMaterial({ color: Math.random() > 0.5 ? 0x666666 : 0x445566 })
+        const bedFrame = new THREE.Mesh(
+          new THREE.BoxGeometry(bedW, 0.25, bedD),
+          new THREE.MeshLambertMaterial({ color: 0x4a3a2a })
         );
-        item.position.set(dresserX, 0.8, dresserZ);
-        group.add(item);
-      }
+        bedFrame.position.set(bedX, 0.35, bedZ);
+        group.add(bedFrame);
 
-      // Small TV on wall (30% of rooms)
-      if (Math.random() > 0.7) {
-        const tv = new THREE.Mesh(
-          new THREE.BoxGeometry(0.8, 0.5, 0.08),
+        // Mattress
+        const mattress = new THREE.Mesh(
+          new THREE.BoxGeometry(bedW - 0.1, 0.2, bedD - 0.1),
+          new THREE.MeshLambertMaterial({ color: 0x887766 })
+        );
+        mattress.position.set(bedX, 0.57, bedZ);
+        group.add(mattress);
+
+        // Blanket
+        const blanketColors = [0x7a6555, 0x665544, 0x887766, 0x556655, 0x775566, 0x667755];
+        const blanket = new THREE.Mesh(
+          new THREE.BoxGeometry(bedW - 0.2, 0.2, bedD * 0.65),
+          new THREE.MeshLambertMaterial({ color: blanketColors[colorIdx % 6] })
+        );
+        blanket.position.set(bedX, 0.75, bedZ + bedD * 0.15);
+        group.add(blanket);
+
+        // Pillow
+        const pillow = new THREE.Mesh(
+          new THREE.BoxGeometry(rotated ? 0.9 : 0.6, 0.25, rotated ? 0.5 : 0.9),
+          new THREE.MeshLambertMaterial({ color: 0xddccbb })
+        );
+        pillow.position.set(
+          bedX - (rotated ? 0 : bedW / 2 - 0.45),
+          0.75,
+          bedZ - (rotated ? bedD / 2 - 0.35 : 0)
+        );
+        group.add(pillow);
+
+        // Nightstand
+        const dresser = new THREE.Mesh(
+          new THREE.BoxGeometry(0.5, 0.7, 0.4),
+          new THREE.MeshLambertMaterial({ color: 0x4a3a2a })
+        );
+        dresser.position.set(bedX + bedW / 2 + 0.4, 0.35, bedZ - bedD / 2 + 0.4);
+        group.add(dresser);
+      } else if (roomType === 'kitchen') {
+        // Counter along back wall
+        const counter = new THREE.Mesh(
+          new THREE.BoxGeometry(rw - 1, 0.9, 0.8),
+          new THREE.MeshLambertMaterial({ color: 0x6a6a6a })
+        );
+        counter.position.set(x, 0.45, z - rd / 2 + 0.6);
+        group.add(counter);
+
+        // Countertop
+        const countertop = new THREE.Mesh(
+          new THREE.BoxGeometry(rw - 0.8, 0.05, 1.0),
+          new THREE.MeshLambertMaterial({ color: 0x888888 })
+        );
+        countertop.position.set(x, 0.93, z - rd / 2 + 0.6);
+        group.add(countertop);
+
+        // Stove
+        const stove = new THREE.Mesh(
+          new THREE.BoxGeometry(0.8, 0.1, 0.6),
           new THREE.MeshLambertMaterial({ color: 0x222222 })
         );
-        tv.position.set(x + rw / 2 - 0.6, 1.5, z - rd / 2 + 0.08);
+        stove.position.set(x - 0.8, 0.96, z - rd / 2 + 0.5);
+        group.add(stove);
+
+        // Burners
+        for (let i = 0; i < 2; i++) {
+          const burner = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.12, 0.12, 0.02, 8),
+            new THREE.MeshLambertMaterial({ color: 0x333333 })
+          );
+          burner.position.set(x - 1 + i * 0.4, 0.98, z - rd / 2 + 0.5);
+          group.add(burner);
+        }
+
+        // Sink
+        const sink = new THREE.Mesh(
+          new THREE.BoxGeometry(0.6, 0.15, 0.5),
+          new THREE.MeshLambertMaterial({ color: 0x999999 })
+        );
+        sink.position.set(x + 0.8, 0.88, z - rd / 2 + 0.5);
+        group.add(sink);
+
+        // Small table
+        const table = new THREE.Mesh(
+          new THREE.BoxGeometry(1.2, 0.05, 0.8),
+          new THREE.MeshLambertMaterial({ color: 0x5a4a3a })
+        );
+        table.position.set(x, 0.7, z + 0.5);
+        group.add(table);
+
+        // Rice cooker
+        const riceCooker = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.15, 0.15, 0.25, 8),
+          new THREE.MeshLambertMaterial({ color: 0xeeeeee })
+        );
+        riceCooker.position.set(x + 1.2, 1.05, z - rd / 2 + 0.5);
+        group.add(riceCooker);
+      } else if (roomType === 'bathroom') {
+        // Toilet
+        const toiletBase = new THREE.Mesh(
+          new THREE.BoxGeometry(0.5, 0.4, 0.6),
+          new THREE.MeshLambertMaterial({ color: 0xeeeeee })
+        );
+        toiletBase.position.set(x - rw / 4, 0.2, z - rd / 2 + 0.5);
+        group.add(toiletBase);
+
+        const toiletSeat = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.2, 0.2, 0.08, 16),
+          new THREE.MeshLambertMaterial({ color: 0xdddddd })
+        );
+        toiletSeat.position.set(x - rw / 4, 0.44, z - rd / 2 + 0.4);
+        group.add(toiletSeat);
+
+        const toiletTank = new THREE.Mesh(
+          new THREE.BoxGeometry(0.4, 0.5, 0.2),
+          new THREE.MeshLambertMaterial({ color: 0xeeeeee })
+        );
+        toiletTank.position.set(x - rw / 4, 0.55, z - rd / 2 + 0.2);
+        group.add(toiletTank);
+
+        // Shower area
+        const showerBase = new THREE.Mesh(
+          new THREE.BoxGeometry(1.2, 0.1, 1.0),
+          new THREE.MeshLambertMaterial({ color: 0xaabbbb })
+        );
+        showerBase.position.set(x + rw / 4, 0.05, z - rd / 2 + 0.7);
+        group.add(showerBase);
+
+        // Shower head pipe
+        const showerPipe = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.03, 0.03, 2.5, 6),
+          new THREE.MeshLambertMaterial({ color: 0x888888 })
+        );
+        showerPipe.position.set(x + rw / 4 + 0.4, 1.5, z - rd / 2 + 0.3);
+        group.add(showerPipe);
+
+        // Small sink
+        const sinkStand = new THREE.Mesh(
+          new THREE.BoxGeometry(0.5, 0.8, 0.35),
+          new THREE.MeshLambertMaterial({ color: 0xdddddd })
+        );
+        sinkStand.position.set(x, 0.4, z + rd / 2 - 0.5);
+        group.add(sinkStand);
+
+        // Mirror
+        const mirror = new THREE.Mesh(
+          new THREE.PlaneGeometry(0.6, 0.8),
+          new THREE.MeshBasicMaterial({ color: 0x99aaaa })
+        );
+        mirror.position.set(x, 1.4, z + rd / 2 - 0.25);
+        mirror.rotation.y = Math.PI;
+        group.add(mirror);
+      } else if (roomType === 'living') {
+        // Sofa/couch
+        const sofaBase = new THREE.Mesh(
+          new THREE.BoxGeometry(2.0, 0.4, 0.9),
+          new THREE.MeshLambertMaterial({ color: 0x665544 })
+        );
+        sofaBase.position.set(x, 0.2, z - rd / 4);
+        group.add(sofaBase);
+
+        const sofaBack = new THREE.Mesh(
+          new THREE.BoxGeometry(2.0, 0.5, 0.2),
+          new THREE.MeshLambertMaterial({ color: 0x665544 })
+        );
+        sofaBack.position.set(x, 0.65, z - rd / 4 - 0.35);
+        group.add(sofaBack);
+
+        const sofaCushion = new THREE.Mesh(
+          new THREE.BoxGeometry(1.8, 0.15, 0.7),
+          new THREE.MeshLambertMaterial({ color: 0x887766 })
+        );
+        sofaCushion.position.set(x, 0.47, z - rd / 4 + 0.05);
+        group.add(sofaCushion);
+
+        // Coffee table
+        const coffeeTable = new THREE.Mesh(
+          new THREE.BoxGeometry(1.0, 0.35, 0.5),
+          new THREE.MeshLambertMaterial({ color: 0x4a3a2a })
+        );
+        coffeeTable.position.set(x, 0.175, z + 0.3);
+        group.add(coffeeTable);
+
+        // TV (larger, on stand)
+        const tvStand = new THREE.Mesh(
+          new THREE.BoxGeometry(1.2, 0.5, 0.4),
+          new THREE.MeshLambertMaterial({ color: 0x3a3a3a })
+        );
+        tvStand.position.set(x, 0.25, z + rd / 2 - 0.6);
+        group.add(tvStand);
+
+        const tv = new THREE.Mesh(
+          new THREE.BoxGeometry(1.1, 0.7, 0.08),
+          new THREE.MeshLambertMaterial({ color: 0x111111 })
+        );
+        tv.position.set(x, 0.9, z + rd / 2 - 0.55);
         group.add(tv);
 
-        // TV screen glow
-        const screen = new THREE.Mesh(
-          new THREE.PlaneGeometry(0.7, 0.4),
-          new THREE.MeshBasicMaterial({ color: Math.random() > 0.5 ? 0x3366aa : 0x334455 })
+        const tvScreen = new THREE.Mesh(
+          new THREE.PlaneGeometry(1.0, 0.6),
+          new THREE.MeshBasicMaterial({ color: 0x334466 })
         );
-        screen.position.set(x + rw / 2 - 0.6, 1.5, z - rd / 2 + 0.12);
-        group.add(screen);
+        tvScreen.position.set(x, 0.9, z + rd / 2 - 0.5);
+        tvScreen.rotation.y = Math.PI;
+        group.add(tvScreen);
+      } else if (roomType === 'storage') {
+        // Boxes and clutter
+        for (let i = 0; i < 6; i++) {
+          const boxW = 0.4 + Math.random() * 0.4;
+          const boxH = 0.3 + Math.random() * 0.4;
+          const boxD = 0.3 + Math.random() * 0.3;
+          const box = new THREE.Mesh(
+            new THREE.BoxGeometry(boxW, boxH, boxD),
+            new THREE.MeshLambertMaterial({
+              color: 0x6a5a4a + Math.floor(Math.random() * 0x202020),
+            })
+          );
+          box.position.set(
+            x - rw / 3 + Math.random() * (rw * 0.6),
+            boxH / 2 + (i > 2 ? 0.4 : 0),
+            z - rd / 3 + Math.random() * (rd * 0.5)
+          );
+          box.rotation.y = Math.random() * 0.3;
+          group.add(box);
+        }
+
+        // Old shelving unit
+        const shelf = new THREE.Mesh(
+          new THREE.BoxGeometry(1.5, 2.0, 0.4),
+          new THREE.MeshLambertMaterial({ color: 0x4a4035 })
+        );
+        shelf.position.set(x + rw / 3, 1.0, z - rd / 2 + 0.35);
+        group.add(shelf);
+
+        // Shelves
+        for (let s = 0; s < 3; s++) {
+          const shelfPlate = new THREE.Mesh(
+            new THREE.BoxGeometry(1.4, 0.05, 0.35),
+            new THREE.MeshLambertMaterial({ color: 0x5a4a3a })
+          );
+          shelfPlate.position.set(x + rw / 3, 0.3 + s * 0.6, z - rd / 2 + 0.35);
+          group.add(shelfPlate);
+        }
+
+        // Buckets
+        const bucket = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.15, 0.12, 0.3, 8),
+          new THREE.MeshLambertMaterial({ color: 0x3366aa })
+        );
+        bucket.position.set(x - rw / 4, 0.15, z + rd / 4);
+        group.add(bucket);
       }
 
       // Wall lamp - 95% of rooms have a warm orange wall lamp
       if (Math.random() < 0.95) {
-        // Orange/warm lamp color
         const lampColor = 0xff8833;
         const intensity = 0.8;
-
-        // Wall lamp position - on wall opposite the door, not on bed
         const lampWallX = rotated ? x : x + (Math.random() > 0.5 ? 2 : -2);
         const lampWallZ = rotated ? z + (Math.random() > 0.5 ? 2 : -2) : z;
 
-        // Lamp fixture (wall mount bracket)
         const bracket = new THREE.Mesh(
           new THREE.BoxGeometry(0.15, 0.1, 0.1),
           new THREE.MeshLambertMaterial({ color: 0x333333 })
@@ -5333,16 +5609,6 @@ function createFloorView(buildingIdx: number, floor: number) {
         bracket.position.set(lampWallX, 2.2, lampWallZ);
         group.add(bracket);
 
-        // Lamp arm
-        const arm = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.02, 0.02, 0.25, 6),
-          new THREE.MeshLambertMaterial({ color: 0x444444 })
-        );
-        arm.rotation.z = Math.PI / 4;
-        arm.position.set(lampWallX, 2.1, lampWallZ);
-        group.add(arm);
-
-        // Lamp shade (conical)
         const shade = new THREE.Mesh(
           new THREE.ConeGeometry(0.18, 0.2, 8, 1, true),
           new THREE.MeshLambertMaterial({ color: 0x885522, side: THREE.DoubleSide })
@@ -5351,7 +5617,6 @@ function createFloorView(buildingIdx: number, floor: number) {
         shade.position.set(lampWallX, 1.95, lampWallZ);
         group.add(shade);
 
-        // Glowing bulb inside shade
         const bulb = new THREE.Mesh(
           new THREE.SphereGeometry(0.08, 8, 8),
           new THREE.MeshBasicMaterial({ color: lampColor })
@@ -5359,48 +5624,54 @@ function createFloorView(buildingIdx: number, floor: number) {
         bulb.position.set(lampWallX, 1.9, lampWallZ);
         group.add(bulb);
 
-        // Orange glow effect around lamp
-        const glow = new THREE.Mesh(
-          new THREE.SphereGeometry(0.25, 8, 8),
-          new THREE.MeshBasicMaterial({ color: lampColor, transparent: true, opacity: 0.2 })
-        );
-        glow.position.set(lampWallX, 1.9, lampWallZ);
-        group.add(glow);
-
-        // Point light for illumination
         const light = new THREE.PointLight(lampColor, intensity, 8);
         light.position.set(lampWallX, 1.9, lampWallZ);
         group.add(light);
       }
     }
 
-    // ========== CREATE ROOM GRID - Clean layout with no overlap ==========
+    // ========== CREATE ROOM GRID with cached room types ==========
+    const floorConfig = getOrCreateFloorConfig(buildingIdx, floor, 14);
     let roomIdx = 0;
 
     // Room grid with proper spacing (7 units apart)
     const roomSpacing = 7;
 
     // Left column of rooms (x = -20)
-    createRoom(-20, -12, false, roomIdx++);
-    createRoom(-20, -4, false, roomIdx++);
-    createRoom(-20, 4, true, roomIdx++);
-    createRoom(-20, 12, true, roomIdx++);
+    createRoom(-20, -12, false, roomIdx, floorConfig.roomTypes[roomIdx] ?? 'bedroom');
+    roomIdx++;
+    createRoom(-20, -4, false, roomIdx, floorConfig.roomTypes[roomIdx] ?? 'bedroom');
+    roomIdx++;
+    createRoom(-20, 4, true, roomIdx, floorConfig.roomTypes[roomIdx] ?? 'bedroom');
+    roomIdx++;
+    createRoom(-20, 12, true, roomIdx, floorConfig.roomTypes[roomIdx] ?? 'bedroom');
+    roomIdx++;
 
     // Left-center column (x = -10)
-    createRoom(-10, -12, false, roomIdx++);
-    createRoom(-10, -4, false, roomIdx++);
-    createRoom(-10, 4, true, roomIdx++);
-    createRoom(-10, 12, true, roomIdx++);
+    createRoom(-10, -12, false, roomIdx, floorConfig.roomTypes[roomIdx] ?? 'bedroom');
+    roomIdx++;
+    createRoom(-10, -4, false, roomIdx, floorConfig.roomTypes[roomIdx] ?? 'bedroom');
+    roomIdx++;
+    createRoom(-10, 4, true, roomIdx, floorConfig.roomTypes[roomIdx] ?? 'bedroom');
+    roomIdx++;
+    createRoom(-10, 12, true, roomIdx, floorConfig.roomTypes[roomIdx] ?? 'bedroom');
+    roomIdx++;
 
     // Right-center column (x = 2)
-    createRoom(2, -12, false, roomIdx++);
-    createRoom(2, -4, false, roomIdx++);
-    createRoom(2, 4, true, roomIdx++);
-    createRoom(2, 12, true, roomIdx++);
+    createRoom(2, -12, false, roomIdx, floorConfig.roomTypes[roomIdx] ?? 'bedroom');
+    roomIdx++;
+    createRoom(2, -4, false, roomIdx, floorConfig.roomTypes[roomIdx] ?? 'bedroom');
+    roomIdx++;
+    createRoom(2, 4, true, roomIdx, floorConfig.roomTypes[roomIdx] ?? 'bedroom');
+    roomIdx++;
+    createRoom(2, 12, true, roomIdx, floorConfig.roomTypes[roomIdx] ?? 'bedroom');
+    roomIdx++;
 
     // Right column (x = 12, avoiding stairs at top right)
-    createRoom(12, 4, true, roomIdx++);
-    createRoom(12, 12, true, roomIdx++);
+    createRoom(12, 4, true, roomIdx, floorConfig.roomTypes[roomIdx] ?? 'bedroom');
+    roomIdx++;
+    createRoom(12, 12, true, roomIdx, floorConfig.roomTypes[roomIdx] ?? 'bedroom');
+    roomIdx++;
 
     // ========== CORRIDOR LIGHTING ==========
     const corridorLights = [
@@ -9194,11 +9465,11 @@ function update() {
       Math.abs(player.x - holeX) < 2 &&
       Math.abs(player.z - holeZ) < 2;
 
-    const nearJumpDown = floor.top && Math.abs(player.x) < 4 && player.z > hd - 5;
+    // Jump down removed - players must use stairs to exit
     const nearJumpLeft = floor.leftRoof && player.x < -hw + 6;
     const nearJumpRight = floor.rightRoof && player.x > hw - 6;
     const nearJumpNorth = floor.northRoof && player.z < -hd + 6; // North is back (negative Z)
-    const nearJumpSouth = floor.southRoof && player.z > hd - 6 && Math.abs(player.x) > 6; // South is front, but not at center (where jump down is)
+    const nearJumpSouth = floor.southRoof && player.z > hd - 5 && Math.abs(player.x) < 4; // South jump now at center front (where jump down was)
     const atDownStairsRoof =
       floor.top &&
       Math.abs(player.x - downStairX) < 3 &&
@@ -9216,7 +9487,7 @@ function update() {
     else if (atUpStairs) prompt = 'upstairs';
     else if (atDownStairs || atDownStairsRoof) prompt = 'downstairs';
     else if (nearExit) prompt = 'exit';
-    else if (nearJumpDown) prompt = 'jump down';
+    // Jump down prompt removed
     else if (nearJumpLeft) prompt = 'jump left';
     else if (nearJumpRight) prompt = 'jump right';
     else if (nearJumpNorth) prompt = 'jump north';
@@ -9256,11 +9527,7 @@ function update() {
         showPrompt('');
         return;
       }
-      if (nearJumpDown) {
-        animatedJumpToRoof();
-        showPrompt('');
-        return;
-      }
+      // Jump down action removed
       if (nearJumpLeft) {
         animatedJumpToLeftBuilding();
         showPrompt('');
