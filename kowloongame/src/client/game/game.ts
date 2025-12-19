@@ -111,58 +111,51 @@ function toChineseNumber(num: number): string {
   return result;
 }
 
-// City layout - DENSE buildings with NAVIGABLE alleyways (7 rows)
-// ALL buildings are enterable - consistent spacing for player access
-// Buildings are 7 units wide, spaced 10 units apart (3 unit alleyways)
+// City layout - MERGED buildings forming one massive interconnected structure
+// Buildings are connected horizontally and vertically - Kowloon Walled City style
+// Each building section has a door entrance on the front face
+// Buildings are 10 units wide (touching neighbors) and 12 units deep (merging rows)
 const cityLayout = [
-  // Row 1 (far back) - z = -70
-  { x: -30, z: -70, w: 7, d: 6, floors: 14 },
-  { x: -20, z: -70, w: 7, d: 6, floors: 16 },
-  { x: -10, z: -70, w: 7, d: 6, floors: 12 },
-  { x: 0, z: -70, w: 7, d: 6, floors: 18 },
-  { x: 10, z: -70, w: 7, d: 6, floors: 13 },
-  { x: 20, z: -70, w: 7, d: 6, floors: 15 },
-  { x: 30, z: -70, w: 7, d: 6, floors: 17 },
-  // Row 2 - z = -58
-  { x: -30, z: -58, w: 7, d: 6, floors: 15 },
-  { x: -20, z: -58, w: 7, d: 6, floors: 11 },
-  { x: -10, z: -58, w: 7, d: 6, floors: 19 },
-  { x: 0, z: -58, w: 7, d: 6, floors: 13 },
-  { x: 10, z: -58, w: 7, d: 6, floors: 16 },
-  { x: 20, z: -58, w: 7, d: 6, floors: 14 },
-  { x: 30, z: -58, w: 7, d: 6, floors: 12 },
-  // Row 3 - z = -46
-  { x: -30, z: -46, w: 7, d: 6, floors: 17 },
-  { x: -20, z: -46, w: 7, d: 6, floors: 13 },
-  { x: -10, z: -46, w: 7, d: 6, floors: 20 },
-  { x: 0, z: -46, w: 7, d: 6, floors: 11 },
-  { x: 10, z: -46, w: 7, d: 6, floors: 18 },
-  { x: 20, z: -46, w: 7, d: 6, floors: 14 },
-  { x: 30, z: -46, w: 7, d: 6, floors: 16 },
-  // Row 4 - z = -34
-  { x: -30, z: -34, w: 7, d: 6, floors: 12 },
-  { x: -20, z: -34, w: 7, d: 6, floors: 16 },
-  { x: -10, z: -34, w: 7, d: 6, floors: 14 },
-  { x: 0, z: -34, w: 7, d: 6, floors: 19 },
-  { x: 10, z: -34, w: 7, d: 6, floors: 11 },
-  { x: 20, z: -34, w: 7, d: 6, floors: 17 },
-  { x: 30, z: -34, w: 7, d: 6, floors: 13 },
-  // Row 5 - z = -22
-  { x: -30, z: -22, w: 7, d: 6, floors: 18 },
-  { x: -20, z: -22, w: 7, d: 6, floors: 12 },
-  { x: -10, z: -22, w: 7, d: 6, floors: 15 },
-  { x: 0, z: -22, w: 7, d: 6, floors: 20 },
-  { x: 10, z: -22, w: 7, d: 6, floors: 13 },
-  { x: 20, z: -22, w: 7, d: 6, floors: 16 },
-  { x: 30, z: -22, w: 7, d: 6, floors: 14 },
-  // Row 6 - z = -10
-  { x: -30, z: -10, w: 7, d: 6, floors: 14 },
-  { x: -20, z: -10, w: 7, d: 6, floors: 17 },
-  { x: -10, z: -10, w: 7, d: 6, floors: 11 },
-  { x: 0, z: -10, w: 7, d: 6, floors: 19 },
-  { x: 10, z: -10, w: 7, d: 6, floors: 15 },
-  { x: 20, z: -10, w: 7, d: 6, floors: 12 },
-  { x: 30, z: -10, w: 7, d: 6, floors: 18 },
+  // Row 1 (far back) - z = -64 (merged pairs of original rows)
+  { x: -30, z: -64, w: 10, d: 12, floors: 15 },
+  { x: -20, z: -64, w: 10, d: 12, floors: 17 },
+  { x: -10, z: -64, w: 10, d: 12, floors: 14 },
+  { x: 0, z: -64, w: 10, d: 12, floors: 19 },
+  { x: 10, z: -64, w: 10, d: 12, floors: 14 },
+  { x: 20, z: -64, w: 10, d: 12, floors: 16 },
+  { x: 30, z: -64, w: 10, d: 12, floors: 15 },
+  // Row 2 - z = -52 (merged)
+  { x: -30, z: -52, w: 10, d: 12, floors: 16 },
+  { x: -20, z: -52, w: 10, d: 12, floors: 12 },
+  { x: -10, z: -52, w: 10, d: 12, floors: 20 },
+  { x: 0, z: -52, w: 10, d: 12, floors: 12 },
+  { x: 10, z: -52, w: 10, d: 12, floors: 17 },
+  { x: 20, z: -52, w: 10, d: 12, floors: 14 },
+  { x: 30, z: -52, w: 10, d: 12, floors: 14 },
+  // Row 3 - z = -40 (merged)
+  { x: -30, z: -40, w: 10, d: 12, floors: 14 },
+  { x: -20, z: -40, w: 10, d: 12, floors: 17 },
+  { x: -10, z: -40, w: 10, d: 12, floors: 15 },
+  { x: 0, z: -40, w: 10, d: 12, floors: 20 },
+  { x: 10, z: -40, w: 10, d: 12, floors: 12 },
+  { x: 20, z: -40, w: 10, d: 12, floors: 17 },
+  { x: 30, z: -40, w: 10, d: 12, floors: 14 },
+  // Row 4 - z = -28 (merged)
+  { x: -30, z: -28, w: 10, d: 12, floors: 16 },
+  { x: -20, z: -28, w: 10, d: 12, floors: 14 },
+  { x: -10, z: -28, w: 10, d: 12, floors: 16 },
+  { x: 0, z: -28, w: 10, d: 12, floors: 21 },
+  { x: 10, z: -28, w: 10, d: 12, floors: 14 },
+  { x: 20, z: -28, w: 10, d: 12, floors: 16 },
+  { x: 30, z: -28, w: 10, d: 12, floors: 15 },
+  // Row 5 (front) - z = -16
+  { x: -30, z: -16, w: 10, d: 12, floors: 15 },
+  { x: -20, z: -16, w: 10, d: 12, floors: 18 },
+  { x: -10, z: -16, w: 10, d: 12, floors: 12 },
+  { x: 0, z: -16, w: 10, d: 12, floors: 19 },
+  { x: 10, z: -16, w: 10, d: 12, floors: 16 },
+  { x: 20, z: -16, w: 10, d: 12, floors: 13 },
+  { x: 30, z: -16, w: 10, d: 12, floors: 17 },
 ];
 
 function createCityBuilding(config: (typeof cityLayout)[0], index: number) {
@@ -1738,14 +1731,14 @@ function createSellerMesh(type: ShopStall['type'], variant: number = 0): THREE.G
   return group;
 }
 
-// Place shop stalls in alleyways between building rows
-// Alleyways are between rows: z = -64, -52, -40, -28, -16, -4
-const alleyZPositions = [-64, -52, -40, -28, -16, -4];
+// Place shop stalls in the open street area in front of the merged building mass
+// Stalls line the front of the city and along the sides
+const streetZPositions = [-4, -2, 0, 2]; // Open street area in front of buildings
 const shopTypes: ShopStall['type'][] = ['food', 'clothes', 'drugs', 'electronics', 'trinkets'];
 
-alleyZPositions.forEach((alleyZ, rowIndex) => {
-  // 2-3 stalls per alley row
-  const numStalls = 2 + Math.floor(Math.random() * 2);
+streetZPositions.forEach((stallZ) => {
+  // 3-4 stalls per street row
+  const numStalls = 3 + Math.floor(Math.random() * 2);
   const usedXPositions: number[] = [];
 
   for (let i = 0; i < numStalls; i++) {
@@ -1770,7 +1763,7 @@ alleyZPositions.forEach((alleyZ, rowIndex) => {
     else if (rand < 0.85) type = 'trinkets';
     else type = 'drugs'; // Rarer
 
-    const stallGroup = createShopStall(xPos, alleyZ, type);
+    const stallGroup = createShopStall(xPos, stallZ, type);
     outdoorScene.add(stallGroup);
 
     // Calculate actual seller world position (seller is behind the stall)
@@ -1780,11 +1773,11 @@ alleyZPositions.forEach((alleyZ, rowIndex) => {
     shopStalls.push({
       type,
       x: xPos,
-      z: alleyZ,
+      z: stallZ,
       group: stallGroup,
       seller: stallGroup.children.find((c) => c instanceof THREE.Group) as THREE.Group,
       sellerX: xPos,
-      sellerZ: alleyZ + sellerOffsetZ,
+      sellerZ: stallZ + sellerOffsetZ,
     });
   }
 });
@@ -1864,36 +1857,31 @@ function createUndergroundEntrance(x: number, z: number): THREE.Group {
   return group;
 }
 
-// Place underground entrances throughout the city in alleyways
-const drainPositions = [
-  // FRONT - near player spawn for quick access
-  { x: 0, z: 2 },
-  // Main alleyways between building rows
-  { x: -25, z: -16 },
-  { x: -5, z: -16 },
-  { x: 15, z: -16 },
-  { x: -15, z: -28 },
-  { x: 5, z: -28 },
-  { x: 25, z: -28 },
-  { x: -25, z: -40 },
-  { x: -5, z: -40 },
-  { x: 15, z: -40 },
-  { x: -15, z: -52 },
-  { x: 5, z: -52 },
-  { x: 25, z: -52 },
-  { x: -25, z: -64 },
-  { x: -5, z: -64 },
-  { x: 15, z: -64 },
-  // Some in vertical alleyways
-  { x: -25, z: -22 },
-  { x: 25, z: -34 },
-  { x: -25, z: -46 },
-  { x: 25, z: -58 },
-  { x: 0, z: -70 },
+// Underground entrances - ONE outdoor entrance near spawn, rest are inside buildings
+// Each entrance is associated with a building index (-1 for outdoor street entrance)
+interface UndergroundEntranceData {
+  x: number;
+  z: number;
+  buildingIdx: number; // Which building this entrance is in (-1 for outdoor)
+}
+
+const drainPositions: UndergroundEntranceData[] = [
+  // Index 0: OUTDOOR entrance near player spawn (the only street-level entrance)
+  { x: 0, z: -8, buildingIdx: -1 },
+  
+  // Indices 1-5: Underground exits that lead INTO buildings (evenly dispersed)
+  { x: -20, z: -16, buildingIdx: 29 }, // Front-left area - Building at x=-20, z=-16
+  { x: 20, z: -16, buildingIdx: 33 },  // Front-right area - Building at x=20, z=-16
+  { x: 0, z: -40, buildingIdx: 17 },   // Center - Building at x=0, z=-40
+  { x: -30, z: -52, buildingIdx: 7 },  // Back-left - Building at x=-30, z=-52
+  { x: 30, z: -52, buildingIdx: 13 },  // Back-right - Building at x=30, z=-52
 ];
 
-drainPositions.forEach((pos) => {
+// Create visual markers for entrances
+drainPositions.forEach((pos, idx) => {
   const drain = createUndergroundEntrance(pos.x, pos.z);
+  // Only the outdoor entrance (index 0) is visible on the street
+  drain.visible = (pos.buildingIdx === -1);
   outdoorScene.add(drain);
   undergroundEntrances.push({ x: pos.x, z: pos.z, mesh: drain });
 });
@@ -4987,6 +4975,72 @@ function createFloorView(buildingIdx: number, floor: number) {
       group.add(cloth);
     }
 
+    // ========== UNDERGROUND ENTRANCE (if this building has one) ==========
+    // Check if this building has an underground entrance
+    const undergroundEntryForThisBuilding = drainPositions.find(
+      (drain) => drain.buildingIdx === buildingIdx
+    );
+    if (undergroundEntryForThisBuilding) {
+      // Create a dark hole in the floor in the back-left corner
+      const holeX = -w / 2 + 8;
+      const holeZ = -d / 2 + 8;
+      const holeW = 2.5;
+      const holeD = 2.0;
+
+      // Dark hole
+      const hole = new THREE.Mesh(
+        new THREE.PlaneGeometry(holeW, holeD),
+        new THREE.MeshBasicMaterial({ color: 0x050505 })
+      );
+      hole.rotation.x = -Math.PI / 2;
+      hole.position.set(holeX, 0.02, holeZ);
+      group.add(hole);
+
+      // Crumbling concrete edges
+      const edgeMat = new THREE.MeshLambertMaterial({ color: 0x3a3530 });
+      for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2;
+        const dist = 1.0 + Math.random() * 0.4;
+        const edgeW = 0.3 + Math.random() * 0.4;
+        const edgeH = 0.15 + Math.random() * 0.1;
+        const edge = new THREE.Mesh(new THREE.BoxGeometry(edgeW, edgeH, edgeW), edgeMat);
+        edge.position.set(holeX + Math.cos(angle) * dist, edgeH / 2 + 0.02, holeZ + Math.sin(angle) * dist);
+        edge.rotation.y = Math.random() * Math.PI;
+        group.add(edge);
+      }
+
+      // Rusty ladder going down
+      const ladderMat = new THREE.MeshLambertMaterial({ color: 0x5a4a3a });
+      const ladderHeight = 3;
+      // Side rails
+      const rail1 = new THREE.Mesh(new THREE.BoxGeometry(0.08, ladderHeight, 0.08), ladderMat);
+      rail1.position.set(holeX - 0.3, -ladderHeight / 2 + 0.1, holeZ);
+      group.add(rail1);
+      const rail2 = new THREE.Mesh(new THREE.BoxGeometry(0.08, ladderHeight, 0.08), ladderMat);
+      rail2.position.set(holeX + 0.3, -ladderHeight / 2 + 0.1, holeZ);
+      group.add(rail2);
+      // Rungs
+      for (let r = 0; r < 8; r++) {
+        const rung = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.05, 0.08), ladderMat);
+        rung.position.set(holeX, -r * 0.35, holeZ);
+        group.add(rung);
+      }
+
+      // Warning sign nearby
+      const warnSign = new THREE.Mesh(
+        new THREE.BoxGeometry(0.8, 0.5, 0.05),
+        new THREE.MeshLambertMaterial({ color: 0xaa5500 })
+      );
+      warnSign.position.set(holeX + 2, 1.2, holeZ);
+      warnSign.rotation.y = -0.3;
+      group.add(warnSign);
+
+      // Faint glow from below
+      const underGlow = new THREE.PointLight(0x331100, 0.3, 5);
+      underGlow.position.set(holeX, -1, holeZ);
+      group.add(underGlow);
+    }
+
     // ====== APARTMENT FLOORS - Multiple corridors with rooms ======
   } else {
     const hallW = 2.5; // Corridor width
@@ -6858,14 +6912,7 @@ function enterUnderground(drainIdx: number) {
 }
 
 function exitUnderground(exitDrainIdx: number) {
-  state.mode = 'outdoor';
-  const drain = undergroundEntrances[exitDrainIdx];
-  outdoorScene.visible = true;
-  indoorScene.visible = false;
-  indoorScene.remove(playerGroup);
-  outdoorScene.add(playerGroup);
-
-  // Clear sewer NPCs
+  // Clear sewer NPCs first
   undergroundNPCs.forEach((npc) => indoorScene.remove(npc.mesh));
   undergroundNPCs.length = 0;
   if (currentUndergroundGroup) {
@@ -6873,7 +6920,42 @@ function exitUnderground(exitDrainIdx: number) {
     currentUndergroundGroup = null;
   }
 
-  // Spawn at the EXIT drain location (fast travel!)
+  // Check if this exit is inside a building
+  const exitDrainData = drainPositions[exitDrainIdx];
+  if (exitDrainData && exitDrainData.buildingIdx >= 0) {
+    // Exit into the building (ground floor)
+    const buildingIdx = exitDrainData.buildingIdx;
+    state.mode = 'indoor';
+    state.currentBuilding = buildingIdx;
+    state.currentFloor = 0;
+    state.currentDrain = -1;
+    
+    outdoorScene.visible = false;
+    indoorScene.visible = true;
+    // playerGroup is already in indoorScene
+    
+    floor = createFloorView(buildingIdx, 0);
+    
+    // Spawn near the underground hole
+    const hw = floor.w / 2;
+    const hd = floor.d / 2;
+    player.x = -hw + 8 + 2; // Near the hole
+    player.z = -hd + 8 + 2;
+    playerGroup.position.set(player.x, 0.1, player.z);
+    spawnIndoorNPCs(buildingIdx, 0, floor.w, floor.d);
+    updateUI();
+    return;
+  }
+
+  // Outdoor exit (fallback - shouldn't happen with new system)
+  state.mode = 'outdoor';
+  const drain = undergroundEntrances[exitDrainIdx];
+  outdoorScene.visible = true;
+  indoorScene.visible = false;
+  indoorScene.remove(playerGroup);
+  outdoorScene.add(playerGroup);
+
+  // Spawn at the EXIT drain location
   player.x = drain?.x ?? 0;
   player.z = drain?.z ?? 0;
   playerGroup.position.set(player.x, 0.1, player.z);
@@ -7788,31 +7870,47 @@ function drawMinimap() {
     };
   }
 
-  // Draw alleyways first (under buildings)
-  ctx.strokeStyle = '#2a2520';
+  // Draw the merged building mass - one large interconnected structure
+  // The entire city block from x=-35 to x=35 and z=-70 to z=-10
+  const mergedTopLeft = worldToMap(-35, -70);
+  const mergedBottomRight = worldToMap(35, -10);
+  const mergedWidth = mergedBottomRight.x - mergedTopLeft.x;
+  const mergedHeight = mergedBottomRight.y - mergedTopLeft.y;
+
+  // Main building mass fill - dark concrete
+  ctx.fillStyle = '#3a3530';
+  ctx.fillRect(mergedTopLeft.x, mergedTopLeft.y, mergedWidth, mergedHeight);
+
+  // Outer border of the merged structure
+  ctx.strokeStyle = '#5a5045';
   ctx.lineWidth = 2;
+  ctx.strokeRect(mergedTopLeft.x, mergedTopLeft.y, mergedWidth, mergedHeight);
 
-  // Horizontal alleyways between rows
-  for (const rowZ of [-64, -52, -40, -28, -16]) {
-    const start = worldToMap(-35, rowZ);
-    const end = worldToMap(35, rowZ);
+  // Draw internal divisions (lighter lines showing building sections)
+  ctx.strokeStyle = '#2a2520';
+  ctx.lineWidth = 0.5;
+
+  // Horizontal divisions between rows
+  for (const rowZ of [-52, -40, -28, -16]) {
+    const start = worldToMap(-35, rowZ - 6);
+    const end = worldToMap(35, rowZ - 6);
     ctx.beginPath();
     ctx.moveTo(start.x, start.y);
     ctx.lineTo(end.x, end.y);
     ctx.stroke();
   }
 
-  // Vertical alleyways between building columns
+  // Vertical divisions between columns
   for (const colX of [-25, -15, -5, 5, 15, 25]) {
-    const start = worldToMap(colX, -73);
-    const end = worldToMap(colX, -7);
+    const start = worldToMap(colX, -70);
+    const end = worldToMap(colX, -10);
     ctx.beginPath();
     ctx.moveTo(start.x, start.y);
     ctx.lineTo(end.x, end.y);
     ctx.stroke();
   }
 
-  // Draw all buildings from buildingsData
+  // Highlight individual building sections with varying heights
   for (let i = 0; i < buildingsData.length; i++) {
     const b = buildingsData[i];
     if (!b) continue;
@@ -7823,25 +7921,32 @@ function drawMinimap() {
     // Check if this is the current building
     const isCurrentBuilding = state.mode === 'indoor' && state.currentBuilding === i;
 
-    // Building fill - shade based on height
-    const heightShade = Math.floor(b.floors * 2);
+    // Height variation shading (taller = lighter)
+    const heightShade = Math.floor(b.floors * 1.5);
     if (isCurrentBuilding) {
       ctx.fillStyle = '#ff5533';
+      ctx.fillRect(pos.x - bw / 2 + 1, pos.y - bd / 2 + 1, bw - 2, bd - 2);
+      ctx.strokeStyle = '#ffaa66';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(pos.x - bw / 2, pos.y - bd / 2, bw, bd);
     } else {
-      ctx.fillStyle = `rgb(${60 + heightShade}, ${55 + heightShade}, ${50 + heightShade})`;
+      // Subtle height variation
+      ctx.fillStyle = `rgb(${50 + heightShade}, ${48 + heightShade}, ${45 + heightShade})`;
+      ctx.fillRect(pos.x - bw / 2 + 1, pos.y - bd / 2 + 1, bw - 2, bd - 2);
     }
-    ctx.fillRect(pos.x - bw / 2, pos.y - bd / 2, bw, bd);
+  }
 
-    // Border
-    ctx.strokeStyle = isCurrentBuilding ? '#ffaa66' : '#7a7060';
-    ctx.lineWidth = isCurrentBuilding ? 2 : 0.5;
-    ctx.strokeRect(pos.x - bw / 2, pos.y - bd / 2, bw, bd);
-
-    // Add small details inside buildings
-    if (!isCurrentBuilding && bw > 4) {
-      ctx.fillStyle = '#3a3530';
-      ctx.fillRect(pos.x - bw / 4, pos.y - bd / 4, bw / 3, bd / 3);
-    }
+  // Draw the outdoor underground entrance marker (the main entrance near spawn)
+  const outdoorEntrance = drainPositions[0];
+  if (outdoorEntrance && outdoorEntrance.buildingIdx === -1) {
+    ctx.fillStyle = '#443344';
+    const pos = worldToMap(outdoorEntrance.x, outdoorEntrance.z);
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#665566';
+    ctx.lineWidth = 1;
+    ctx.stroke();
   }
 
   // Draw player position
@@ -8594,11 +8699,16 @@ function update() {
       prompt = 'enter building';
     }
 
-    // Check for nearby sewer drains
+    // Check for nearby sewer drains (only outdoor entrances - buildingIdx === -1)
     let nearestDrainIdx = -1;
     let nearestDrainDist = 999;
     for (let i = 0; i < undergroundEntrances.length; i++) {
+      const drainData = drainPositions[i];
+      // Only check outdoor entrances (buildingIdx === -1)
+      if (!drainData || drainData.buildingIdx !== -1) continue;
+      
       const drain = undergroundEntrances[i];
+      if (!drain) continue;
       const dist = Math.sqrt(Math.pow(player.x - drain.x, 2) + Math.pow(player.z - drain.z, 2));
       if (dist < nearestDrainDist) {
         nearestDrainDist = dist;
@@ -9017,6 +9127,16 @@ function update() {
       player.z > stairZEnd - 1 &&
       player.z < stairZEnd + 2;
     const nearExit = floor.ground && Math.abs(player.x) < 4 && player.z > hd - 3;
+    
+    // Check for underground entrance (only on ground floor of buildings that have one)
+    const undergroundEntryForThisBuilding = drainPositions.find(
+      (drain) => drain.buildingIdx === state.currentBuilding
+    );
+    const holeX = -hw + 8;
+    const holeZ = -hd + 8;
+    const nearUndergroundHole = floor.ground && undergroundEntryForThisBuilding &&
+      Math.abs(player.x - holeX) < 2 && Math.abs(player.z - holeZ) < 2;
+    
     const nearJumpDown = floor.top && Math.abs(player.x) < 4 && player.z > hd - 5;
     const nearJumpLeft = floor.leftRoof && player.x < -hw + 6;
     const nearJumpRight = floor.rightRoof && player.x > hw - 6;
@@ -9035,7 +9155,8 @@ function update() {
       } else {
         prompt = 'talk';
       }
-    } else if (atUpStairs) prompt = 'upstairs';
+    } else if (nearUndergroundHole) prompt = 'descend underground';
+    else if (atUpStairs) prompt = 'upstairs';
     else if (atDownStairs || atDownStairsRoof) prompt = 'downstairs';
     else if (nearExit) prompt = 'exit';
     else if (nearJumpDown) prompt = 'jump down';
@@ -9050,6 +9171,18 @@ function update() {
         showNPCDialogue(nearestIndoorNPC);
         showPrompt('');
         return;
+      }
+      // Underground entrance from inside building
+      if (nearUndergroundHole && undergroundEntryForThisBuilding) {
+        // Find the drain index for this building's entrance
+        const drainIdx = drainPositions.findIndex(
+          (drain) => drain.buildingIdx === state.currentBuilding
+        );
+        if (drainIdx >= 0) {
+          enterUnderground(drainIdx);
+          showPrompt('');
+          return;
+        }
       }
       if (atUpStairs) {
         goUp();
