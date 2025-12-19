@@ -739,9 +739,55 @@ interface ShopStall {
   z: number;
   group: THREE.Group;
   seller: THREE.Group;
+  sellerX: number; // World position of seller
+  sellerZ: number;
 }
 
 const shopStalls: ShopStall[] = [];
+
+// Dialogue for shop sellers based on their type
+const shopSellerDialogues: Record<ShopStall['type'], string[]> = {
+  food: [
+    '"Best noodles in Kowloon! My grandmother\'s recipe!"',
+    '"Fresh today! Fish balls, dumplings, whatever you like!"',
+    '"Hungry? Sit down, sit down. I\'ll make you something special."',
+    '"Try the char siu bao. You won\'t find better anywhere."',
+    '"Ah, a customer! The soup is hot and ready."',
+    '"My congee has been simmering since dawn. Perfect for you!"',
+  ],
+  clothes: [
+    '"Good quality! Look, feel the fabric. Real silk, very cheap."',
+    '"This would look perfect on you. Very fashionable!"',
+    '"I have everything. Jackets, shirts, pants. What do you need?"',
+    '"Brand name, brand name! Nobody can tell the difference."',
+    '"Special price for you today. I give you good deal."',
+    '"Looking for something? I can find any style, any size."',
+  ],
+  drugs: [
+    '"...What do you want? Make it quick."',
+    '"You didn\'t see me. I wasn\'t here."',
+    '"Looking for something... special? Keep your voice down."',
+    '"Wrong stall, friend. Move along."',
+    '"I don\'t know you. You don\'t know me. Understand?"',
+    '"Cash only. No questions. That\'s how this works."',
+  ],
+  electronics: [
+    '"Latest models! Phones, watches, cameras. All working!"',
+    '"Need it fixed? I can repair anything electronic."',
+    '"Cheap prices! These fell off a truck, if you know what I mean."',
+    '"Batteries, cables, chargers. Everything you need."',
+    '"This radio picks up frequencies you won\'t believe."',
+    '"Looking for parts? I have components from everywhere."',
+  ],
+  trinkets: [
+    '"Beautiful jade! Brings good luck, very powerful."',
+    '"Antiques from the old city. Each one has a story."',
+    '"This charm will protect you. My grandmother blessed it."',
+    '"Souvenirs! Something to remember Kowloon by."',
+    '"Hand-carved, very old. A real collector\'s piece."',
+    '"Incense, candles, paper offerings. For the ancestors."',
+  ],
+};
 
 function createShopStall(x: number, z: number, type: ShopStall['type']): THREE.Group {
   const group = new THREE.Group();
@@ -1727,12 +1773,18 @@ alleyZPositions.forEach((alleyZ, rowIndex) => {
     const stallGroup = createShopStall(xPos, alleyZ, type);
     outdoorScene.add(stallGroup);
 
+    // Calculate actual seller world position (seller is behind the stall)
+    const stallRotated = Math.random() > 0.5; // Same logic as in createShopStall
+    const sellerOffsetZ = stallRotated ? 0.8 : -0.8;
+    
     shopStalls.push({
       type,
       x: xPos,
       z: alleyZ,
       group: stallGroup,
       seller: stallGroup.children.find((c) => c instanceof THREE.Group) as THREE.Group,
+      sellerX: xPos,
+      sellerZ: alleyZ + sellerOffsetZ,
     });
   }
 });
@@ -1900,76 +1952,206 @@ interface NPC {
   hasScroll?: boolean;
   scrollId?: number;
   scrollCollected?: boolean;
+  // Supernatural character properties
+  characterId?: string;
+  characterName?: string;
 }
 
 // ============================================
-// SCROLL SYSTEM - Ancient wisdom of Kowloon
+// AMBIENT GHOSTS - Spectral figures that appear and disappear
+// ============================================
+interface AmbientGhost {
+  mesh: THREE.Group;
+  x: number;
+  z: number;
+  targetX: number;
+  targetZ: number;
+  speed: number;
+  visible: boolean;
+  nextToggleTime: number; // When to appear/disappear
+  fadeAlpha: number; // Current opacity (0-1)
+  fadeDirection: number; // 1 = fading in, -1 = fading out
+  floatOffset: number; // For floating animation
+}
+
+const ambientGhosts: AmbientGhost[] = [];
+const GHOST_TOGGLE_INTERVAL = 15000; // 15 seconds
+const GHOST_FADE_SPEED = 0.02; // How fast they fade in/out
+
+// ============================================
+// SUPERNATURAL CHARACTERS - Story ghosts with scrolls
+// ============================================
+interface SupernaturalCharacter {
+  id: string;
+  name: string;
+  story: string;
+  scrollQuote: string;
+  source: string;
+  interactions: {
+    greeting: string;
+    handoff: string;
+    congratulation: string;
+    farewell: string;
+  };
+}
+
+// The 10 supernatural characters from Chinese ghost stories
+const supernaturalCharacters: SupernaturalCharacter[] = [
+  {
+    id: 'judge_bao',
+    name: 'Judge Bao (Bao Zheng)',
+    story: 'Judge Bao Selling Rice in Chenzhou (Sept 17)',
+    scrollQuote: 'The law is not established for the sake of the powerful, nor does it bend for the wealthy. It is set down so that right and wrong may be distinguished clearly, and so that Heaven may judge through human hands.',
+    source: 'Judge Bao case stories',
+    interactions: {
+      greeting: 'You stand before the law. Speak carefully—truth echoes longer than words.',
+      handoff: 'Take this decree. Justice must circulate like grain.',
+      congratulation: 'You have acted without fear or favor. Heaven records this.',
+      farewell: 'Go. Let fairness guide your steps.',
+    },
+  },
+  {
+    id: 'phantom_heroine',
+    name: 'The Phantom Heroine',
+    story: 'The Phantom Heroine: Ghosts and Gender (Sept 29)',
+    scrollQuote: 'Though my bones lie cold and my name has faded among the living, my grievance is not buried. I return because what was done to me was never answered, and because silence would be the greater injustice.',
+    source: 'Seventeenth-century chuanqi ghost tales',
+    interactions: {
+      greeting: 'Do not fear me. Fear what was done while I still breathed.',
+      handoff: 'Read this, and remember why I returned.',
+      congratulation: 'You listened when others would not.',
+      farewell: 'I remain until justice is done.',
+    },
+  },
+  {
+    id: 'corporeal_ghost',
+    name: 'The Corporeal Female Ghost',
+    story: "The Ghost's Body (Sept 29 / Oct 1)",
+    scrollQuote: 'She ate with the living and spoke with the living, casting a shadow where she stood. Yet when one drew near, no breath warmed her body, and those who touched her felt only the chill of death.',
+    source: "The Ghost's Body",
+    interactions: {
+      greeting: 'You expected mist and shadow. Instead, you found flesh.',
+      handoff: 'Take this proof that death does not erase presence.',
+      congratulation: 'You did not turn away.',
+      farewell: 'Remember what a body can carry.',
+    },
+  },
+  {
+    id: 'shen_xiu',
+    name: 'Shen Xiu',
+    story: 'Shen Xiu (Sept 10)',
+    scrollQuote: 'The dead may not speak in court, nor may they plead their case before men. Yet Heaven hears what the living refuse to hear, and it does not forget injustice merely because a body has perished.',
+    source: 'Stories Old and New (Jingu qiguan)',
+    interactions: {
+      greeting: 'I have already died once. You need not bow.',
+      handoff: 'This is what I returned to say.',
+      congratulation: 'You have finished what I could not.',
+      farewell: 'Now I may finally rest.',
+    },
+  },
+  {
+    id: 'magistrate_teng_ghost',
+    name: 'The Wronged Ghost',
+    story: 'Magistrate Teng (Sept 8)',
+    scrollQuote: 'When human judgment failed and the magistrate closed his ears, the spirit came forth to accuse. What could not be spoken among the living was declared openly among the dead.',
+    source: 'Magistrate Teng, Stories Old and New',
+    interactions: {
+      greeting: 'The living ignored me. You did not.',
+      handoff: 'Carry my accusation where I cannot.',
+      congratulation: 'Justice has weight, even beyond the grave.',
+      farewell: 'I will trouble the courts no longer.',
+    },
+  },
+  {
+    id: 'underworld_bureaucrat',
+    name: 'Underworld Bureaucrat',
+    story: 'The Chinese Deathscape (Oct 20)',
+    scrollQuote: 'In death, as in life, there are offices to pass through and registers to be checked. Merit and crime are recorded without omission, and no soul departs until its account is settled.',
+    source: 'The Chinese Deathscape, Introduction',
+    interactions: {
+      greeting: 'State your name. The dead queue as well.',
+      handoff: 'Keep this record. Nothing escapes documentation.',
+      congratulation: 'Your papers are in order.',
+      farewell: 'Next.',
+    },
+  },
+  {
+    id: 'hungry_ghost',
+    name: 'Hungry Ghost',
+    story: 'The Chinese Deathscape (Oct 20)',
+    scrollQuote: 'With throats no wider than needles and bellies like great drums, they hunger without relief. Food turns to flame before it can be swallowed, and desire itself becomes punishment.',
+    source: 'The Chinese Deathscape',
+    interactions: {
+      greeting: 'Food… no, not food—memory.',
+      handoff: 'This is all I was given.',
+      congratulation: 'You saw me.',
+      farewell: 'I remain.',
+    },
+  },
+  {
+    id: 'qutu_zhongren',
+    name: 'Qutu Zhongren',
+    story: 'Qutu Zhongren Cruelly Kills Other Creatures (Oct 22)',
+    scrollQuote: 'Qutu Zhongren took pleasure not merely in killing, but in cruelty itself. He delighted in suffering, and his heart was unmoved by pleading, blood, or death.',
+    source: 'Slapping the Table in Amazement',
+    interactions: {
+      greeting: 'Do you hear them? They never stop.',
+      handoff: "Take it. I don't need reminders.",
+      congratulation: 'You think this makes you better than me?',
+      farewell: 'Run.',
+    },
+  },
+  {
+    id: 'fox_spirit',
+    name: 'Fox Spirit (Huli Jing)',
+    story: 'Alien Kind: Foxes and Late Imperial Chinese Narrative (Nov 3)',
+    scrollQuote: 'Do not ask whether I am human or spirit. Ask only whether I am sincere, for sincerity is rarer than either form and far more dangerous.',
+    source: 'Late-imperial fox-spirit tales',
+    interactions: {
+      greeting: "Relax. If I meant to harm you, you'd never know.",
+      handoff: 'Read carefully. Words bite.',
+      congratulation: 'Clever enough to survive—impressive.',
+      farewell: "We'll meet again. Or we won't.",
+    },
+  },
+  {
+    id: 'ghost_witness',
+    name: 'Ghost Witness',
+    story: 'Stories Old and New (judicial ghost motif)',
+    scrollQuote: 'The ghost testified clearly, naming names and crimes without hesitation, and when the truth was revealed, the case was finally resolved and the living left without excuse.',
+    source: 'Stories Old and New (Jingu qiguan)',
+    interactions: {
+      greeting: 'I was summoned.',
+      handoff: 'This is what I said.',
+      congratulation: 'The record is complete.',
+      farewell: 'Court is adjourned.',
+    },
+  },
+];
+
+// Dialogue state for multi-step conversations
+type DialogueStage = 'greeting' | 'backstory' | 'accept' | 'farewell' | 'closed';
+let currentDialogueStage: DialogueStage = 'closed';
+let isHoodlumDialogue = false;
+
+// ============================================
+// SCROLL SYSTEM - Ancient wisdom from supernatural characters
 // ============================================
 interface Scroll {
   id: number;
   name: string;
   excerpt: string;
   fullText: string;
+  characterId: string;
 }
 
-const scrollData: Scroll[] = [
-  {
-    id: 1,
-    name: 'The Ungoverned City',
-    excerpt:
-      '"They called it lawless, but we had our own laws... Written not in books, but in the understanding between neighbors."',
-    fullText:
-      'They called it lawless, but we had our own laws. Written not in books, but in the understanding between neighbors. When the British and the Chinese both claimed sovereignty but neither would govern, we governed ourselves. The triads kept order in their way. The dentists and doctors worked without licenses but with decades of skill. We were 50,000 souls in six acres, and we survived.',
-  },
-  {
-    id: 2,
-    name: 'The Rooftop Gardens',
-    excerpt:
-      '"Above the darkness, we grew life. Tomatoes, herbs, even small trees — a secret garden atop the concrete jungle."',
-    fullText:
-      'Above the darkness, we grew life. Tomatoes, herbs, even small trees — a secret garden atop the concrete jungle. The rooftops were our sky, our freedom. While below, the alleyways never saw sunlight, up here we breathed. Children played among the water tanks. Old men practiced tai chi at dawn. The city reached fourteen stories, but on top, we touched the clouds.',
-  },
-  {
-    id: 3,
-    name: 'The Water Carriers',
-    excerpt:
-      '"Before the pipes came, we carried water up thirteen floors. Bucket by bucket. That is how we learned to be strong."',
-    fullText:
-      'Before the pipes came, we carried water up thirteen floors. Bucket by bucket. That is how we learned to be strong. The government said we were illegal, so they gave us nothing. No water, no electricity, no sewage. So we made our own. We tapped the mains ourselves, ran wires where we could. Some called it stealing. We called it surviving.',
-  },
-  {
-    id: 4,
-    name: 'The Narrow Ways',
-    excerpt:
-      '"The alleys were so tight two people could not pass. But we knew every turn, every shortcut, every shadow."',
-    fullText:
-      'The alleys were so tight two people could not pass. But we knew every turn, every shortcut, every shadow. Outsiders got lost in minutes. For us, it was home. The neon signs flickered overhead, the wires crisscrossed like spiderwebs, and the smell of fish balls mixed with incense. You could walk for hours and never see the sun.',
-  },
-  {
-    id: 5,
-    name: 'The Night Doctors',
-    excerpt:
-      '"They had no degrees, but they had something better — fifty years of healing. The people trusted them more than any hospital."',
-    fullText:
-      "They had no degrees, but they had something better — fifty years of healing. The people trusted them more than any hospital. Dentists pulled teeth for five dollars. Bone-setters fixed what the modern doctors couldn't. When you are poor and unregistered, you cannot go to the official clinics. So the city made its own. And they were good. Very good.",
-  },
-  {
-    id: 6,
-    name: 'The Factory Floors',
-    excerpt:
-      '"We made everything in the Walled City. Fish balls, noodles, plastic toys. The machines never stopped humming."',
-    fullText:
-      'We made everything in the Walled City. Fish balls, noodles, plastic toys, metal parts. The machines never stopped humming. Whole families worked together, lived together, ate together in rooms no bigger than a closet. The children helped after school. There was no separation between work and home. The factory was our living room.',
-  },
-  {
-    id: 7,
-    name: 'The Last Days',
-    excerpt:
-      '"When they finally tore it down, we wept. Not for the buildings, but for what we had built together in the darkness."',
-    fullText:
-      'When they finally tore it down in 1993, we wept. Not for the buildings — they were crumbling, dangerous, unfit. But for what we had built together in the darkness. A community that asked nothing of the outside world because the outside world gave us nothing. They made a park where we once lived. Sometimes I visit, and I swear I can still hear the mah-jong tiles clicking.',
-  },
-];
+const scrollData: Scroll[] = supernaturalCharacters.map((char, idx) => ({
+  id: idx + 1,
+  name: char.name,
+  excerpt: `"${char.scrollQuote}"`,
+  fullText: `${char.scrollQuote}\n\n— ${char.name}, from "${char.story}"\nSource: ${char.source}`,
+  characterId: char.id,
+}));
 
 // Track collected scrolls by ID
 const collectedScrolls: number[] = [];
@@ -2084,6 +2266,528 @@ function createPersonMesh(): THREE.Group {
   );
   rightHand.position.set(0.28, 0.45, 0);
   group.add(rightHand);
+
+  return group;
+}
+
+// Create an ambient ghost mesh - ethereal, transparent, floating humanoid
+function createAmbientGhostMesh(): THREE.Group {
+  const group = new THREE.Group();
+
+  // Ghost material - transparent white/gray
+  const ghostMaterial = new THREE.MeshLambertMaterial({
+    color: 0xccccdd,
+    transparent: true,
+    opacity: 0.4,
+  });
+
+  const ghostMaterialDark = new THREE.MeshLambertMaterial({
+    color: 0x888899,
+    transparent: true,
+    opacity: 0.3,
+  });
+
+  // Ethereal body - slightly elongated and wispy
+  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.6, 0.25), ghostMaterial);
+  torso.position.y = 0.9; // Floating higher
+  group.add(torso);
+
+  // Trailing lower body (no distinct legs - ghost-like)
+  const trail = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.6, 8), ghostMaterial);
+  trail.position.y = 0.35;
+  trail.rotation.x = Math.PI; // Point downward
+  group.add(trail);
+
+  // Ghostly head
+  const head = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.32, 0.28), ghostMaterial);
+  head.position.y = 1.4;
+  group.add(head);
+
+  // Empty eye sockets - darker
+  const leftEye = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 6), ghostMaterialDark);
+  leftEye.position.set(-0.08, 1.42, 0.14);
+  group.add(leftEye);
+
+  const rightEye = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 6), ghostMaterialDark);
+  rightEye.position.set(0.08, 1.42, 0.14);
+  group.add(rightEye);
+
+  // Wispy arms
+  const leftArm = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.5, 0.08), ghostMaterial);
+  leftArm.position.set(-0.28, 0.85, 0);
+  leftArm.rotation.z = 0.2;
+  group.add(leftArm);
+
+  const rightArm = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.5, 0.08), ghostMaterial);
+  rightArm.position.set(0.28, 0.85, 0);
+  rightArm.rotation.z = -0.2;
+  group.add(rightArm);
+
+  return group;
+}
+
+// Create supernatural character meshes - human-like figures with unique characteristics
+function createSupernaturalMesh(characterId: string): THREE.Group {
+  const group = new THREE.Group();
+  
+  // Glow group - contains all the glow shells (separate so we can control them)
+  const glowGroup = new THREE.Group();
+  glowGroup.name = 'glowGroup';
+  group.add(glowGroup);
+
+  // Create ethereal material with transparency
+  const createGhostMat = (color: number, opacity = 0.75) =>
+    new THREE.MeshLambertMaterial({
+      color,
+      transparent: true,
+      opacity,
+      emissive: color,
+      emissiveIntensity: 0.05,
+    });
+
+  // Create a glow shell material
+  const createGlowMat = () =>
+    new THREE.MeshBasicMaterial({
+      color: 0xaaddff,
+      transparent: true,
+      opacity: 0.3,
+      side: THREE.BackSide, // Render on backside so it shows around the mesh
+    });
+
+  // Helper to add a glow shell around a mesh
+  const addGlowShell = (mesh: THREE.Mesh, scaleMultiplier = 1.15) => {
+    const glowMat = createGlowMat();
+    const glowMesh = new THREE.Mesh(mesh.geometry.clone(), glowMat);
+    glowMesh.position.copy(mesh.position);
+    glowMesh.rotation.copy(mesh.rotation);
+    glowMesh.scale.copy(mesh.scale).multiplyScalar(scaleMultiplier);
+    glowMesh.name = 'glowShell';
+    glowGroup.add(glowMesh);
+    return glowMesh;
+  };
+
+  // Helper to create a basic human body structure
+  const createHumanBase = (
+    skinColor: number,
+    clothColor: number,
+    pantsColor: number,
+    hairColor: number,
+    opacity = 0.75
+  ) => {
+    const skinMat = createGhostMat(skinColor, opacity);
+    const clothMat = createGhostMat(clothColor, opacity);
+    const pantsMat = createGhostMat(pantsColor, opacity);
+    const hairMat = createGhostMat(hairColor, opacity);
+
+    // Torso
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.5, 0.25), clothMat);
+    torso.position.y = 0.75;
+    group.add(torso);
+    addGlowShell(torso, 1.2);
+
+    // Left leg
+    const leftLeg = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.5, 0.16), pantsMat);
+    leftLeg.position.set(-0.1, 0.25, 0);
+    group.add(leftLeg);
+    addGlowShell(leftLeg, 1.25);
+
+    // Right leg
+    const rightLeg = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.5, 0.16), pantsMat);
+    rightLeg.position.set(0.1, 0.25, 0);
+    group.add(rightLeg);
+    addGlowShell(rightLeg, 1.25);
+
+    // Head
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.32, 0.28), skinMat);
+    head.position.y = 1.2;
+    group.add(head);
+    addGlowShell(head, 1.3); // Head gets a bigger glow
+
+    // Hair
+    const hair = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.12, 0.3), hairMat);
+    hair.position.y = 1.42;
+    group.add(hair);
+    addGlowShell(hair, 1.2);
+
+    // Eyes
+    const eyeMat = createGhostMat(0x111122, 0.9);
+    const leftEye = new THREE.Mesh(new THREE.SphereGeometry(0.04, 6, 6), eyeMat);
+    leftEye.position.set(-0.08, 1.22, 0.14);
+    group.add(leftEye);
+    const rightEye = new THREE.Mesh(new THREE.SphereGeometry(0.04, 6, 6), eyeMat);
+    rightEye.position.set(0.08, 1.22, 0.14);
+    group.add(rightEye);
+
+    // Arms
+    const leftArm = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.4, 0.1), clothMat);
+    leftArm.position.set(-0.28, 0.7, 0);
+    group.add(leftArm);
+    addGlowShell(leftArm, 1.3);
+    const rightArm = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.4, 0.1), clothMat);
+    rightArm.position.set(0.28, 0.7, 0);
+    group.add(rightArm);
+    addGlowShell(rightArm, 1.3);
+
+    // Hands
+    const leftHand = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.1, 0.08), skinMat);
+    leftHand.position.set(-0.28, 0.45, 0);
+    group.add(leftHand);
+    addGlowShell(leftHand, 1.3);
+    const rightHand = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.1, 0.08), skinMat);
+    rightHand.position.set(0.28, 0.45, 0);
+    group.add(rightHand);
+    addGlowShell(rightHand, 1.3);
+
+    return { skinMat, clothMat, pantsMat, hairMat };
+  };
+
+  switch (characterId) {
+    case 'judge_bao': {
+      // Judge Bao - stern official in dark robes with distinctive official cap
+      createHumanBase(0xccccdd, 0x1a1a2e, 0x1a1a2e, 0x111111, 0.8);
+
+      // Official cap (wushamao) with extended wings
+      const capMat = createGhostMat(0x1a1a2e, 0.85);
+      const cap = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.1, 0.32), capMat);
+      cap.position.y = 1.52;
+      group.add(cap);
+
+      // Cap wings (the distinctive horizontal extensions)
+      const leftWing = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.04, 0.06), capMat);
+      leftWing.position.set(-0.28, 1.52, 0);
+      group.add(leftWing);
+      const rightWing = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.04, 0.06), capMat);
+      rightWing.position.set(0.28, 1.52, 0);
+      group.add(rightWing);
+
+      // Golden belt (symbol of official rank)
+      const beltMat = createGhostMat(0xdaa520, 0.9);
+      const belt = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.06, 0.26), beltMat);
+      belt.position.y = 0.52;
+      group.add(belt);
+
+      // Crescent moon on forehead (his famous symbol)
+      const moon = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.012, 6, 12, Math.PI), beltMat);
+      moon.position.set(0, 1.38, 0.15);
+      moon.rotation.z = Math.PI;
+      group.add(moon);
+
+      // Beard
+      const beardMat = createGhostMat(0x222222, 0.8);
+      const beard = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.12, 0.08), beardMat);
+      beard.position.set(0, 1.02, 0.12);
+      group.add(beard);
+      break;
+    }
+
+    case 'phantom_heroine': {
+      // Phantom Heroine - graceful female figure in flowing white robes
+      createHumanBase(0xeeeeff, 0xffffff, 0xeeeeff, 0x222233, 0.6);
+
+      // Long flowing hair reaching down the back
+      const hairMat = createGhostMat(0x222233, 0.7);
+      const hairBack = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.7, 0.08), hairMat);
+      hairBack.position.set(0, 0.95, -0.14);
+      group.add(hairBack);
+
+      // Hair sides framing face
+      const hairLeft = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.4, 0.1), hairMat);
+      hairLeft.position.set(-0.18, 1.15, 0.05);
+      group.add(hairLeft);
+      const hairRight = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.4, 0.1), hairMat);
+      hairRight.position.set(0.18, 1.15, 0.05);
+      group.add(hairRight);
+
+      // Red sash (symbolizing grievance/blood)
+      const sashMat = createGhostMat(0x8b0000, 0.8);
+      const sash = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.5, 0.04), sashMat);
+      sash.position.set(0.18, 0.6, 0.14);
+      sash.rotation.z = -0.2;
+      group.add(sash);
+
+      // Delicate hands held together
+      const handsMat = createGhostMat(0xeeeeff, 0.7);
+      const hands = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.1, 0.1), handsMat);
+      hands.position.set(0, 0.55, 0.12);
+      group.add(hands);
+      break;
+    }
+
+    case 'corporeal_ghost': {
+      // Corporeal Ghost - looks almost completely human, just slightly pale
+      createHumanBase(0xd8d8e8, 0x4a5a6a, 0x3a4a5a, 0x1a1a24, 0.88);
+
+      // She looks so human, add subtle details
+      // Earrings
+      const earringMat = createGhostMat(0xaaaacc, 0.9);
+      const leftEarring = new THREE.Mesh(new THREE.SphereGeometry(0.025, 6, 6), earringMat);
+      leftEarring.position.set(-0.17, 1.15, 0.08);
+      group.add(leftEarring);
+      const rightEarring = new THREE.Mesh(new THREE.SphereGeometry(0.025, 6, 6), earringMat);
+      rightEarring.position.set(0.17, 1.15, 0.08);
+      group.add(rightEarring);
+
+      // Longer hair
+      const hairMat = createGhostMat(0x1a1a24, 0.85);
+      const hairBack = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.35, 0.06), hairMat);
+      hairBack.position.set(0, 1.1, -0.13);
+      group.add(hairBack);
+      break;
+    }
+
+    case 'shen_xiu': {
+      // Shen Xiu - tragic figure, disheveled appearance, visible wounds
+      createHumanBase(0xbbccdd, 0x3a4a5a, 0x2a3a4a, 0x222233, 0.7);
+
+      // Disheveled hair (tilted)
+      const messyHair = new THREE.Mesh(
+        new THREE.BoxGeometry(0.36, 0.14, 0.32),
+        createGhostMat(0x222233, 0.7)
+      );
+      messyHair.position.y = 1.42;
+      messyHair.rotation.z = 0.15;
+      group.add(messyHair);
+
+      // Wound marks on torso (dark red stains)
+      const woundMat = createGhostMat(0x550022, 0.85);
+      const wound1 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.06, 0.02), woundMat);
+      wound1.position.set(0.08, 0.82, 0.13);
+      group.add(wound1);
+      const wound2 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.05, 0.02), woundMat);
+      wound2.position.set(-0.05, 0.7, 0.13);
+      group.add(wound2);
+
+      // Torn sleeve
+      const tornMat = createGhostMat(0x2a3a4a, 0.6);
+      const tornSleeve = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.15, 0.06), tornMat);
+      tornSleeve.position.set(-0.32, 0.52, 0);
+      tornSleeve.rotation.z = 0.3;
+      group.add(tornSleeve);
+      break;
+    }
+
+    case 'magistrate_teng_ghost': {
+      // The Wronged Ghost - anguished spirit, reaching out pleadingly
+      createHumanBase(0xaabbcc, 0x555566, 0x444455, 0x333344, 0.55);
+
+      // Arms reaching forward (pleading gesture)
+      const armMat = createGhostMat(0x555566, 0.55);
+      // Override arm positions
+      group.children.forEach((child) => {
+        if (child instanceof THREE.Mesh && child.position.x === -0.28 && child.position.y === 0.7) {
+          child.position.set(-0.22, 0.75, 0.15);
+          child.rotation.x = -0.5;
+        }
+        if (child instanceof THREE.Mesh && child.position.x === 0.28 && child.position.y === 0.7) {
+          child.position.set(0.22, 0.75, 0.15);
+          child.rotation.x = -0.5;
+        }
+      });
+
+      // Tear marks under eyes
+      const tearMat = createGhostMat(0x334455, 0.7);
+      const leftTear = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.08, 0.02), tearMat);
+      leftTear.position.set(-0.08, 1.12, 0.15);
+      group.add(leftTear);
+      const rightTear = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.08, 0.02), tearMat);
+      rightTear.position.set(0.08, 1.12, 0.15);
+      group.add(rightTear);
+      break;
+    }
+
+    case 'underworld_bureaucrat': {
+      // Underworld Bureaucrat - formal official in dark robes, holding ledger
+      createHumanBase(0xaabbcc, 0x1a1a2a, 0x1a1a2a, 0x111111, 0.8);
+
+      // Official cap
+      const capMat = createGhostMat(0x1a1a2a, 0.85);
+      const cap = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.12, 0.3), capMat);
+      cap.position.y = 1.5;
+      group.add(cap);
+
+      // Ledger/registry book in hand
+      const bookMat = createGhostMat(0xddddcc, 0.9);
+      const book = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.18, 0.03), bookMat);
+      book.position.set(-0.3, 0.6, 0.1);
+      book.rotation.z = 0.2;
+      group.add(book);
+
+      // Brush/pen in other hand
+      const brushMat = createGhostMat(0x332211, 0.9);
+      const brush = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.12, 6), brushMat);
+      brush.position.set(0.3, 0.5, 0.08);
+      brush.rotation.z = 0.3;
+      group.add(brush);
+      break;
+    }
+
+    case 'hungry_ghost': {
+      // Hungry Ghost - emaciated figure with distended belly
+      // Don't use standard base - custom thin body
+      const ghostMat = createGhostMat(0x778899, 0.6);
+      const skinMat = createGhostMat(0x99aabb, 0.65);
+
+      // Distended belly
+      const belly = new THREE.Mesh(new THREE.SphereGeometry(0.28, 8, 8), ghostMat);
+      belly.position.y = 0.65;
+      belly.scale.set(1, 1.1, 0.9);
+      group.add(belly);
+
+      // Thin torso above belly
+      const torso = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.25, 0.15), ghostMat);
+      torso.position.y = 1.0;
+      group.add(torso);
+
+      // Emaciated limbs
+      const limbMat = createGhostMat(0x667788, 0.6);
+
+      // Thin arms
+      const leftArm = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.02, 0.45, 6), limbMat);
+      leftArm.position.set(-0.2, 0.8, 0);
+      leftArm.rotation.z = 0.3;
+      group.add(leftArm);
+      const rightArm = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.02, 0.45, 6), limbMat);
+      rightArm.position.set(0.2, 0.8, 0);
+      rightArm.rotation.z = -0.3;
+      group.add(rightArm);
+
+      // Thin legs
+      const leftLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.025, 0.4, 6), limbMat);
+      leftLeg.position.set(-0.1, 0.2, 0);
+      group.add(leftLeg);
+      const rightLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.025, 0.4, 6), limbMat);
+      rightLeg.position.set(0.1, 0.2, 0);
+      group.add(rightLeg);
+
+      // Large head
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 8), skinMat);
+      head.position.y = 1.25;
+      group.add(head);
+
+      // Sunken eyes
+      const eyeMat = createGhostMat(0x223344, 0.9);
+      const leftEye = new THREE.Mesh(new THREE.SphereGeometry(0.04, 6, 6), eyeMat);
+      leftEye.position.set(-0.07, 1.28, 0.14);
+      group.add(leftEye);
+      const rightEye = new THREE.Mesh(new THREE.SphereGeometry(0.04, 6, 6), eyeMat);
+      rightEye.position.set(0.07, 1.28, 0.14);
+      group.add(rightEye);
+
+      // Tiny needle-thin throat
+      const throat = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.1, 6), limbMat);
+      throat.position.set(0, 1.08, 0);
+      group.add(throat);
+      break;
+    }
+
+    case 'qutu_zhongren': {
+      // Qutu Zhongren - dark, menacing figure
+      createHumanBase(0x99aabb, 0x2a2a3a, 0x1a1a2a, 0x111111, 0.75);
+
+      // Blood-stained hands
+      const bloodMat = createGhostMat(0x660022, 0.85);
+      // Override hand colors
+      group.children.forEach((child) => {
+        if (child instanceof THREE.Mesh) {
+          const pos = child.position;
+          if ((pos.x === -0.28 || pos.x === 0.28) && pos.y === 0.45) {
+            child.material = bloodMat;
+          }
+        }
+      });
+
+      // Dark aura around him
+      const auraMat = new THREE.MeshBasicMaterial({
+        color: 0x220011,
+        transparent: true,
+        opacity: 0.12,
+      });
+      const aura = new THREE.Mesh(new THREE.SphereGeometry(0.7, 8, 8), auraMat);
+      aura.position.y = 0.8;
+      group.add(aura);
+
+      // Sinister smile
+      const smileMat = createGhostMat(0x330011, 0.9);
+      const smile = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.02, 0.02), smileMat);
+      smile.position.set(0, 1.08, 0.15);
+      group.add(smile);
+      break;
+    }
+
+    case 'fox_spirit': {
+      // Fox Spirit - beautiful human form with subtle fox features
+      createHumanBase(0xeeddcc, 0x995533, 0x884422, 0x111111, 0.8);
+
+      // Long flowing black hair
+      const hairMat = createGhostMat(0x111111, 0.85);
+      const hairBack = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.6, 0.08), hairMat);
+      hairBack.position.set(0, 1.0, -0.13);
+      group.add(hairBack);
+
+      // Fox ears (subtle, could be mistaken for hair ornaments)
+      const earMat = createGhostMat(0xcc7744, 0.8);
+      const leftEar = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.1, 4), earMat);
+      leftEar.position.set(-0.14, 1.48, -0.02);
+      group.add(leftEar);
+      const rightEar = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.1, 4), earMat);
+      rightEar.position.set(0.14, 1.48, -0.02);
+      group.add(rightEar);
+
+      // Golden fox eyes
+      const eyeMat = createGhostMat(0xddaa00, 0.95);
+      // Override eye colors
+      group.children.forEach((child) => {
+        if (child instanceof THREE.Mesh && child.geometry instanceof THREE.SphereGeometry) {
+          const pos = child.position;
+          if (pos.y > 1.1 && pos.y < 1.3 && Math.abs(pos.x) < 0.15) {
+            child.material = eyeMat;
+          }
+        }
+      });
+
+      // Fox tail (partially hidden behind robes)
+      const tailMat = createGhostMat(0xcc7744, 0.75);
+      const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.08, 0.4, 6), tailMat);
+      tail.position.set(0, 0.4, -0.2);
+      tail.rotation.x = -0.6;
+      group.add(tail);
+      const tailTip = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 6), createGhostMat(0xeeeecc, 0.8));
+      tailTip.position.set(0, 0.55, -0.38);
+      group.add(tailTip);
+      break;
+    }
+
+    case 'ghost_witness': {
+      // Ghost Witness - formal, composed figure
+      createHumanBase(0xbbccdd, 0x4a4a5a, 0x3a3a4a, 0x222233, 0.7);
+
+      // Hands clasped in formal posture
+      const handsMat = createGhostMat(0xbbccdd, 0.7);
+      const clasped = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.1, 0.1), handsMat);
+      clasped.position.set(0, 0.55, 0.12);
+      group.add(clasped);
+
+      // Simple official headpiece
+      const headpiece = new THREE.Mesh(
+        new THREE.BoxGeometry(0.3, 0.06, 0.26),
+        createGhostMat(0x3a3a4a, 0.75)
+      );
+      headpiece.position.y = 1.48;
+      group.add(headpiece);
+      break;
+    }
+
+    default: {
+      // Default - basic human ghost
+      createHumanBase(0xaabbcc, 0x555566, 0x444455, 0x333344, 0.6);
+    }
+  }
+
+  // Add point light for actual illumination (will be controlled in update)
+  const glowLight = new THREE.PointLight(0xaaddff, 1.5, 8);
+  glowLight.position.set(0, 1, 0);
+  glowLight.name = 'glowLight';
+  group.add(glowLight);
 
   return group;
 }
@@ -2459,10 +3163,97 @@ function createDogMesh(): THREE.Group {
   return group;
 }
 
+// Spawn ambient ghosts that appear/disappear
+function spawnAmbientGhosts() {
+  const ghostCount = 20; // Number of ambient ghosts wandering the city
+
+  for (let i = 0; i < ghostCount; i++) {
+    const mesh = createAmbientGhostMesh();
+    const x = -35 + Math.random() * 70;
+    const z = -70 + Math.random() * 75;
+
+    mesh.position.set(x, 0.3, z); // Slightly elevated for floating effect
+    mesh.visible = Math.random() > 0.5; // Some start visible, some don't
+    outdoorScene.add(mesh);
+
+    const ghost: AmbientGhost = {
+      mesh,
+      x,
+      z,
+      targetX: x + (Math.random() - 0.5) * 15,
+      targetZ: z + (Math.random() - 0.5) * 15,
+      speed: 0.03 + Math.random() * 0.015, // Walk like normal people
+      visible: mesh.visible,
+      nextToggleTime: Date.now() + GHOST_TOGGLE_INTERVAL * (0.5 + Math.random()), // Stagger initial toggles
+      fadeAlpha: mesh.visible ? 0.4 : 0,
+      fadeDirection: 0,
+      floatOffset: Math.random() * Math.PI * 2,
+    };
+
+    ambientGhosts.push(ghost);
+  }
+}
+
+// The supernatural characters who carry scrolls
+const supernaturalNPCs: NPC[] = [];
+
+// Spawn the 10 unique supernatural characters at fixed locations
+function spawnSupernaturalCharacters() {
+  // Fixed spawn locations spread across the city - closer to player spawn (0,0)
+  const spawnLocations = [
+    { x: -8, z: -8 }, // Judge Bao - very close to spawn
+    { x: 10, z: -12 }, // Phantom Heroine
+    { x: -15, z: -20 }, // Corporeal Ghost
+    { x: 18, z: -25 }, // Shen Xiu
+    { x: -20, z: -35 }, // Wronged Ghost
+    { x: 5, z: -40 }, // Underworld Bureaucrat
+    { x: 25, z: -45 }, // Hungry Ghost
+    { x: -25, z: -50 }, // Qutu Zhongren
+    { x: 15, z: -55 }, // Fox Spirit
+    { x: -10, z: -60 }, // Ghost Witness
+  ];
+
+  for (let i = 0; i < supernaturalCharacters.length; i++) {
+    const char = supernaturalCharacters[i];
+    if (!char) continue;
+
+    const location = spawnLocations[i] ?? { x: Math.random() * 40 - 20, z: -40 + Math.random() * 30 };
+    const mesh = createSupernaturalMesh(char.id);
+
+    mesh.position.set(location.x, 0.15, location.z); // Slightly floating
+    outdoorScene.add(mesh);
+
+    const scrollId = i + 1; // Scroll IDs 1-10
+
+    const npcData: NPC = {
+      mesh,
+      x: location.x,
+      z: location.z,
+      targetX: location.x + (Math.random() - 0.5) * 10,
+      targetZ: location.z + (Math.random() - 0.5) * 10,
+      speed: 0.035, // Move like regular people, slightly slower
+      type: 'person',
+      indoor: false,
+      buildingIdx: -1,
+      floorIdx: -1,
+      hasScroll: true,
+      scrollId,
+      scrollCollected: collectedScrolls.includes(scrollId),
+      characterId: char.id,
+      characterName: char.name,
+    };
+
+    supernaturalNPCs.push(npcData);
+    outdoorNPCs.push(npcData); // Also add to outdoor NPCs for collision/interaction
+    assignedScrollIds.add(scrollId);
+  }
+}
+
 // Spawn outdoor NPCs
 function spawnOutdoorNPCs() {
   // Spawn various NPCs in the city - increased counts
   // 41 people, 10 dogs, 11 foxes, 8 monkeys, 13 squirrels, 26 mice = 109 total
+  // Note: Regular NPCs no longer carry scrolls - only supernatural characters do
   const npcTypes: { type: NPC['type']; count: number; speed: number }[] = [
     { type: 'person', count: 41, speed: 0.04 },
     { type: 'dog', count: 10, speed: 0.07 },
@@ -2471,10 +3262,6 @@ function spawnOutdoorNPCs() {
     { type: 'squirrel', count: 13, speed: 0.1 },
     { type: 'mouse', count: 26, speed: 0.12 },
   ];
-
-  // Track how many person NPCs have been assigned scrolls in outdoor area
-  let outdoorScrollsAssigned = 0;
-  const scrollsForOutdoor = [1, 2, 3, 4]; // Scrolls 1-4 go to outdoor NPCs
 
   for (const npcDef of npcTypes) {
     for (let i = 0; i < npcDef.count; i++) {
@@ -2517,25 +3304,8 @@ function spawnOutdoorNPCs() {
         indoor: false,
         buildingIdx: -1,
         floorIdx: -1,
+        // Regular NPCs no longer have scrolls
       };
-
-      // Assign scrolls to first 4 person-type NPCs (spread out)
-      if (npcDef.type === 'person' && outdoorScrollsAssigned < scrollsForOutdoor.length) {
-        // Only assign to every ~10th person to spread them out
-        if (
-          i % 10 === 0 ||
-          (i === npcDef.count - 1 && outdoorScrollsAssigned < scrollsForOutdoor.length)
-        ) {
-          const scrollId = scrollsForOutdoor[outdoorScrollsAssigned];
-          if (scrollId !== undefined) {
-            npcData.hasScroll = true;
-            npcData.scrollId = scrollId;
-            npcData.scrollCollected = false;
-            assignedScrollIds.add(scrollId);
-            outdoorScrollsAssigned++;
-          }
-        }
-      }
 
       // Some foxes are shapeshifters (kitsune) - 40% chance
       if (npcDef.type === 'fox' && Math.random() < 0.4) {
@@ -2558,9 +3328,7 @@ function spawnIndoorNPCs(buildingIdx: number, floorIdx: number, floorW: number, 
   }
   indoorNPCs.length = 0;
 
-  // Scrolls 5-7 go to indoor NPCs - but only if not already collected
-  const scrollsForIndoor = [5, 6, 7].filter((id) => !collectedScrolls.includes(id));
-  let indoorScrollsAssigned = 0;
+  // Note: Indoor NPCs no longer carry scrolls - only supernatural characters in the outdoor area do
 
   // Spawn 8-14 NPCs per floor (mix of types) - 30% more
   const count = 8 + Math.floor(Math.random() * 7); // 8-14 NPCs per floor
@@ -2615,18 +3383,8 @@ function spawnIndoorNPCs(buildingIdx: number, floorIdx: number, floorW: number, 
       indoor: true,
       buildingIdx,
       floorIdx,
+      // Indoor NPCs no longer have scrolls
     };
-
-    // Assign scrolls to first person NPCs on each floor (one scroll per floor visit)
-    if (type === 'person' && indoorScrollsAssigned < scrollsForIndoor.length && i === 0) {
-      const scrollId = scrollsForIndoor[indoorScrollsAssigned];
-      if (scrollId !== undefined) {
-        npcData.hasScroll = true;
-        npcData.scrollId = scrollId;
-        npcData.scrollCollected = false;
-        indoorScrollsAssigned++;
-      }
-    }
 
     // Some foxes are shapeshifters (kitsune) - 40% chance
     if (type === 'fox' && Math.random() < 0.4) {
@@ -3035,8 +3793,186 @@ function updateNPCs() {
   }
 }
 
+// Update ambient ghosts - handle fading in/out and floating animation
+function updateAmbientGhosts() {
+  if (state.mode !== 'outdoor') return; // Only update when in outdoor mode
+
+  const now = Date.now();
+
+  for (const ghost of ambientGhosts) {
+    // Check if it's time to toggle visibility
+    if (now >= ghost.nextToggleTime) {
+      if (ghost.visible) {
+        // Start fading out
+        ghost.fadeDirection = -1;
+      } else {
+        // Start fading in
+        ghost.fadeDirection = 1;
+      }
+      ghost.nextToggleTime = now + GHOST_TOGGLE_INTERVAL + (Math.random() - 0.5) * 5000;
+    }
+
+    // Handle fading
+    if (ghost.fadeDirection !== 0) {
+      ghost.fadeAlpha += ghost.fadeDirection * GHOST_FADE_SPEED;
+
+      if (ghost.fadeAlpha >= 0.4) {
+        ghost.fadeAlpha = 0.4;
+        ghost.fadeDirection = 0;
+        ghost.visible = true;
+        ghost.mesh.visible = true;
+      } else if (ghost.fadeAlpha <= 0) {
+        ghost.fadeAlpha = 0;
+        ghost.fadeDirection = 0;
+        ghost.visible = false;
+        ghost.mesh.visible = false;
+      }
+
+      // Update material opacity for all children
+      ghost.mesh.traverse((child) => {
+        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshLambertMaterial) {
+          child.material.opacity = ghost.fadeAlpha;
+        }
+      });
+    }
+
+    // Floating animation (when visible) - subtle hover just above ground
+    if (ghost.visible || ghost.fadeAlpha > 0) {
+      ghost.floatOffset += 0.015;
+      const floatY = 0.1 + Math.sin(ghost.floatOffset) * 0.05; // Subtle float
+      ghost.mesh.position.y = floatY;
+    }
+
+    // Move around like normal people
+    if (ghost.visible) {
+      // Occasionally pick new target - more frequently for natural movement
+      if (Math.random() < 0.008) {
+        ghost.targetX = ghost.x + (Math.random() - 0.5) * 20;
+        ghost.targetZ = ghost.z + (Math.random() - 0.5) * 20;
+        // Keep within bounds
+        ghost.targetX = Math.max(-35, Math.min(35, ghost.targetX));
+        ghost.targetZ = Math.max(-70, Math.min(5, ghost.targetZ));
+      }
+
+      // Move toward target at normal walking speed
+      const dx = ghost.targetX - ghost.x;
+      const dz = ghost.targetZ - ghost.z;
+      const dist = Math.sqrt(dx * dx + dz * dz);
+
+      if (dist > 0.5) {
+        ghost.x += (dx / dist) * ghost.speed;
+        ghost.z += (dz / dist) * ghost.speed;
+        ghost.mesh.position.x = ghost.x;
+        ghost.mesh.position.z = ghost.z;
+
+        // Face movement direction
+        ghost.mesh.rotation.y = Math.atan2(dx, dz);
+      }
+    }
+  }
+}
+
+// Update supernatural character movement and floating effect
+function updateSupernaturalCharacters() {
+  if (state.mode !== 'outdoor') return;
+
+  for (const npc of supernaturalNPCs) {
+    // Movement like regular NPCs - occasionally pick new random targets
+    if (Math.random() < 0.008) {
+      // Pick a new target within a reasonable range
+      npc.targetX = npc.x + (Math.random() - 0.5) * 20;
+      npc.targetZ = npc.z + (Math.random() - 0.5) * 20;
+      // Keep within city bounds
+      npc.targetX = Math.max(-35, Math.min(35, npc.targetX));
+      npc.targetZ = Math.max(-70, Math.min(5, npc.targetZ));
+    }
+
+    // Move toward target
+    const dx = npc.targetX - npc.x;
+    const dz = npc.targetZ - npc.z;
+    const dist = Math.sqrt(dx * dx + dz * dz);
+
+    if (dist > 0.5) {
+      // Move toward target
+      npc.x += (dx / dist) * npc.speed;
+      npc.z += (dz / dist) * npc.speed;
+      npc.mesh.position.x = npc.x;
+      npc.mesh.position.z = npc.z;
+
+      // Face movement direction
+      npc.mesh.rotation.y = Math.atan2(dx, dz);
+    }
+
+    // Gentle floating bob - just slightly above ground
+    const floatY = 0.12 + Math.sin(Date.now() / 800 + npc.x * 0.5) * 0.06;
+    npc.mesh.position.y = floatY;
+
+    // Determine glow intensity based on whether scroll has been collected
+    const hasUncollectedScroll = npc.hasScroll && !npc.scrollCollected;
+    const pulseValue = Math.sin(Date.now() / 500 + npc.x) * 0.5 + 0.5; // 0 to 1
+
+    // Update body glow shells (the glowGroup contains all body-shaped glow meshes)
+    npc.mesh.traverse((child) => {
+      // Find the glow group and update all glow shells inside it
+      if (child instanceof THREE.Group && child.name === 'glowGroup') {
+        child.traverse((glowChild) => {
+          if (glowChild instanceof THREE.Mesh && glowChild.material instanceof THREE.MeshBasicMaterial) {
+            if (hasUncollectedScroll) {
+              // Bright pulsing glow for uncollected
+              glowChild.material.opacity = 0.25 + pulseValue * 0.2;
+              glowChild.material.color.setHex(0xaaddff);
+              glowChild.visible = true;
+            } else {
+              // Very dim glow for collected
+              glowChild.material.opacity = 0.03;
+              glowChild.material.color.setHex(0x445566);
+              glowChild.visible = true;
+            }
+          }
+        });
+      }
+
+      // Update the point light
+      if (child instanceof THREE.PointLight || child.name === 'glowLight') {
+        if (child instanceof THREE.PointLight) {
+          if (hasUncollectedScroll) {
+            child.intensity = 1.2 + pulseValue * 0.8;
+            child.distance = 10;
+            child.color.setHex(0xaaddff);
+          } else {
+            child.intensity = 0.1;
+            child.distance = 2;
+            child.color.setHex(0x333344);
+          }
+        }
+      }
+    });
+
+    // Update emissive on all body materials for inner glow effect
+    npc.mesh.traverse((child) => {
+      if (
+        child instanceof THREE.Mesh &&
+        child.material instanceof THREE.MeshLambertMaterial &&
+        child.name !== 'glowShell'
+      ) {
+        if (hasUncollectedScroll) {
+          // Strong emissive glow that pulses
+          child.material.emissiveIntensity = 0.2 + pulseValue * 0.15;
+        } else {
+          // Very subtle emissive when collected
+          child.material.emissiveIntensity = 0.02;
+        }
+      }
+    });
+  }
+}
+
 // Initialize outdoor NPCs
 spawnOutdoorNPCs();
+// Spawn supernatural characters (the 10 unique ghosts with scrolls)
+spawnSupernaturalCharacters();
+// Spawn ambient ghosts (wandering spectral figures)
+spawnAmbientGhosts();
 
 // ============================================
 // INDOOR SCENE
@@ -5721,6 +6657,8 @@ function spawnUndergroundNPCs(w: number, d: number) {
           speed: 0.04 + Math.random() * 0.04, // Fast rats!
           type: 'mouse',
           indoor: true,
+          buildingIdx: -1,
+          floorIdx: -1,
         });
       }
     }
@@ -5746,23 +6684,25 @@ function spawnUndergroundNPCs(w: number, d: number) {
           speed: 0.025 + Math.random() * 0.025,
           type: 'fox',
           indoor: true,
+          buildingIdx: -1,
+          floorIdx: -1,
         });
       }
     }
   }
 
-  // ========== SHADY DRUG DEALERS prowling the underground ==========
-  // Spawn 15-25 dealers scattered throughout
-  const numDealers = 15 + Math.floor(Math.random() * 10);
-  for (let i = 0; i < numDealers; i++) {
-    const dealer = createDrugDealerMesh();
+  // ========== SHADY HOODLUMS prowling the underground ==========
+  // Spawn 15-25 hoodlums scattered throughout
+  const numHoodlums = 15 + Math.floor(Math.random() * 10);
+  for (let i = 0; i < numHoodlums; i++) {
+    const hoodlum = createDrugDealerMesh();
     const x = -w / 2 + 10 + Math.random() * (w - 20);
     const z = -d / 2 + 10 + Math.random() * (d - 20);
-    dealer.position.set(x, 0.1, z);
-    indoorScene.add(dealer);
+    hoodlum.position.set(x, 0.1, z);
+    indoorScene.add(hoodlum);
 
-    undergroundNPCs.push({
-      mesh: dealer,
+    const npcData: NPC = {
+      mesh: hoodlum,
       x,
       z,
       targetX: x + (Math.random() - 0.5) * 25,
@@ -5770,7 +6710,11 @@ function spawnUndergroundNPCs(w: number, d: number) {
       speed: 0.015 + Math.random() * 0.015, // Slow, lurking movement
       type: 'person', // Use person type for movement
       indoor: true,
-    });
+      buildingIdx: -1,
+      floorIdx: -1,
+      characterId: 'hoodlum', // Mark as hoodlum for interaction
+    };
+    undergroundNPCs.push(npcData);
   }
 }
 
@@ -5897,7 +6841,7 @@ function findNearestLadder(): { idx: number; dist: number; x: number; z: number 
 function enterUnderground(drainIdx: number) {
   state.mode = 'underground';
   state.currentDrain = drainIdx;
-  state.sewerDepth = 0;
+  state.undergroundDepth = 0;
   outdoorScene.visible = false;
   indoorScene.visible = true;
   outdoorScene.remove(playerGroup);
@@ -6536,7 +7480,7 @@ const npcDialogueClose = document.getElementById('npc-dialogue-close') as HTMLBu
 
 function updateScrollCount() {
   if (scrollCountEl) {
-    scrollCountEl.textContent = `${collectedScrolls.length}/7`;
+    scrollCountEl.textContent = `${collectedScrolls.length}/10`;
   }
 }
 
@@ -6591,18 +7535,31 @@ function showNPCDialogue(npc: NPC) {
   if (!npcDialogue || !npcDialogueText || !npcDialogueAccept) return;
 
   currentDialogueNPC = npc;
+  isHoodlumDialogue = false;
 
-  if (npc.hasScroll && !npc.scrollCollected && npc.scrollId !== undefined) {
-    // NPC has a scroll to give
-    const scroll = scrollData.find((s) => s.id === npc.scrollId);
-    if (scroll) {
-      npcDialogueHeader.textContent = 'A STRANGER APPROACHES...';
-      npcDialogueText.textContent = scroll.excerpt;
+  if (npc.hasScroll && !npc.scrollCollected && npc.scrollId !== undefined && npc.characterId) {
+    // Supernatural character with a scroll to give - start multi-step dialogue
+    const character = supernaturalCharacters.find((c) => c.id === npc.characterId);
+    if (character) {
+      currentDialogueStage = 'greeting';
+      npcDialogueHeader.textContent = character.name.toUpperCase();
+      npcDialogueText.textContent = `"${character.interactions.greeting}"`;
       npcDialogueAccept.classList.remove('hidden');
-      npcDialogueAccept.textContent = 'ACCEPT SCROLL';
+      npcDialogueAccept.textContent = 'CONTINUE';
+    }
+  } else if (npc.hasScroll && npc.scrollCollected && npc.characterId) {
+    // Already collected this character's scroll - show farewell only
+    const character = supernaturalCharacters.find((c) => c.id === npc.characterId);
+    if (character) {
+      currentDialogueStage = 'farewell';
+      npcDialogueHeader.textContent = character.name.toUpperCase();
+      npcDialogueText.textContent = `"${character.interactions.farewell}"`;
+      npcDialogueAccept.classList.remove('hidden');
+      npcDialogueAccept.textContent = 'FAREWELL';
     }
   } else {
-    // Regular NPC dialogue
+    // Regular NPC dialogue (no scrolls from regular NPCs)
+    currentDialogueStage = 'farewell'; // So pressing button closes it
     const genericDialogues = [
       '"The walls have ears here. Be careful who you trust."',
       '"I\'ve lived here for forty years. The city knows me."',
@@ -6611,13 +7568,76 @@ function showNPCDialogue(npc: NPC) {
       '"Stay out of the underground unless you know the way out."',
       '"The noodles from Mr. Chen\'s stall are the best in Kowloon."',
       '"Don\'t bother the animals. Some of them aren\'t what they seem."',
+      '"Have you seen the ghosts? They wander these streets at night..."',
+      '"Strange spirits roam Kowloon. They carry ancient wisdom."',
+      '"The supernatural ones... they have scrolls. Seek them out."',
     ];
     const randomDialogue = genericDialogues[Math.floor(Math.random() * genericDialogues.length)];
     npcDialogueHeader.textContent = 'RESIDENT';
     npcDialogueText.textContent = randomDialogue ?? '"..."';
-    npcDialogueAccept.classList.add('hidden');
+    npcDialogueAccept.classList.remove('hidden');
+    npcDialogueAccept.textContent = 'OK';
   }
 
+  npcDialogue.classList.add('visible');
+}
+
+// Show hoodlum dialogue in underground - just dismissive conversation
+function showHoodlumDialogue() {
+  if (!npcDialogue || !npcDialogueText || !npcDialogueAccept) return;
+
+  isHoodlumDialogue = true;
+  currentDialogueStage = 'farewell'; // Just show and close
+  currentDialogueNPC = null;
+
+  const shadyDialogues = [
+    '"Scram, kid. This ain\'t your turf."',
+    '"Get lost. I\'ve got business to attend to."',
+    '"You didn\'t see nothin\'. Now beat it."',
+    '"Wrong place, wrong time. Move along."',
+    '"Keep walking. Nothing for you here."',
+    '"Eyes forward. Don\'t make me repeat myself."',
+    '"This is my corner. Find your own."',
+    '"You got a death wish? Get outta here."',
+    '"I don\'t know you. Keep it that way."',
+    '"Curiosity killed the cat. Scram."',
+  ];
+
+  npcDialogueHeader.textContent = 'SHADY FIGURE';
+  npcDialogueText.textContent = shadyDialogues[Math.floor(Math.random() * shadyDialogues.length)] ?? '"..."';
+  npcDialogueAccept.classList.remove('hidden');
+  npcDialogueAccept.textContent = 'BACK AWAY';
+  npcDialogue.classList.add('visible');
+}
+
+// Current seller being talked to (for dialogue state)
+let currentSellerType: ShopStall['type'] | null = null;
+
+// Show shop seller dialogue
+function showSellerDialogue(stallType: ShopStall['type']) {
+  if (!npcDialogue || !npcDialogueText || !npcDialogueAccept) return;
+
+  currentSellerType = stallType;
+  currentDialogueStage = 'farewell'; // Simple one-shot dialogue
+  currentDialogueNPC = null;
+  isHoodlumDialogue = false;
+
+  const dialogues = shopSellerDialogues[stallType];
+  const randomDialogue = dialogues[Math.floor(Math.random() * dialogues.length)] ?? '"..."';
+
+  // Header based on stall type
+  const headers: Record<ShopStall['type'], string> = {
+    food: 'FOOD VENDOR',
+    clothes: 'CLOTHING SELLER',
+    drugs: 'SHADY DEALER',
+    electronics: 'ELECTRONICS VENDOR',
+    trinkets: 'TRINKET SELLER',
+  };
+
+  npcDialogueHeader.textContent = headers[stallType];
+  npcDialogueText.textContent = randomDialogue;
+  npcDialogueAccept.classList.remove('hidden');
+  npcDialogueAccept.textContent = stallType === 'drugs' ? 'WALK AWAY' : 'THANKS';
   npcDialogue.classList.add('visible');
 }
 
@@ -6625,15 +7645,83 @@ function closeNPCDialogue() {
   if (npcDialogue) {
     npcDialogue.classList.remove('visible');
     currentDialogueNPC = null;
+    currentDialogueStage = 'closed';
+    isHoodlumDialogue = false;
+    currentSellerType = null;
   }
 }
 
-function acceptScrollFromNPC() {
-  if (currentDialogueNPC && currentDialogueNPC.scrollId !== undefined) {
-    collectScroll(currentDialogueNPC.scrollId);
-    currentDialogueNPC.scrollCollected = true;
+function advanceDialogue() {
+  if (!npcDialogue || !npcDialogueText || !npcDialogueAccept) return;
+
+  // Handle hoodlum dialogue - just close it
+  if (isHoodlumDialogue) {
     closeNPCDialogue();
+    return;
   }
+
+  // Handle seller dialogue - just close it
+  if (currentSellerType !== null) {
+    currentSellerType = null;
+    closeNPCDialogue();
+    return;
+  }
+
+  // Handle regular NPC dialogue (no characterId or no scroll) - just close
+  if (!currentDialogueNPC || !currentDialogueNPC.characterId || currentDialogueNPC.characterId === 'hoodlum') {
+    closeNPCDialogue();
+    return;
+  }
+
+  // Handle supernatural character multi-step dialogue
+  const character = supernaturalCharacters.find((c) => c.id === currentDialogueNPC?.characterId);
+  if (!character) {
+    closeNPCDialogue();
+    return;
+  }
+
+  switch (currentDialogueStage) {
+    case 'greeting':
+      // Move to backstory - show the scroll quote
+      currentDialogueStage = 'backstory';
+      npcDialogueHeader.textContent = `${character.name.toUpperCase()} SPEAKS...`;
+      npcDialogueText.textContent = `"${character.scrollQuote}"`;
+      npcDialogueAccept.textContent = 'ACCEPT SCROLL';
+      break;
+
+    case 'backstory':
+      // Accept the scroll and show congratulation
+      if (currentDialogueNPC.scrollId !== undefined) {
+        collectScroll(currentDialogueNPC.scrollId);
+        currentDialogueNPC.scrollCollected = true;
+      }
+      currentDialogueStage = 'accept';
+      npcDialogueHeader.textContent = 'SCROLL RECEIVED';
+      npcDialogueText.textContent = `"${character.interactions.congratulation}"\n\n"${character.interactions.handoff}"`;
+      npcDialogueAccept.textContent = 'CONTINUE';
+      break;
+
+    case 'accept':
+      // Show farewell
+      currentDialogueStage = 'farewell';
+      npcDialogueHeader.textContent = character.name.toUpperCase();
+      npcDialogueText.textContent = `"${character.interactions.farewell}"`;
+      npcDialogueAccept.textContent = 'FAREWELL';
+      break;
+
+    case 'farewell':
+      // Close dialogue
+      closeNPCDialogue();
+      break;
+
+    default:
+      closeNPCDialogue();
+  }
+}
+
+// Legacy function for compatibility
+function acceptScrollFromNPC() {
+  advanceDialogue();
 }
 
 // Event listeners for scroll UI
@@ -7471,13 +8559,37 @@ function update() {
       }
     }
 
+    // Check for nearby shop stall sellers
+    let nearestStall: ShopStall | null = null;
+    let nearestStallDist = 999;
+    for (const stall of shopStalls) {
+      const dist = Math.sqrt(Math.pow(player.x - stall.x, 2) + Math.pow(player.z - stall.z, 2));
+      if (dist < nearestStallDist) {
+        nearestStallDist = dist;
+        nearestStall = stall;
+      }
+    }
+
     // Show prompt when near a person NPC (priority over building)
     if (nearestPersonNPC && nearestPersonDist < 2.5) {
-      if (nearestPersonNPC.hasScroll && !nearestPersonNPC.scrollCollected) {
+      if (nearestPersonNPC.hasScroll && !nearestPersonNPC.scrollCollected && nearestPersonNPC.characterName) {
+        // Supernatural character with uncollected scroll
+        prompt = `speak with ${nearestPersonNPC.characterName}`;
+      } else if (nearestPersonNPC.hasScroll && !nearestPersonNPC.scrollCollected) {
         prompt = 'talk (has scroll)';
       } else {
         prompt = 'talk';
       }
+    } else if (nearestStall && nearestStallDist < 3) {
+      // Near a shop stall - show prompt to talk to seller
+      const stallNames: Record<ShopStall['type'], string> = {
+        food: 'food vendor',
+        clothes: 'clothing seller',
+        drugs: 'shady dealer',
+        electronics: 'electronics vendor',
+        trinkets: 'trinket seller',
+      };
+      prompt = `talk to ${stallNames[nearestStall.type]}`;
     } else if (nearestDist < 5) {
       prompt = 'enter building';
     }
@@ -7504,6 +8616,12 @@ function update() {
       // Person NPC takes priority if very close
       if (nearestPersonNPC && nearestPersonDist < 2.5) {
         showNPCDialogue(nearestPersonNPC);
+        showPrompt('');
+        return;
+      }
+      // Shop stall seller interaction
+      if (nearestStall && nearestStallDist < 3) {
+        showSellerDialogue(nearestStall.type);
         showPrompt('');
         return;
       }
@@ -7622,12 +8740,37 @@ function update() {
     player.z = finalZ;
     playerGroup.position.set(player.x, 0.1, player.z);
 
+    // Find nearest hoodlum (person type NPC with hoodlum characterId)
+    let nearestHoodlum: NPC | null = null;
+    let nearestHoodlumDist = 999;
+    for (const npc of undergroundNPCs) {
+      if (npc.type === 'person' && npc.characterId === 'hoodlum') {
+        const dist = Math.sqrt(Math.pow(player.x - npc.x, 2) + Math.pow(player.z - npc.z, 2));
+        if (dist < nearestHoodlumDist) {
+          nearestHoodlumDist = dist;
+          nearestHoodlum = npc;
+        }
+      }
+    }
+
+    // Show hoodlum prompt when near (priority over ladder)
+    if (nearestHoodlum && nearestHoodlumDist < 2.5) {
+      prompt = 'talk to shady figure';
+    }
+
+    // Handle hoodlum interaction
+    if (acted && nearestHoodlum && nearestHoodlumDist < 2.5) {
+      showHoodlumDialogue();
+      showPrompt('');
+      return;
+    }
+
     // Find nearest ladder exit
     const nearest = findNearestLadder();
     nearestLadderIdx = nearest.idx;
 
-    // Show exit prompt when near any ladder
-    if (nearest.dist < 3) {
+    // Show exit prompt when near any ladder (if not near hoodlum)
+    if (nearest.dist < 3 && (!nearestHoodlum || nearestHoodlumDist >= 2.5)) {
       // Show which exit this is
       const exitName = nearest.idx === 0 ? 'SPAWN' : `EXIT ${nearest.idx}`;
       prompt = `climb up (${exitName})`;
@@ -8006,6 +9149,10 @@ function animate() {
     update();
     updateNPCs();
   }
+
+  // Update ghosts (always, even during jumps for visual effect)
+  updateAmbientGhosts();
+  updateSupernaturalCharacters();
 
   updateCamera();
   drawMinimap();
