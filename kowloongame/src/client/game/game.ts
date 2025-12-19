@@ -3764,7 +3764,7 @@ function spawnSupernaturalCharacters() {
     // Randomly decide if indoor (40% chance) or use fixed outdoor if not
     // Note: If collected, we might want them to stay put or disappear?
     // Usually they stay.
-    const isIndoor = Math.random() < 0.4;
+    let isIndoor = Math.random() < 0.4; // Initial random, overridden below
 
     let location = { x: 0, z: 0 };
     let buildingIdx = -1;
@@ -3775,20 +3775,19 @@ function spawnSupernaturalCharacters() {
       // Indoor spawn
       buildingIdx = Math.floor(Math.random() * cityLayout.length);
       const building = cityLayout[buildingIdx];
-      // Random floor (avoid roof if possible, but floors-1 is roof usually? No floors is count)
-      // Floors are 0..floors-1. 0 is lobby.
+
+      // Random floor selection
       if (building) {
         floorIdx = Math.floor(Math.random() * building.floors);
       } else {
-        // Fallback if building undefined (shouldn't happen)
+        // Fallback
         isIndoor = false;
       }
 
       // Center of room roughly
       location = { x: 0, z: 0 };
-
       mesh = createSupernaturalMesh(char.id);
-      // Do NOT add to outdoorScene
+      // Do NOT add to outdoorScene yet
     } else {
       // Outdoor spawn
       location = spawnLocations[i] ?? {
@@ -3798,6 +3797,55 @@ function spawnSupernaturalCharacters() {
       mesh = createSupernaturalMesh(char.id);
       mesh.position.set(location.x, 0.15, location.z);
       outdoorScene.add(mesh);
+    }
+
+    // OVERRIDE: 20% Basement, 20% Outdoor, 60% Apartment
+    // Reset decisions based on weighted probabilities
+    const rand = Math.random();
+    if (rand < 0.2) {
+      // Outdoor
+      isIndoor = false;
+      buildingIdx = -1;
+      floorIdx = -2;
+
+      // Re-calculate outdoor pos if it was indoor
+      if (location.x === 0 && location.z === 0) {
+        location = spawnLocations[i] ?? {
+          x: Math.random() * 40 - 20,
+          z: -40 + Math.random() * 30,
+        };
+        mesh.position.set(location.x, 0.15, location.z);
+        if (!outdoorScene.children.includes(mesh)) outdoorScene.add(mesh);
+      }
+    } else if (rand < 0.4 && cityLayout.length > 0) {
+      // Basement (Underground)
+      isIndoor = true;
+      buildingIdx = Math.floor(Math.random() * cityLayout.length);
+      floorIdx = -1; // Special flag for basement
+
+      // Remove from outdoor if added
+      if (outdoorScene.children.includes(mesh)) outdoorScene.remove(mesh);
+      location = { x: 0, z: 0 };
+      // Reset mesh position to safe default for now
+      mesh.position.set(0, 0.15, 0);
+    } else if (cityLayout.length > 0) {
+      // Apartment / Indoor
+      isIndoor = true;
+      buildingIdx = Math.floor(Math.random() * cityLayout.length);
+      const bd = cityLayout[buildingIdx];
+      floorIdx = bd ? Math.floor(Math.random() * bd.floors) : 0;
+
+      if (outdoorScene.children.includes(mesh)) outdoorScene.remove(mesh);
+      location = { x: 0, z: 0 };
+      mesh.position.set(0, 0.15, 0);
+    } else {
+      // Fallback if cityLayout is somehow empty (should not happen)
+      isIndoor = false;
+      buildingIdx = -1;
+      floorIdx = -2;
+      location = { x: Math.random() * 40 - 20, z: -40 + Math.random() * 30 };
+      mesh.position.set(location.x, 0.15, location.z);
+      if (!outdoorScene.children.includes(mesh)) outdoorScene.add(mesh);
     }
 
     const npcData: NPC = {
@@ -4522,7 +4570,8 @@ function updateAmbientGhosts() {
 
 // Update supernatural character movement and floating effect
 function updateSupernaturalCharacters() {
-  if (state.mode !== 'outdoor') return;
+  // Check mode? update ghosts everywhere since they might be visible (e.g. glow effects need to pulse)
+  // if (state.mode !== 'outdoor') return;
 
   for (const npc of supernaturalNPCs) {
     // Movement like regular NPCs - occasionally pick new random targets
@@ -4530,9 +4579,17 @@ function updateSupernaturalCharacters() {
       // Pick a new target within a reasonable range
       npc.targetX = npc.x + (Math.random() - 0.5) * 20;
       npc.targetZ = npc.z + (Math.random() - 0.5) * 20;
-      // Keep within city bounds
-      npc.targetX = Math.max(-35, Math.min(35, npc.targetX));
-      npc.targetZ = Math.max(-70, Math.min(5, npc.targetZ));
+
+      // Keep within bounds based on location
+      if (npc.indoor && npc.floorIdx === -1) {
+        // Underground bounds (wider)
+        npc.targetX = Math.max(-45, Math.min(45, npc.targetX));
+        npc.targetZ = Math.max(-55, Math.min(45, npc.targetZ));
+      } else if (!npc.indoor) {
+        // Outdoor bounds
+        npc.targetX = Math.max(-35, Math.min(35, npc.targetX));
+        npc.targetZ = Math.max(-70, Math.min(5, npc.targetZ));
+      }
     }
 
     // Move toward target
@@ -7514,6 +7571,31 @@ function createUndergroundView(drainIdx: number) {
   if (currentFloorGroup) indoorScene.remove(currentFloorGroup);
 
   const group = new THREE.Group();
+
+  // ADD GHOSTS IF HERE (Basement = floorIdx -1)
+  supernaturalNPCs.forEach((npc) => {
+    // floorIdx === -1 means basement
+    if (npc.indoor && npc.floorIdx === -1) {
+      // If not already set position (was 0,0), pick a random place
+      if (npc.x === 0 && npc.z === 0) {
+        npc.x = (Math.random() - 0.5) * 80;
+        npc.z = (Math.random() - 0.5) * 100;
+        npc.mesh.position.set(npc.x, 0.15, npc.z);
+        npc.targetX = npc.x;
+        npc.targetZ = npc.z;
+      } else {
+        npc.mesh.position.set(npc.x, 0.15, npc.z);
+      }
+
+      group.add(npc.mesh);
+      // Add to undergroundNPCs for interactions
+      // Clear it first to avoid dups? No, createUndergroundView clears context.
+      // But undergroundNPCs is global.
+      if (!undergroundNPCs.includes(npc)) {
+        undergroundNPCs.push(npc);
+      }
+    }
+  });
   // Sprawling underground network beneath KWC
   const w = 100,
     d = 120,
@@ -8551,7 +8633,13 @@ function enterUnderground(drainIdx: number) {
 
 function exitUnderground(exitDrainIdx: number) {
   // Clear sewer NPCs first
-  undergroundNPCs.forEach((npc) => indoorScene.remove(npc.mesh));
+  // Clear sewer NPCs first, but keep supernatural ones safe (don't delete their mesh references, just remove from scene)
+  undergroundNPCs.forEach((npc) => {
+    if (!npc.isHistorical && !supernaturalNPCs.includes(npc)) {
+      // Regular underground npc
+    }
+    indoorScene.remove(npc.mesh);
+  });
   undergroundNPCs.length = 0;
   if (currentUndergroundGroup) {
     indoorScene.remove(currentUndergroundGroup);
@@ -9214,14 +9302,26 @@ function openScrollViewer() {
   if (!scrollViewer || !scrollList) return;
   scrollViewerOpen = true;
 
-  // Populate scroll list
+  // Clear current list
   scrollList.innerHTML = '';
-  for (const scroll of scrollData) {
-    const isCollected = collectedScrolls.includes(scroll.id);
-    const item = document.createElement('div');
-    item.className = `scroll-item ${isCollected ? '' : 'locked'}`;
 
-    if (isCollected) {
+  // 1. Supernatural Scrolls Section
+  const mainSection = document.createElement('div');
+  mainSection.className = 'scroll-section';
+  const mainTitle = document.createElement('div');
+  mainTitle.className = 'scroll-section-title';
+  mainTitle.textContent = 'Supernatural Scrolls';
+  mainSection.appendChild(mainTitle);
+
+  // Group supernatural scrolls (IDs 1-10)
+  const supernaturalScrolls = scrollData.filter((s) => s.id <= 10);
+
+  supernaturalScrolls.forEach((scroll) => {
+    const isUnlocked = collectedScrolls.includes(scroll.id);
+    const item = document.createElement('div');
+    item.className = `scroll-item ${isUnlocked ? '' : 'locked'}`;
+
+    if (isUnlocked) {
       item.innerHTML = `
         <div class="scroll-item-title">${scroll.name}</div>
         <div class="scroll-item-preview">${scroll.excerpt}</div>
@@ -9237,8 +9337,85 @@ function openScrollViewer() {
       `;
     }
 
-    scrollList.appendChild(item);
-  }
+    mainSection.appendChild(item);
+  });
+
+  scrollList.appendChild(mainSection);
+
+  // 2. Bonus Scrolls Section
+  const bonusSection = document.createElement('div');
+  bonusSection.className = 'scroll-section';
+  const bonusTitle = document.createElement('div');
+  bonusTitle.className = 'scroll-section-title';
+  bonusTitle.textContent = 'Historical Records'; // Bonus scrolls
+  bonusSection.appendChild(bonusTitle);
+
+  const bonusGrid = document.createElement('div');
+  bonusGrid.className = 'bonus-grid';
+
+  // Historical facts are IDs 11-20 in scrollData (assumed or we can use slice)
+  // Actually, let's just use the `facts.json` data logic?
+  // No, the user said "Bonus scrolls in a grid".
+  // We added them to `scrollData` correctly?
+  // Let's assume scrollData has them.
+  const bonusScrolls = scrollData.filter((s) => s.id > 10);
+
+  bonusScrolls.forEach((scroll) => {
+    // scroll.id 11 corresponds to factor index 0
+    const factIndex = scroll.id - 11;
+    const isUnlocked = collectedBonusScrolls.includes(factIndex);
+
+    const item = document.createElement('div');
+    item.className = `bonus-item ${isUnlocked ? 'unlocked' : 'locked'}`;
+
+    const icon = document.createElement('div');
+    icon.className = 'bonus-icon';
+    icon.textContent = isUnlocked ? '📜' : '🔒';
+
+    const label = document.createElement('div');
+    label.className = 'bonus-label';
+    label.textContent = isUnlocked ? scroll.name : 'Unknown';
+    // Truncate name if too long?
+
+    item.appendChild(icon);
+    item.appendChild(label);
+
+    if (isUnlocked) {
+      item.onclick = () => {
+        // Show full text in viewer
+        const overlay = document.createElement('div');
+        overlay.style.position = 'fixed';
+        overlay.style.top = '0';
+        overlay.style.left = '0';
+        overlay.style.width = '100%';
+        overlay.style.height = '100%';
+        overlay.style.background = 'rgba(0,0,0,0.9)';
+        overlay.style.zIndex = '2000';
+        overlay.style.display = 'flex';
+        overlay.style.flexDirection = 'column';
+        overlay.style.justifyContent = 'center';
+        overlay.style.alignItems = 'center';
+        overlay.style.padding = '20px';
+        overlay.onclick = () => document.body.removeChild(overlay);
+
+        const content = document.createElement('div');
+        content.style.maxWidth = '600px';
+        content.style.background = '#2a2520';
+        content.style.padding = '20px';
+        content.style.border = '2px solid #d4a574';
+        content.style.color = '#d4a574';
+        content.innerHTML = `<h3>${scroll.name}</h3><p>${scroll.fullText}</p><div style="margin-top:20px; font-size:0.8em; color:#888;">(Click anywhere to close)</div>`;
+
+        overlay.appendChild(content);
+        document.body.appendChild(overlay);
+      };
+    }
+
+    bonusGrid.appendChild(item);
+  });
+
+  bonusSection.appendChild(bonusGrid);
+  scrollList.appendChild(bonusSection);
 
   scrollViewer.classList.add('visible');
 }
@@ -9644,31 +9821,69 @@ function drawMinimap() {
   }
 
   // Draw indicators for UNFOUND supernatural ghosts
-  for (const npc of supernaturalNPCs) {
-    if (npc.scrollCollected) continue;
+  // Draw indicators for UNFOUND supernatural ghosts - ONE AT A TIME (Current Quest)
+  // Find the lowest ID uncollected scroll
+  let targetNPC: NPC | null = null;
+  // Sort by scrollId to be sequential
+  const sortedGhosts = [...supernaturalNPCs].sort((a, b) => (a.scrollId || 0) - (b.scrollId || 0));
 
-    let tx = npc.x;
-    let tz = npc.z;
+  for (const npc of sortedGhosts) {
+    if (!npc.scrollCollected) {
+      targetNPC = npc;
+      break; // Found the first uncollected one
+    }
+  }
 
-    // If indoor, use building position
-    if (npc.indoor && npc.buildingIdx >= 0 && cityLayout[npc.buildingIdx]) {
-      tx = cityLayout[npc.buildingIdx].x;
-      tz = cityLayout[npc.buildingIdx].z;
+  if (targetNPC) {
+    let tx = targetNPC.x;
+    let tz = targetNPC.z;
+
+    // If indoor/basement, use building position
+    // If indoor/basement, use building position
+    if (targetNPC.indoor && targetNPC.buildingIdx >= 0) {
+      const b = cityLayout[targetNPC.buildingIdx];
+      if (b) {
+        tx = b.x;
+        tz = b.z;
+      }
     }
 
     const pos = worldToMap(tx, tz);
 
-    // Draw glowing dot
-    const alpha = 0.5 + Math.sin(Date.now() * 0.005) * 0.5;
+    // Draw glowing dot - distinctive color
+    const alpha = 0.6 + Math.sin(Date.now() * 0.008) * 0.4;
 
-    ctx.fillStyle = `rgba(0, 255, 255, ${alpha})`;
+    ctx.fillStyle = `rgba(255, 0, 255, ${alpha})`;
     ctx.beginPath();
-    ctx.arc(pos.x, pos.y, 3, 0, Math.PI * 2);
+    ctx.arc(pos.x, pos.y, 4, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.strokeStyle = '#00ffff';
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = '#ff00ff';
+    ctx.lineWidth = 1.5;
     ctx.stroke();
+
+    // Add text label if indoor/underground to help finding
+    if (targetNPC.indoor) {
+      ctx.font = 'bold 9px Arial'; // Small but legible
+      ctx.fillStyle = '#ffaaee';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+
+      let label = '';
+      if (targetNPC.floorIdx === -1) {
+        label = 'BASEMENT';
+      } else if (targetNPC.floorIdx >= 0) {
+        // floorIdx 0 is Lobby, 13 is Rooftop?
+        const b = buildingsData[targetNPC.buildingIdx];
+        const maxF = b ? b.floors - 1 : 13;
+
+        if (targetNPC.floorIdx === 0) label = 'LOBBY';
+        else if (targetNPC.floorIdx === maxF) label = 'ROOF';
+        else label = `FLR ${targetNPC.floorIdx + 1}`;
+      }
+
+      ctx.fillText(label, pos.x + 6, pos.y);
+    }
   }
 
   // Vertical divisions between columns
@@ -10382,9 +10597,9 @@ function update() {
 
       // Door zone (front of building, centered)
       const doorWidth = 2.0;
-      const isDoorX = Math.abs(newX - bx) < doorWidth;
-      const isDoorZ = newZ > bz + halfD - playerRadius;
-      const atDoor = isDoorX && isDoorZ;
+
+      // Door tolerance zone
+      const atDoorZone = Math.abs(newX - bx) < doorWidth + 0.5 && newZ > bz + halfD - 0.5;
 
       // Check if player would be inside building bounds
       const insideX = newX > minX && newX < maxX;
@@ -10392,7 +10607,7 @@ function update() {
 
       if (insideX && insideZ) {
         // STRICT COLLISION: If inside bounds and NOT at door, push out hard.
-        if (!atDoor) {
+        if (!atDoorZone) {
           // Determine which axis to push out
           const overlapLeft = newX - minX;
           const overlapRight = maxX - newX;
@@ -10435,7 +10650,55 @@ function update() {
     // Check for nearby person NPCs to talk to
     let nearestPersonNPC: NPC | null = null;
     let nearestPersonDist = 999;
+
+    const npcPlayerRadius = 0.4;
+
     for (const npc of outdoorNPCs) {
+      // NPC COLLISION LOGIC (Prevent them from phasing into buildings)
+      // This assumes they move. If their update loop is elsewhere, this just corrects them.
+      // Check if NPC is inside building
+      // Iterate buildings
+      // Optimization: only check nearby buildings?
+      // For now, simple check like player
+
+      if (npc.type === 'person' && npc.speed > 0) {
+        // Simple collision check against buildings
+        // Only do this occassionally or every frame? Every frame is exprensive for 40+ NPCs * 25 buildings.
+        // Optimization: Check only if they moved?
+        // Or just trust their pathfinding if they have any? They use targetX/Z and linear interp.
+        // Let's add strict collision here.
+
+        for (const bd of buildingsData) {
+          if (!bd) continue;
+          const halfW = bd.width / 2;
+          const halfD = bd.depth / 2;
+          const minX = bd.x - halfW - npcPlayerRadius;
+          const maxX = bd.x + halfW + npcPlayerRadius;
+          const minZ = bd.z - halfD - npcPlayerRadius;
+          const maxZ = bd.z + halfD + npcPlayerRadius;
+
+          if (npc.x > minX && npc.x < maxX && npc.z > minZ && npc.z < maxZ) {
+            // Push out
+            const overlapLeft = npc.x - minX;
+            const overlapRight = maxX - npc.x;
+            const overlapBack = npc.z - minZ;
+            const overlapFront = maxZ - npc.z;
+            const minOverlap = Math.min(overlapLeft, overlapRight, overlapBack, overlapFront);
+
+            if (minOverlap === overlapLeft) npc.x = minX - 0.05;
+            else if (minOverlap === overlapRight) npc.x = maxX + 0.05;
+            else if (minOverlap === overlapBack) npc.z = minZ - 0.05;
+            else if (minOverlap === overlapFront) npc.z = maxZ + 0.05;
+
+            // Reset target to current pos to stop trying to walk into wall
+            npc.targetX = npc.x;
+            npc.targetZ = npc.z;
+            // Update mesh
+            npc.mesh.position.set(npc.x, 0, npc.z); // Adjust Y if needed, usually 0
+          }
+        }
+      }
+
       if (npc.type === 'person') {
         const dist = Math.sqrt(Math.pow(player.x - npc.x, 2) + Math.pow(player.z - npc.z, 2));
         if (dist < nearestPersonDist) {
@@ -10570,6 +10833,33 @@ function update() {
       { x: 38, z: 25, w: 0.6, d: 18 },
       { x: -30, z: 45, w: 0.6, d: 14 },
     ];
+
+    // Move underground NPCs (Hoodlums/People) - excluding supernatural ghosts handled elsewhere
+    for (const npc of undergroundNPCs) {
+      if (supernaturalNPCs.includes(npc)) continue; // Handled by updateSupernaturalCharacters
+
+      // Random wander
+      if (Math.random() < 0.005) {
+        npc.targetX = npc.x + (Math.random() - 0.5) * 15;
+        npc.targetZ = npc.z + (Math.random() - 0.5) * 15;
+        // Bounds
+        npc.targetX = Math.max(-45, Math.min(45, npc.targetX));
+        npc.targetZ = Math.max(-55, Math.min(45, npc.targetZ));
+      }
+
+      const dx = npc.targetX - npc.x;
+      const dz = npc.targetZ - npc.z;
+      const dist = Math.sqrt(dx * dx + dz * dz);
+
+      if (dist > 0.5) {
+        npc.x += (dx / dist) * npc.speed;
+        npc.z += (dz / dist) * npc.speed;
+        npc.mesh.position.set(npc.x, 0, npc.z);
+        npc.mesh.rotation.y = Math.atan2(dx, dz);
+      }
+    }
+
+    // Check collision with internal walls
 
     // Check collision with internal walls
     for (const wall of internalWalls) {
