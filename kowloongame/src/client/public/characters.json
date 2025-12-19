@@ -1,0 +1,144 @@
+{
+    "characters": [
+      {
+        "id": "judge_bao",
+        "name": "Judge Bao (Bao Zheng)",
+        "story": "Judge Bao Selling Rice in Chenzhou (Sept 17)",
+        "scroll_quote": "The law is not for the powerful alone; it is the scale by which Heaven weighs all under it.",
+        "source": "Judge Bao case stories; standard translation used in Judge Bao anthologies and course packet under, Judge Bao and the Rule of Law - Judge Bao Selling Rice in Chenzhou",
+        "interactions": {
+          "greeting": "You stand before the law. Speak carefully—truth echoes longer than words.",
+          "handoff": "Take this decree. Justice must circulate like grain.",
+          "congratulation": "You have acted without fear or favor. Heaven records this.",
+          "farewell": "Go. Let fairness guide your steps."
+        }
+      },
+  
+      {
+        "id": "phantom_heroine",
+        "name": "The Phantom Heroine",
+        "story": "The Phantom Heroine: Ghosts and Gender (Sept 29)",
+        "scroll_quote": "Though my bones lie cold, my grievance is not buried.",
+        "source": "Seventeenth-century chuanqi ghost stories discussed in The Phantom Heroine: Ghosts and Gender in Seventeenth-Century Chinese Literature",
+        "interactions": {
+          "greeting": "Do not fear me. Fear what was done while I still breathed.",
+          "handoff": "Read this, and remember why I returned.",
+          "congratulation": "You listened when others would not.",
+          "farewell": "I remain until justice is done."
+        }
+      },
+  
+      {
+        "id": "corporeal_ghost",
+        "name": "The Corporeal Female Ghost",
+        "story": "The Ghost’s Body (Sept 29 / Oct 1)",
+        "scroll_quote": "She ate with the living, spoke with the living, and yet no breath warmed her body.",
+        "source": "Discussed and quoted in “The Ghost’s Body,” commonly cited in analyses of embodied ghosts (translation varies slightly across scholarly editions)",
+        "interactions": {
+          "greeting": "You expected mist and shadow. Instead, you found flesh.",
+          "handoff": "Take this proof that death does not erase presence.",
+          "congratulation": "You did not turn away.",
+          "farewell": "Remember what a body can carry."
+        }
+      },
+  
+      {
+        "id": "shen_xiu",
+        "name": "Shen Xiu",
+        "story": "Shen Xiu (Sept 10)",
+        "scroll_quote": "The dead may not speak in court, but Heaven hears them all the same.",
+        "source": "Shen Xiu,” from Stories Old and New (Jingu qiguan), standard English translation",
+        "interactions": {
+          "greeting": "I have already died once. You need not bow.",
+          "handoff": "This is what I returned to say.",
+          "congratulation": "You have finished what I could not.",
+          "farewell": "Now I may finally rest."
+        }
+      },
+  
+      {
+        "id": "magistrate_teng_ghost",
+        "name": "The Wronged Ghost",
+        "story": "Magistrate Teng (Sept 8)",
+        "scroll_quote": "When human judgment failed, the spirit came forth to accuse.",
+        "source": "Magistrate Teng,” Stories Old and New; narrative line used in standard translations",
+        "interactions": {
+          "greeting": "The living ignored me. You did not.",
+          "handoff": "Carry my accusation where I cannot.",
+          "congratulation": "Justice has weight, even beyond the grave.",
+          "farewell": "I will trouble the courts no longer."
+        }
+      },
+  
+      {
+        "id": "underworld_bureaucrat",
+        "name": "Underworld Bureaucrat",
+        "story": "The Chinese Deathscape (Oct 20)",
+        "scroll_quote": "In death, as in life, there are offices to pass and registers to be checked.",
+        "source": "The Chinese Deathscape,” introduction; discussion of afterlife bureaucracy",
+        "interactions": {
+          "greeting": "State your name. The dead queue as well.",
+          "handoff": "Keep this record. Nothing escapes documentation.",
+          "congratulation": "Your papers are in order.",
+          "farewell": "Next."
+        }
+      },
+  
+      {
+        "id": "hungry_ghost",
+        "name": "Hungry Ghost",
+        "story": "The Chinese Deathscape (Oct 20)",
+        "scroll_quote": "With throats no wider than needles, they hunger without relief.",
+        "source": "Traditional hungry-ghost description cited in “The Chinese Deathscape”",
+        "interactions": {
+          "greeting": "Food… no, not food—memory.",
+          "handoff": "This is all I was given.",
+          "congratulation": "You saw me.",
+          "farewell": "I remain."
+        }
+      },
+  
+      {
+        "id": "qutu_zhongren",
+        "name": "Qutu Zhongren",
+        "story": "Qutu Zhongren Cruelly Kills Other Creatures (Oct 22)",
+        "scroll_quote": "He took pleasure not in killing, but in cruelty itself.",
+        "source": "Slapping the Table in Amazement - Qutu Zhongren Cruelly Kills Other Creatures",
+        "interactions": {
+          "greeting": "Do you hear them? They never stop.",
+          "handoff": "Take it. I don’t need reminders.",
+          "shun": "You think this makes you better than me?",
+          "farewell": "Run."
+        }
+      },
+  
+      {
+        "id": "fox_spirit",
+        "name": "Fox Spirit (Huli Jing)",
+        "story": "Alien Kind: Foxes and Late Imperial Chinese Narrative (Nov 3)",
+        "scroll_quote": "Do not ask whether I am human. Ask whether I am sincere.",
+        "source": "Late-imperial fox-spirit tales discussed in “Alien Kind: Foxes…”,Commonly cited fox-spirit sentiment across translations",
+        "interactions": {
+          "greeting": "Relax. If I meant to harm you, you’d never know.",
+          "handoff": "Read carefully. Words bite.",
+          "congratulation": "Clever enough to survive—impressive.",
+          "farewell": "We’ll meet again. Or we won’t."
+        }
+      },
+  
+      {
+        "id": "ghost_witness",
+        "name": "Ghost Witness",
+        "story": "Stories Old and New (general judicial ghost motif)",
+        "scroll_quote": "The ghost testified, and the case was finally resolved.",
+        "source": "Judicial ghost motif recurring in Stories Old and New (Jingu qiguan)",
+        "interactions": {
+          "greeting": "I was summoned.",
+          "handoff": "This is what I said.",
+          "congratulation": "The record is complete.",
+          "farewell": "Court is adjourned."
+        }
+      }
+    ]
+  }
+  

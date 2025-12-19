@@ -24,7 +24,7 @@
     "items": [
       {
         "label": "Create a new post",
-        "description": "kowloongame",
+        "description": "Kowloon Walled City Game",
         "location": "subreddit",
         "forUserType": "moderator",
         "endpoint": "/internal/menu/post-create"
@@ -35,6 +35,6 @@
     "onAppInstall": "/internal/on-app-install"
   },
   "dev": {
-    "subreddit": "kowloongame_dev"
+    "subreddit": "kowloongame_Dev"
   }
 }
