@@ -3758,37 +3758,70 @@ function spawnSupernaturalCharacters() {
     const char = supernaturalCharacters[i];
     if (!char) continue;
 
-    const location = spawnLocations[i] ?? {
-      x: Math.random() * 40 - 20,
-      z: -40 + Math.random() * 30,
-    };
-    const mesh = createSupernaturalMesh(char.id);
-
-    mesh.position.set(location.x, 0.15, location.z); // Slightly floating
-    outdoorScene.add(mesh);
-
     const scrollId = i + 1; // Scroll IDs 1-10
+    const isCollected = collectedScrolls.includes(scrollId);
+
+    // Randomly decide if indoor (40% chance) or use fixed outdoor if not
+    // Note: If collected, we might want them to stay put or disappear?
+    // Usually they stay.
+    const isIndoor = Math.random() < 0.4;
+
+    let location = { x: 0, z: 0 };
+    let buildingIdx = -1;
+    let floorIdx = -1;
+    let mesh: THREE.Group;
+
+    if (isIndoor && cityLayout.length > 0) {
+      // Indoor spawn
+      buildingIdx = Math.floor(Math.random() * cityLayout.length);
+      const building = cityLayout[buildingIdx];
+      // Random floor (avoid roof if possible, but floors-1 is roof usually? No floors is count)
+      // Floors are 0..floors-1. 0 is lobby.
+      if (building) {
+        floorIdx = Math.floor(Math.random() * building.floors);
+      } else {
+        // Fallback if building undefined (shouldn't happen)
+        isIndoor = false;
+      }
+
+      // Center of room roughly
+      location = { x: 0, z: 0 };
+
+      mesh = createSupernaturalMesh(char.id);
+      // Do NOT add to outdoorScene
+    } else {
+      // Outdoor spawn
+      location = spawnLocations[i] ?? {
+        x: Math.random() * 40 - 20,
+        z: -40 + Math.random() * 30,
+      };
+      mesh = createSupernaturalMesh(char.id);
+      mesh.position.set(location.x, 0.15, location.z);
+      outdoorScene.add(mesh);
+    }
 
     const npcData: NPC = {
       mesh,
       x: location.x,
       z: location.z,
-      targetX: location.x + (Math.random() - 0.5) * 10,
-      targetZ: location.z + (Math.random() - 0.5) * 10,
-      speed: 0.035, // Move like regular people, slightly slower
+      targetX: location.x + (Math.random() - 0.5) * 5, // Less movement
+      targetZ: location.z + (Math.random() - 0.5) * 5,
+      speed: 0.035,
       type: 'person',
-      indoor: false,
-      buildingIdx: -1,
-      floorIdx: -1,
+      indoor: isIndoor,
+      buildingIdx: buildingIdx,
+      floorIdx: floorIdx,
       hasScroll: true,
       scrollId,
-      scrollCollected: collectedScrolls.includes(scrollId),
+      scrollCollected: isCollected,
       characterId: char.id,
       characterName: char.name,
     };
 
     supernaturalNPCs.push(npcData);
-    outdoorNPCs.push(npcData); // Also add to outdoor NPCs for collision/interaction
+    if (!isIndoor) {
+      outdoorNPCs.push(npcData);
+    }
     assignedScrollIds.add(scrollId);
   }
 }
@@ -3930,6 +3963,18 @@ function spawnIndoorNPCs(buildingIdx: number, floorIdx: number, floorW: number, 
     indoorScene.remove(npc.mesh);
   }
   indoorNPCs.length = 0;
+
+  // Add supernatural ghosts if they are in this building/floor
+  for (const npc of supernaturalNPCs) {
+    if (npc.indoor && npc.buildingIdx === buildingIdx && npc.floorIdx === floorIdx) {
+      // Reuse the mesh from the npc object
+      // Reset position to be safe (relative to floor center 0,0 usually)
+      // If x,z were 0,0, keep them.
+      npc.mesh.position.set(npc.x, 0.15, npc.z);
+      indoorScene.add(npc.mesh);
+      indoorNPCs.push(npc);
+    }
+  }
 
   // Note: Indoor NPCs no longer carry scrolls - only supernatural characters in the outdoor area do
 
@@ -9598,6 +9643,34 @@ function drawMinimap() {
     ctx.stroke();
   }
 
+  // Draw indicators for UNFOUND supernatural ghosts
+  for (const npc of supernaturalNPCs) {
+    if (npc.scrollCollected) continue;
+
+    let tx = npc.x;
+    let tz = npc.z;
+
+    // If indoor, use building position
+    if (npc.indoor && npc.buildingIdx >= 0 && cityLayout[npc.buildingIdx]) {
+      tx = cityLayout[npc.buildingIdx].x;
+      tz = cityLayout[npc.buildingIdx].z;
+    }
+
+    const pos = worldToMap(tx, tz);
+
+    // Draw glowing dot
+    const alpha = 0.5 + Math.sin(Date.now() * 0.005) * 0.5;
+
+    ctx.fillStyle = `rgba(0, 255, 255, ${alpha})`;
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = '#00ffff';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
   // Vertical divisions between columns
   for (const colX of [-25, -15, -5, 5, 15, 25]) {
     const start = worldToMap(colX, -70);
@@ -10317,24 +10390,27 @@ function update() {
       const insideX = newX > minX && newX < maxX;
       const insideZ = newZ > minZ && newZ < maxZ;
 
-      if (insideX && insideZ && !atDoor) {
-        // Determine which axis to push out
-        const overlapLeft = newX - minX;
-        const overlapRight = maxX - newX;
-        const overlapBack = newZ - minZ;
-        const overlapFront = maxZ - newZ;
+      if (insideX && insideZ) {
+        // STRICT COLLISION: If inside bounds and NOT at door, push out hard.
+        if (!atDoor) {
+          // Determine which axis to push out
+          const overlapLeft = newX - minX;
+          const overlapRight = maxX - newX;
+          const overlapBack = newZ - minZ; // Push towards -Z (north? no, usually back wall)
+          const overlapFront = maxZ - newZ; // Push towards +Z (south/street)
 
-        const minOverlap = Math.min(overlapLeft, overlapRight, overlapBack, overlapFront);
+          const minOverlap = Math.min(overlapLeft, overlapRight, overlapBack, overlapFront);
 
-        // Push player out of building along the axis with smallest overlap
-        if (minOverlap === overlapLeft && !atDoor) {
-          newX = minX;
-        } else if (minOverlap === overlapRight && !atDoor) {
-          newX = maxX;
-        } else if (minOverlap === overlapBack) {
-          newZ = minZ;
-        } else if (minOverlap === overlapFront && !isDoorX) {
-          newZ = maxZ;
+          // Push player out of building along the axis with smallest overlap
+          if (minOverlap === overlapLeft) {
+            newX = minX - 0.01; // Extra nudge
+          } else if (minOverlap === overlapRight) {
+            newX = maxX + 0.01;
+          } else if (minOverlap === overlapBack) {
+            newZ = minZ - 0.01;
+          } else if (minOverlap === overlapFront) {
+            newZ = maxZ + 0.01;
+          }
         }
       }
 
