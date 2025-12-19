@@ -49,6 +49,32 @@ const state = {
 };
 
 // ============================================
+// BACKGROUND MUSIC
+// ============================================
+const backgroundMusic = new Audio('/kowloontheme.mp3');
+backgroundMusic.loop = true;
+backgroundMusic.volume = 0.3;
+
+// ============================================
+// KOWLOON FACTS - Loaded from JSON for NPC dialogues
+// ============================================
+interface KowloonFact {
+  fact: string;
+}
+let kowloonFacts: KowloonFact[] = [];
+
+// Load facts from JSON
+fetch('/kowloonfacts.json')
+  .then((response) => response.json())
+  .then((data: KowloonFact[]) => {
+    kowloonFacts = data;
+    console.log(`Loaded ${kowloonFacts.length} Kowloon facts`);
+  })
+  .catch((error) => {
+    console.error('Failed to load kowloonfacts.json:', error);
+  });
+
+// ============================================
 // LIGHTING - Bright enough to see
 // ============================================
 const ambient = new THREE.AmbientLight(0xffffff, 0.7);
@@ -6429,6 +6455,11 @@ function setupCustomization() {
     // Stop preview if running
     previewAnimating = false;
     customizePopup?.classList.remove('visible');
+
+    // Start background music
+    backgroundMusic.play().catch((e) => {
+      console.log('Audio autoplay blocked, will play on first interaction:', e);
+    });
   });
 }
 
@@ -6602,19 +6633,16 @@ function showNPCDialogue(npc: NPC) {
       npcDialogueAccept.textContent = 'ACCEPT SCROLL';
     }
   } else {
-    // Regular NPC dialogue
-    const genericDialogues = [
-      '"The walls have ears here. Be careful who you trust."',
-      '"I\'ve lived here for forty years. The city knows me."',
-      '"Looking for something? You won\'t find it standing there."',
-      '"The dentist on the third floor is good. No questions asked."',
-      '"Stay out of the underground unless you know the way out."',
-      '"The noodles from Mr. Chen\'s stall are the best in Kowloon."',
-      '"Don\'t bother the animals. Some of them aren\'t what they seem."',
-    ];
-    const randomDialogue = genericDialogues[Math.floor(Math.random() * genericDialogues.length)];
-    npcDialogueHeader.textContent = 'RESIDENT';
-    npcDialogueText.textContent = randomDialogue ?? '"..."';
+    // Regular NPC dialogue - use random fact from kowloonfacts.json
+    let dialogueText = '"..."';
+    if (kowloonFacts.length > 0) {
+      const randomFact = kowloonFacts[Math.floor(Math.random() * kowloonFacts.length)];
+      if (randomFact) {
+        dialogueText = `"${randomFact.fact}"`;
+      }
+    }
+    npcDialogueHeader.textContent = 'DID YOU KNOW?';
+    npcDialogueText.textContent = dialogueText;
     npcDialogueAccept.classList.add('hidden');
   }
 
