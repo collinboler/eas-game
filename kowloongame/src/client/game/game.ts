@@ -1915,59 +1915,59 @@ interface Scroll {
 const scrollData: Scroll[] = [
   {
     id: 1,
-    name: 'Jackie Pullinger - The Missionary',
+    name: 'The Ungoverned City',
     excerpt:
-      '"I came to Hong Kong in 1966 with nothing but faith. In the Walled City, I found my calling among those society had abandoned."',
+      '"They called it lawless, but we had our own laws... Written not in books, but in the understanding between neighbors."',
     fullText:
-      'I arrived in Hong Kong in 1966, a young British woman of twenty-two with no mission board, no funding, just a conviction that God had called me here. I found the Walled City — a place of darkness, drugs, and despair. The triads ruled the opium dens. Addicts lay in the alleys, forgotten by the world. I started a youth club, then began helping addicts recover. We prayed through withdrawals. Men who had been enslaved to heroin for decades found freedom without medication. The authorities thought I was mad. The triads watched me carefully at first, then left me alone. Over the years, I saw thousands transformed — gang members, prostitutes, the hopeless ones. I founded St. Stephen\'s Society to continue this work. The Walled City is gone now, demolished in 1993, but its people taught me that light shines brightest in the darkest places. I wrote my story in "Chasing the Dragon." Even today, I see former addicts who now help others find the same freedom they discovered in those cramped, dark rooms.<br><br><em>Source: <a href="https://en.wikipedia.org/wiki/Jackie_Pullinger" target="_blank">Jackie Pullinger - Wikipedia</a></em>',
+      'They called it lawless, but we had our own laws. Written not in books, but in the understanding between neighbors. When the British and the Chinese both claimed sovereignty but neither would govern, we governed ourselves. The triads kept order in their way. The dentists and doctors worked without licenses but with decades of skill. We were 50,000 souls in six acres, and we survived.',
   },
   {
     id: 2,
-    name: 'Albert Ng - The Rooftop Child',
+    name: 'The Rooftop Gardens',
     excerpt:
-      '"We flew kites so high they nearly touched the planes descending to Kai Tak. We did not know we were poor — we only knew we were free."',
+      '"Above the darkness, we grew life. Tomatoes, herbs, even small trees — a secret garden atop the concrete jungle."',
     fullText:
-      'My family moved to the Walled City from mainland China when I was young, in the mid-1970s. We lived there until I left for university in 1988. To outsiders, it was a slum. To me, it was home. I played ping-pong in the narrow hallways with my friends. On the rooftops, we flew kites so high they nearly touched the airliners descending to Kai Tak Airport — we could see the passengers in the windows. We did not understand the danger. We had no running water in our flat, so as a boy, one of my daily chores was fetching water from downstairs. Eventually, my mother saved enough for a washing machine, even air conditioning — small luxuries that meant everything. My mother raised me and my two sisters alone in that cramped space. Her sacrifices shaped who I am. I returned home every weekend even during university. I still dream of walking those alleys. I am now a pastor at Island ECC, and I hope someday to write a book about my childhood. The Walled City taught me compassion for the underprivileged.<br><br><em>Source: <a href="https://www.scmp.com/news/hong-kong/society/article/3154619/kowloon-walled-city-former-residents-recall-life-hong-kongs" target="_blank">SCMP - Former Residents Recall Life</a></em>',
+      'Above the darkness, we grew life. Tomatoes, herbs, even small trees — a secret garden atop the concrete jungle. The rooftops were our sky, our freedom. While below, the alleyways never saw sunlight, up here we breathed. Children played among the water tanks. Old men practiced tai chi at dawn. The city reached fourteen stories, but on top, we touched the clouds.',
   },
   {
     id: 3,
-    name: 'Chan Wai Shui - The Noodle Master',
+    name: 'The Water Carriers',
     excerpt:
-      '"Every day, five hundred catties of noodles. Fifty customers waiting. My hands never stopped moving."',
+      '"Before the pipes came, we carried water up thirteen floors. Bucket by bucket. That is how we learned to be strong."',
     fullText:
-      'From 1979 until they tore down the city, I ran my noodle factory on Lo Yan Street. Every single day, we produced five hundred catties of noodles — that is more than three hundred kilograms — and fifty catties of wonton pastry. Fifty regular customers depended on us. The work started before dawn and continued until my arms ached and my back screamed. The Walled City was perfect for small factories like mine. No government inspectors, no licensing fees, no regulations telling us how to work. Just good noodles made the traditional way. My whole family worked beside me. My wife, my children when they were old enough. The factory was our life. When the demolition notices came, I did not know what to do. How do you move a lifetime of work? How do you explain to customers who have bought your noodles for fifteen years that you must close? They gave us compensation, found us new housing. But it was never the same. The noodles I make now are good, but something was lost when those walls came down. The spirit of the place lives in every strand I still make.<br><br><em>Source: <a href="https://industrialhistoryhk.org/walled-city-industries/" target="_blank">Industrial History HK</a></em>',
+      'Before the pipes came, we carried water up thirteen floors. Bucket by bucket. That is how we learned to be strong. The government said we were illegal, so they gave us nothing. No water, no electricity, no sewage. So we made our own. We tapped the mains ourselves, ran wires where we could. Some called it stealing. We called it surviving.',
   },
   {
     id: 4,
-    name: 'Hui Tung Choy - The Factory Father',
+    name: 'The Narrow Ways',
     excerpt:
-      '"My factory was two hundred square feet. No windows. In summer, the heat was unbearable. But my daughters helped me, and together we survived."',
+      '"The alleys were so tight two people could not pass. But we knew every turn, every shortcut, every shadow."',
     fullText:
-      'My noodle factory was barely two hundred square feet. During the day, it was a workshop. At night, we cleared the equipment and it became our home. There were no windows — ventilation was terrible. In summer, the heat was almost unbearable, the air thick with flour dust and humidity. I worked twelve hours a day, seven days a week. My two daughters helped me whenever they could, their small hands quick and nimble. We could not afford to hire workers, so family was everything. Some days I would look at my girls, covered in flour, and wonder if I was giving them a childhood or stealing it. But what choice did we have? The Walled City let people like me work. Outside, I would need licenses, health inspections, permits — things that cost more money than I could ever save. In here, I could feed my family with honest work. Many workers in the factories lost fingers to the machines. I was lucky — I kept all of mine. When the city was demolished, my daughters were grown. They have better lives now. But I still remember the sound of the noodle machine, humming through the night.<br><br><em>Source: <a href="https://www.theguardian.com/cities/gallery/2014/apr/29/kowloon-walled-city-hong-kong-photographs" target="_blank">The Guardian - Kowloon Walled City</a></em>',
+      'The alleys were so tight two people could not pass. But we knew every turn, every shortcut, every shadow. Outsiders got lost in minutes. For us, it was home. The neon signs flickered overhead, the wires crisscrossed like spiderwebs, and the smell of fish balls mixed with incense. You could walk for hours and never see the sun.',
   },
   {
     id: 5,
-    name: 'Ida Shum - The Community Voice',
+    name: 'The Night Doctors',
     excerpt:
-      '"When it rained, the streets flooded with trash and sewage. We waded through it together. That was life in the Walled City."',
+      '"They had no degrees, but they had something better — fifty years of healing. The people trusted them more than any hospital."',
     fullText:
-      'I am sixty-two years old now, and I still remember everything. When the heavy rains came, the streets of the Walled City would flood completely. Trash floated everywhere, sometimes sewage too. We had no choice but to wade through it — there was no other way to get home, to get food, to get anywhere. People outside thought we were animals living in filth. They did not understand. We were a community. Neighbors looked after neighbors. If someone was sick, we brought them soup. If someone was in trouble, we helped without being asked. The buildings were so close together that you could hear your neighbor\'s conversations, their arguments, their laughter. Privacy was impossible, but loneliness was too. We were thirty-three thousand people packed into a space smaller than a city block. We formed our own de facto council, organized our own volunteer fire brigade because the real firemen would not come inside. We governed ourselves because no one else would. When they demolished it, they scattered us across Hong Kong. I have a proper flat now with running water and a toilet that works. But I miss hearing my neighbors through the walls.<br><br><em>Source: <a href="https://www.scmp.com/video/hong-kong/3262266/kowloon-walled-city-former-residents-share-their-memories-30-years-after" target="_blank">SCMP - Residents Share Memories</a></em>',
+      "They had no degrees, but they had something better — fifty years of healing. The people trusted them more than any hospital. Dentists pulled teeth for five dollars. Bone-setters fixed what the modern doctors couldn't. When you are poor and unregistered, you cannot go to the official clinics. So the city made its own. And they were good. Very good.",
   },
   {
     id: 6,
-    name: 'Chan Kwong - The Entrepreneur',
+    name: 'The Factory Floors',
     excerpt:
-      '"I started as a hawker, then worked in plastics. In 1970, I opened my golf ball factory. The Walled City let people like me dream."',
+      '"We made everything in the Walled City. Fish balls, noodles, plastic toys. The machines never stopped humming."',
     fullText:
-      'Before the Walled City, I was nothing. A hawker selling goods on the street, then a worker in a plastics factory, taking orders, earning little. But in 1970, I saw an opportunity. Golf was becoming popular with the wealthy in Hong Kong, and they needed golf balls. I opened my own factory inside the Walled City. Why there? Because anywhere else, I would have needed capital I did not have — licenses, permits, inspections, rent I could not afford. The Walled City asked no questions. If you could work, you could build a business. My factory grew. I hired workers, bought better equipment. We produced thousands of golf balls that ended up on courses across Hong Kong, used by rich businessmen who never knew their balls came from the darkest corner of the city. My children helped with packaging after school. My wife kept the books. It was hard work, but it was ours. The Walled City gave people like me a chance to rise. When it was demolished, I had saved enough to start again outside. Not everyone was so lucky. I think about the young entrepreneurs there now, with nowhere to go. The city took away our opportunity when it took away those walls.<br><br><em>Source: <a href="https://www.archdaily.com/492032/kowloon-the-walled-city-a-documentary-look-at-the-city-that-is-no-more" target="_blank">ArchDaily - City of Darkness</a></em>',
+      'We made everything in the Walled City. Fish balls, noodles, plastic toys, metal parts. The machines never stopped humming. Whole families worked together, lived together, ate together in rooms no bigger than a closet. The children helped after school. There was no separation between work and home. The factory was our living room.',
   },
   {
     id: 7,
-    name: 'Dr. Wong - The Unlicensed Healer',
+    name: 'The Last Days',
     excerpt:
-      '"I learned my craft from my father, and he from his. For fifty years, I healed the people the hospitals would not see."',
+      '"When they finally tore it down, we wept. Not for the buildings, but for what we had built together in the darkness."',
     fullText:
-      'My family has practiced dentistry for three generations. My grandfather learned in mainland China, taught my father, who taught me. When we came to Hong Kong, we discovered our credentials meant nothing here. To practice legally, we would need to start over — new examinations, new certifications, years of training we could not afford. So we went to the Walled City, where credentials did not matter. Only skill. For fifty years, I pulled teeth, filled cavities, treated infections. I charged five dollars when the hospitals charged fifty. My patients were the poor, the unregistered, the people Hong Kong\'s medical system refused to see. They trusted me more than any licensed doctor because I was one of them. Some say we were dangerous, practicing without oversight. But I ask you — what is more dangerous: an unlicensed dentist with fifty years of experience, or telling a man in pain that he cannot afford to be treated? When they demolished the Walled City, many of us lost our livelihoods. Some continued practicing quietly, passing knowledge to the next generation. I hear there are still unlicensed practitioners in Hong Kong today, trained by those who learned in our dark little clinics. Our legacy continues.<br><br><em>Source: <a href="https://en.wikipedia.org/wiki/Kowloon_Walled_City" target="_blank">Kowloon Walled City - Wikipedia</a></em>',
+      'When they finally tore it down in 1993, we wept. Not for the buildings — they were crumbling, dangerous, unfit. But for what we had built together in the darkness. A community that asked nothing of the outside world because the outside world gave us nothing. They made a park where we once lived. Sometimes I visit, and I swear I can still hear the mah-jong tiles clicking.',
   },
 ];
 
@@ -2086,791 +2086,6 @@ function createPersonMesh(): THREE.Group {
   group.add(rightHand);
 
   return group;
-}
-
-// ============================================
-// HISTORICAL RESIDENT NPC CREATORS
-// Each creates a distinctive appearance for real KWC residents
-// ============================================
-
-// Jackie Pullinger - British missionary, Western woman with lighter hair, modest dress
-function createJackiePullingerNPC(): THREE.Group {
-  const group = new THREE.Group();
-
-  // Modest blue dress (torso)
-  const torso = new THREE.Mesh(
-    new THREE.BoxGeometry(0.38, 0.55, 0.24),
-    new THREE.MeshLambertMaterial({ color: 0x3a5a8a }) // Modest blue
-  );
-  torso.position.y = 0.75;
-  group.add(torso);
-
-  // Dress skirt extending down
-  const skirt = new THREE.Mesh(
-    new THREE.BoxGeometry(0.42, 0.3, 0.26),
-    new THREE.MeshLambertMaterial({ color: 0x3a5a8a })
-  );
-  skirt.position.y = 0.4;
-  group.add(skirt);
-
-  // Legs (covered by skirt, just feet visible)
-  const leftFoot = new THREE.Mesh(
-    new THREE.BoxGeometry(0.1, 0.1, 0.14),
-    new THREE.MeshLambertMaterial({ color: 0x4a3728 }) // Brown shoes
-  );
-  leftFoot.position.set(-0.1, 0.05, 0.02);
-  group.add(leftFoot);
-
-  const rightFoot = new THREE.Mesh(
-    new THREE.BoxGeometry(0.1, 0.1, 0.14),
-    new THREE.MeshLambertMaterial({ color: 0x4a3728 })
-  );
-  rightFoot.position.set(0.1, 0.05, 0.02);
-  group.add(rightFoot);
-
-  // Head - lighter Western skin tone
-  const head = new THREE.Mesh(
-    new THREE.BoxGeometry(0.3, 0.3, 0.26),
-    new THREE.MeshLambertMaterial({ color: 0xf5dcc8 }) // Light skin
-  );
-  head.position.y = 1.18;
-  group.add(head);
-
-  // Light brown/blonde hair - longer, pulled back
-  const hair = new THREE.Mesh(
-    new THREE.BoxGeometry(0.34, 0.22, 0.3),
-    new THREE.MeshLambertMaterial({ color: 0xb8860b }) // Golden brown
-  );
-  hair.position.y = 1.35;
-  group.add(hair);
-
-  // Hair bun at back
-  const bun = new THREE.Mesh(
-    new THREE.SphereGeometry(0.1, 8, 8),
-    new THREE.MeshLambertMaterial({ color: 0xb8860b })
-  );
-  bun.position.set(0, 1.25, -0.18);
-  group.add(bun);
-
-  // Blue eyes
-  const leftEye = new THREE.Mesh(
-    new THREE.SphereGeometry(0.035, 6, 6),
-    new THREE.MeshBasicMaterial({ color: 0x4169e1 }) // Blue
-  );
-  leftEye.position.set(-0.07, 1.2, 0.13);
-  group.add(leftEye);
-
-  const rightEye = new THREE.Mesh(
-    new THREE.SphereGeometry(0.035, 6, 6),
-    new THREE.MeshBasicMaterial({ color: 0x4169e1 })
-  );
-  rightEye.position.set(0.07, 1.2, 0.13);
-  group.add(rightEye);
-
-  // Arms
-  const leftArm = new THREE.Mesh(
-    new THREE.BoxGeometry(0.09, 0.38, 0.09),
-    new THREE.MeshLambertMaterial({ color: 0x3a5a8a })
-  );
-  leftArm.position.set(-0.26, 0.72, 0);
-  group.add(leftArm);
-
-  const rightArm = new THREE.Mesh(
-    new THREE.BoxGeometry(0.09, 0.38, 0.09),
-    new THREE.MeshLambertMaterial({ color: 0x3a5a8a })
-  );
-  rightArm.position.set(0.26, 0.72, 0);
-  group.add(rightArm);
-
-  // Hands
-  const leftHand = new THREE.Mesh(
-    new THREE.BoxGeometry(0.07, 0.09, 0.07),
-    new THREE.MeshLambertMaterial({ color: 0xf5dcc8 })
-  );
-  leftHand.position.set(-0.26, 0.48, 0);
-  group.add(leftHand);
-
-  const rightHand = new THREE.Mesh(
-    new THREE.BoxGeometry(0.07, 0.09, 0.07),
-    new THREE.MeshLambertMaterial({ color: 0xf5dcc8 })
-  );
-  rightHand.position.set(0.26, 0.48, 0);
-  group.add(rightHand);
-
-  // Small cross necklace
-  const crossV = new THREE.Mesh(
-    new THREE.BoxGeometry(0.02, 0.06, 0.02),
-    new THREE.MeshLambertMaterial({ color: 0xffd700 }) // Gold
-  );
-  crossV.position.set(0, 0.92, 0.13);
-  group.add(crossV);
-
-  const crossH = new THREE.Mesh(
-    new THREE.BoxGeometry(0.04, 0.02, 0.02),
-    new THREE.MeshLambertMaterial({ color: 0xffd700 })
-  );
-  crossH.position.set(0, 0.94, 0.13);
-  group.add(crossH);
-
-  return group;
-}
-
-// Albert Ng - Young Chinese man, casual 1980s clothes, friendly appearance
-function createAlbertNgNPC(): THREE.Group {
-  const group = new THREE.Group();
-
-  // Casual polo shirt
-  const torso = new THREE.Mesh(
-    new THREE.BoxGeometry(0.38, 0.48, 0.24),
-    new THREE.MeshLambertMaterial({ color: 0x4a90a4 }) // Teal polo
-  );
-  torso.position.y = 0.74;
-  group.add(torso);
-
-  // Polo collar
-  const collar = new THREE.Mesh(
-    new THREE.BoxGeometry(0.24, 0.06, 0.14),
-    new THREE.MeshLambertMaterial({ color: 0x4a90a4 })
-  );
-  collar.position.set(0, 1.0, 0.08);
-  group.add(collar);
-
-  // Khaki pants
-  const leftLeg = new THREE.Mesh(
-    new THREE.BoxGeometry(0.14, 0.5, 0.15),
-    new THREE.MeshLambertMaterial({ color: 0xc3b091 }) // Khaki
-  );
-  leftLeg.position.set(-0.1, 0.25, 0);
-  group.add(leftLeg);
-
-  const rightLeg = new THREE.Mesh(
-    new THREE.BoxGeometry(0.14, 0.5, 0.15),
-    new THREE.MeshLambertMaterial({ color: 0xc3b091 })
-  );
-  rightLeg.position.set(0.1, 0.25, 0);
-  group.add(rightLeg);
-
-  // Head
-  const head = new THREE.Mesh(
-    new THREE.BoxGeometry(0.3, 0.3, 0.26),
-    new THREE.MeshLambertMaterial({ color: 0xd4a574 }) // Chinese skin tone
-  );
-  head.position.y = 1.18;
-  group.add(head);
-
-  // Short black hair - neat, student-like
-  const hair = new THREE.Mesh(
-    new THREE.BoxGeometry(0.32, 0.1, 0.28),
-    new THREE.MeshLambertMaterial({ color: 0x111111 }) // Black
-  );
-  hair.position.y = 1.38;
-  group.add(hair);
-
-  // Eyes
-  const leftEye = new THREE.Mesh(
-    new THREE.SphereGeometry(0.035, 6, 6),
-    new THREE.MeshBasicMaterial({ color: 0x2a1a0a }) // Dark brown
-  );
-  leftEye.position.set(-0.07, 1.2, 0.13);
-  group.add(leftEye);
-
-  const rightEye = new THREE.Mesh(
-    new THREE.SphereGeometry(0.035, 6, 6),
-    new THREE.MeshBasicMaterial({ color: 0x2a1a0a })
-  );
-  rightEye.position.set(0.07, 1.2, 0.13);
-  group.add(rightEye);
-
-  // Arms
-  const leftArm = new THREE.Mesh(
-    new THREE.BoxGeometry(0.09, 0.36, 0.09),
-    new THREE.MeshLambertMaterial({ color: 0x4a90a4 })
-  );
-  leftArm.position.set(-0.26, 0.7, 0);
-  group.add(leftArm);
-
-  const rightArm = new THREE.Mesh(
-    new THREE.BoxGeometry(0.09, 0.36, 0.09),
-    new THREE.MeshLambertMaterial({ color: 0x4a90a4 })
-  );
-  rightArm.position.set(0.26, 0.7, 0);
-  group.add(rightArm);
-
-  // Hands
-  const leftHand = new THREE.Mesh(
-    new THREE.BoxGeometry(0.07, 0.09, 0.07),
-    new THREE.MeshLambertMaterial({ color: 0xd4a574 })
-  );
-  leftHand.position.set(-0.26, 0.47, 0);
-  group.add(leftHand);
-
-  const rightHand = new THREE.Mesh(
-    new THREE.BoxGeometry(0.07, 0.09, 0.07),
-    new THREE.MeshLambertMaterial({ color: 0xd4a574 })
-  );
-  rightHand.position.set(0.26, 0.47, 0);
-  group.add(rightHand);
-
-  return group;
-}
-
-// Chan Wai Shui - Noodle factory owner, apron, chef headband
-function createChanWaiShuiNPC(): THREE.Group {
-  const group = new THREE.Group();
-
-  // White undershirt
-  const torso = new THREE.Mesh(
-    new THREE.BoxGeometry(0.4, 0.5, 0.25),
-    new THREE.MeshLambertMaterial({ color: 0xf0f0e0 }) // Off-white
-  );
-  torso.position.y = 0.75;
-  group.add(torso);
-
-  // Flour-dusted apron
-  const apron = new THREE.Mesh(
-    new THREE.BoxGeometry(0.36, 0.55, 0.08),
-    new THREE.MeshLambertMaterial({ color: 0xddd8c8 }) // Dusty white
-  );
-  apron.position.set(0, 0.65, 0.12);
-  group.add(apron);
-
-  // Apron strings
-  const apronString = new THREE.Mesh(
-    new THREE.BoxGeometry(0.5, 0.03, 0.02),
-    new THREE.MeshLambertMaterial({ color: 0xddd8c8 })
-  );
-  apronString.position.set(0, 0.85, 0.05);
-  group.add(apronString);
-
-  // Dark work pants
-  const leftLeg = new THREE.Mesh(
-    new THREE.BoxGeometry(0.14, 0.5, 0.16),
-    new THREE.MeshLambertMaterial({ color: 0x2a2a2a })
-  );
-  leftLeg.position.set(-0.1, 0.25, 0);
-  group.add(leftLeg);
-
-  const rightLeg = new THREE.Mesh(
-    new THREE.BoxGeometry(0.14, 0.5, 0.16),
-    new THREE.MeshLambertMaterial({ color: 0x2a2a2a })
-  );
-  rightLeg.position.set(0.1, 0.25, 0);
-  group.add(rightLeg);
-
-  // Head
-  const head = new THREE.Mesh(
-    new THREE.BoxGeometry(0.32, 0.32, 0.28),
-    new THREE.MeshLambertMaterial({ color: 0xd4a574 })
-  );
-  head.position.y = 1.2;
-  group.add(head);
-
-  // Chef headband (hachimaki style)
-  const headband = new THREE.Mesh(
-    new THREE.BoxGeometry(0.36, 0.06, 0.32),
-    new THREE.MeshLambertMaterial({ color: 0xffffff }) // White
-  );
-  headband.position.y = 1.38;
-  group.add(headband);
-
-  // Hair visible above headband
-  const hair = new THREE.Mesh(
-    new THREE.BoxGeometry(0.34, 0.08, 0.3),
-    new THREE.MeshLambertMaterial({ color: 0x222222 })
-  );
-  hair.position.y = 1.44;
-  group.add(hair);
-
-  // Eyes
-  const leftEye = new THREE.Mesh(
-    new THREE.SphereGeometry(0.04, 6, 6),
-    new THREE.MeshBasicMaterial({ color: 0x111111 })
-  );
-  leftEye.position.set(-0.08, 1.22, 0.14);
-  group.add(leftEye);
-
-  const rightEye = new THREE.Mesh(
-    new THREE.SphereGeometry(0.04, 6, 6),
-    new THREE.MeshBasicMaterial({ color: 0x111111 })
-  );
-  rightEye.position.set(0.08, 1.22, 0.14);
-  group.add(rightEye);
-
-  // Arms (rolled up sleeves)
-  const leftArm = new THREE.Mesh(
-    new THREE.BoxGeometry(0.1, 0.35, 0.1),
-    new THREE.MeshLambertMaterial({ color: 0xd4a574 }) // Bare arms
-  );
-  leftArm.position.set(-0.28, 0.68, 0);
-  group.add(leftArm);
-
-  const rightArm = new THREE.Mesh(
-    new THREE.BoxGeometry(0.1, 0.35, 0.1),
-    new THREE.MeshLambertMaterial({ color: 0xd4a574 })
-  );
-  rightArm.position.set(0.28, 0.68, 0);
-  group.add(rightArm);
-
-  // Hands
-  const leftHand = new THREE.Mesh(
-    new THREE.BoxGeometry(0.08, 0.1, 0.08),
-    new THREE.MeshLambertMaterial({ color: 0xd4a574 })
-  );
-  leftHand.position.set(-0.28, 0.45, 0);
-  group.add(leftHand);
-
-  const rightHand = new THREE.Mesh(
-    new THREE.BoxGeometry(0.08, 0.1, 0.08),
-    new THREE.MeshLambertMaterial({ color: 0xd4a574 })
-  );
-  rightHand.position.set(0.28, 0.45, 0);
-  group.add(rightHand);
-
-  return group;
-}
-
-// Hui Tung Choy - Factory worker, tired, work clothes, flour-dusted
-function createHuiTungChoyNPC(): THREE.Group {
-  const group = new THREE.Group();
-
-  // Worn grey work shirt
-  const torso = new THREE.Mesh(
-    new THREE.BoxGeometry(0.4, 0.5, 0.25),
-    new THREE.MeshLambertMaterial({ color: 0x6a6a68 }) // Dusty grey
-  );
-  torso.position.y = 0.75;
-  group.add(torso);
-
-  // Simple work apron (shorter)
-  const apron = new THREE.Mesh(
-    new THREE.BoxGeometry(0.32, 0.35, 0.06),
-    new THREE.MeshLambertMaterial({ color: 0x8b7355 }) // Brown canvas
-  );
-  apron.position.set(0, 0.58, 0.13);
-  group.add(apron);
-
-  // Worn dark pants
-  const leftLeg = new THREE.Mesh(
-    new THREE.BoxGeometry(0.14, 0.5, 0.16),
-    new THREE.MeshLambertMaterial({ color: 0x3a3a38 })
-  );
-  leftLeg.position.set(-0.1, 0.25, 0);
-  group.add(leftLeg);
-
-  const rightLeg = new THREE.Mesh(
-    new THREE.BoxGeometry(0.14, 0.5, 0.16),
-    new THREE.MeshLambertMaterial({ color: 0x3a3a38 })
-  );
-  rightLeg.position.set(0.1, 0.25, 0);
-  group.add(rightLeg);
-
-  // Head - weathered skin
-  const head = new THREE.Mesh(
-    new THREE.BoxGeometry(0.32, 0.32, 0.28),
-    new THREE.MeshLambertMaterial({ color: 0xc49a6c }) // Tan
-  );
-  head.position.y = 1.2;
-  group.add(head);
-
-  // Thinning grey-black hair
-  const hair = new THREE.Mesh(
-    new THREE.BoxGeometry(0.32, 0.08, 0.28),
-    new THREE.MeshLambertMaterial({ color: 0x3a3a3a }) // Greying
-  );
-  hair.position.y = 1.4;
-  group.add(hair);
-
-  // Tired eyes (slightly smaller)
-  const leftEye = new THREE.Mesh(
-    new THREE.SphereGeometry(0.035, 6, 6),
-    new THREE.MeshBasicMaterial({ color: 0x111111 })
-  );
-  leftEye.position.set(-0.08, 1.2, 0.14);
-  group.add(leftEye);
-
-  const rightEye = new THREE.Mesh(
-    new THREE.SphereGeometry(0.035, 6, 6),
-    new THREE.MeshBasicMaterial({ color: 0x111111 })
-  );
-  rightEye.position.set(0.08, 1.2, 0.14);
-  group.add(rightEye);
-
-  // Arms
-  const leftArm = new THREE.Mesh(
-    new THREE.BoxGeometry(0.1, 0.4, 0.1),
-    new THREE.MeshLambertMaterial({ color: 0x6a6a68 })
-  );
-  leftArm.position.set(-0.28, 0.7, 0);
-  group.add(leftArm);
-
-  const rightArm = new THREE.Mesh(
-    new THREE.BoxGeometry(0.1, 0.4, 0.1),
-    new THREE.MeshLambertMaterial({ color: 0x6a6a68 })
-  );
-  rightArm.position.set(0.28, 0.7, 0);
-  group.add(rightArm);
-
-  // Hands
-  const leftHand = new THREE.Mesh(
-    new THREE.BoxGeometry(0.08, 0.1, 0.08),
-    new THREE.MeshLambertMaterial({ color: 0xc49a6c })
-  );
-  leftHand.position.set(-0.28, 0.45, 0);
-  group.add(leftHand);
-
-  const rightHand = new THREE.Mesh(
-    new THREE.BoxGeometry(0.08, 0.1, 0.08),
-    new THREE.MeshLambertMaterial({ color: 0xc49a6c })
-  );
-  rightHand.position.set(0.28, 0.45, 0);
-  group.add(rightHand);
-
-  return group;
-}
-
-// Ida Shum - Older Chinese woman, practical dress, warm demeanor
-function createIdaShumNPC(): THREE.Group {
-  const group = new THREE.Group();
-
-  // Traditional-style blouse (cheongsam-inspired top)
-  const torso = new THREE.Mesh(
-    new THREE.BoxGeometry(0.38, 0.5, 0.24),
-    new THREE.MeshLambertMaterial({ color: 0x6b4423 }) // Warm brown
-  );
-  torso.position.y = 0.75;
-  group.add(torso);
-
-  // Mandarin collar
-  const collar = new THREE.Mesh(
-    new THREE.BoxGeometry(0.18, 0.08, 0.12),
-    new THREE.MeshLambertMaterial({ color: 0x6b4423 })
-  );
-  collar.position.set(0, 1.02, 0.08);
-  group.add(collar);
-
-  // Wide pants (practical for work)
-  const leftLeg = new THREE.Mesh(
-    new THREE.BoxGeometry(0.16, 0.5, 0.18),
-    new THREE.MeshLambertMaterial({ color: 0x2a2a28 }) // Dark
-  );
-  leftLeg.position.set(-0.1, 0.25, 0);
-  group.add(leftLeg);
-
-  const rightLeg = new THREE.Mesh(
-    new THREE.BoxGeometry(0.16, 0.5, 0.18),
-    new THREE.MeshLambertMaterial({ color: 0x2a2a28 })
-  );
-  rightLeg.position.set(0.1, 0.25, 0);
-  group.add(rightLeg);
-
-  // Head
-  const head = new THREE.Mesh(
-    new THREE.BoxGeometry(0.3, 0.3, 0.26),
-    new THREE.MeshLambertMaterial({ color: 0xd4a574 })
-  );
-  head.position.y = 1.18;
-  group.add(head);
-
-  // Short grey-black hair, pulled back
-  const hair = new THREE.Mesh(
-    new THREE.BoxGeometry(0.32, 0.12, 0.28),
-    new THREE.MeshLambertMaterial({ color: 0x4a4a4a }) // Grey
-  );
-  hair.position.y = 1.36;
-  group.add(hair);
-
-  // Small bun
-  const bun = new THREE.Mesh(
-    new THREE.SphereGeometry(0.08, 6, 6),
-    new THREE.MeshLambertMaterial({ color: 0x4a4a4a })
-  );
-  bun.position.set(0, 1.3, -0.16);
-  group.add(bun);
-
-  // Eyes
-  const leftEye = new THREE.Mesh(
-    new THREE.SphereGeometry(0.035, 6, 6),
-    new THREE.MeshBasicMaterial({ color: 0x2a1a0a })
-  );
-  leftEye.position.set(-0.07, 1.19, 0.13);
-  group.add(leftEye);
-
-  const rightEye = new THREE.Mesh(
-    new THREE.SphereGeometry(0.035, 6, 6),
-    new THREE.MeshBasicMaterial({ color: 0x2a1a0a })
-  );
-  rightEye.position.set(0.07, 1.19, 0.13);
-  group.add(rightEye);
-
-  // Arms
-  const leftArm = new THREE.Mesh(
-    new THREE.BoxGeometry(0.09, 0.38, 0.09),
-    new THREE.MeshLambertMaterial({ color: 0x6b4423 })
-  );
-  leftArm.position.set(-0.26, 0.7, 0);
-  group.add(leftArm);
-
-  const rightArm = new THREE.Mesh(
-    new THREE.BoxGeometry(0.09, 0.38, 0.09),
-    new THREE.MeshLambertMaterial({ color: 0x6b4423 })
-  );
-  rightArm.position.set(0.26, 0.7, 0);
-  group.add(rightArm);
-
-  // Hands
-  const leftHand = new THREE.Mesh(
-    new THREE.BoxGeometry(0.07, 0.09, 0.07),
-    new THREE.MeshLambertMaterial({ color: 0xd4a574 })
-  );
-  leftHand.position.set(-0.26, 0.46, 0);
-  group.add(leftHand);
-
-  const rightHand = new THREE.Mesh(
-    new THREE.BoxGeometry(0.07, 0.09, 0.07),
-    new THREE.MeshLambertMaterial({ color: 0xd4a574 })
-  );
-  rightHand.position.set(0.26, 0.46, 0);
-  group.add(rightHand);
-
-  return group;
-}
-
-// Chan Kwong - Entrepreneur, smart casual, confident posture
-function createChanKwongNPC(): THREE.Group {
-  const group = new THREE.Group();
-
-  // Button-up shirt (businessman style)
-  const torso = new THREE.Mesh(
-    new THREE.BoxGeometry(0.4, 0.5, 0.25),
-    new THREE.MeshLambertMaterial({ color: 0xf5f5dc }) // Cream/beige
-  );
-  torso.position.y = 0.75;
-  group.add(torso);
-
-  // Shirt buttons
-  for (let i = 0; i < 4; i++) {
-    const button = new THREE.Mesh(
-      new THREE.SphereGeometry(0.015, 4, 4),
-      new THREE.MeshLambertMaterial({ color: 0x8b4513 })
-    );
-    button.position.set(0, 0.9 - i * 0.1, 0.13);
-    group.add(button);
-  }
-
-  // Dark slacks
-  const leftLeg = new THREE.Mesh(
-    new THREE.BoxGeometry(0.15, 0.5, 0.16),
-    new THREE.MeshLambertMaterial({ color: 0x1a1a1a }) // Black
-  );
-  leftLeg.position.set(-0.1, 0.25, 0);
-  group.add(leftLeg);
-
-  const rightLeg = new THREE.Mesh(
-    new THREE.BoxGeometry(0.15, 0.5, 0.16),
-    new THREE.MeshLambertMaterial({ color: 0x1a1a1a })
-  );
-  rightLeg.position.set(0.1, 0.25, 0);
-  group.add(rightLeg);
-
-  // Head
-  const head = new THREE.Mesh(
-    new THREE.BoxGeometry(0.32, 0.32, 0.28),
-    new THREE.MeshLambertMaterial({ color: 0xd4a574 })
-  );
-  head.position.y = 1.2;
-  group.add(head);
-
-  // Neat black hair, side-parted
-  const hair = new THREE.Mesh(
-    new THREE.BoxGeometry(0.34, 0.1, 0.3),
-    new THREE.MeshLambertMaterial({ color: 0x0a0a0a })
-  );
-  hair.position.y = 1.42;
-  group.add(hair);
-
-  // Eyes
-  const leftEye = new THREE.Mesh(
-    new THREE.SphereGeometry(0.04, 6, 6),
-    new THREE.MeshBasicMaterial({ color: 0x111111 })
-  );
-  leftEye.position.set(-0.08, 1.22, 0.14);
-  group.add(leftEye);
-
-  const rightEye = new THREE.Mesh(
-    new THREE.SphereGeometry(0.04, 6, 6),
-    new THREE.MeshBasicMaterial({ color: 0x111111 })
-  );
-  rightEye.position.set(0.08, 1.22, 0.14);
-  group.add(rightEye);
-
-  // Arms
-  const leftArm = new THREE.Mesh(
-    new THREE.BoxGeometry(0.1, 0.4, 0.1),
-    new THREE.MeshLambertMaterial({ color: 0xf5f5dc })
-  );
-  leftArm.position.set(-0.28, 0.7, 0);
-  group.add(leftArm);
-
-  const rightArm = new THREE.Mesh(
-    new THREE.BoxGeometry(0.1, 0.4, 0.1),
-    new THREE.MeshLambertMaterial({ color: 0xf5f5dc })
-  );
-  rightArm.position.set(0.28, 0.7, 0);
-  group.add(rightArm);
-
-  // Hands
-  const leftHand = new THREE.Mesh(
-    new THREE.BoxGeometry(0.08, 0.1, 0.08),
-    new THREE.MeshLambertMaterial({ color: 0xd4a574 })
-  );
-  leftHand.position.set(-0.28, 0.45, 0);
-  group.add(leftHand);
-
-  const rightHand = new THREE.Mesh(
-    new THREE.BoxGeometry(0.08, 0.1, 0.08),
-    new THREE.MeshLambertMaterial({ color: 0xd4a574 })
-  );
-  rightHand.position.set(0.28, 0.45, 0);
-  group.add(rightHand);
-
-  return group;
-}
-
-// Dr. Wong - Unlicensed dentist, older, white coat, glasses
-function createDrWongNPC(): THREE.Group {
-  const group = new THREE.Group();
-
-  // White medical coat
-  const coat = new THREE.Mesh(
-    new THREE.BoxGeometry(0.44, 0.65, 0.28),
-    new THREE.MeshLambertMaterial({ color: 0xf8f8f8 }) // White
-  );
-  coat.position.y = 0.68;
-  group.add(coat);
-
-  // Darker pants under coat
-  const leftLeg = new THREE.Mesh(
-    new THREE.BoxGeometry(0.14, 0.35, 0.16),
-    new THREE.MeshLambertMaterial({ color: 0x2a2a2a })
-  );
-  leftLeg.position.set(-0.1, 0.18, 0);
-  group.add(leftLeg);
-
-  const rightLeg = new THREE.Mesh(
-    new THREE.BoxGeometry(0.14, 0.35, 0.16),
-    new THREE.MeshLambertMaterial({ color: 0x2a2a2a })
-  );
-  rightLeg.position.set(0.1, 0.18, 0);
-  group.add(rightLeg);
-
-  // Head - older
-  const head = new THREE.Mesh(
-    new THREE.BoxGeometry(0.32, 0.32, 0.28),
-    new THREE.MeshLambertMaterial({ color: 0xc49a6c }) // Weathered
-  );
-  head.position.y = 1.2;
-  group.add(head);
-
-  // Grey/white hair
-  const hair = new THREE.Mesh(
-    new THREE.BoxGeometry(0.3, 0.08, 0.26),
-    new THREE.MeshLambertMaterial({ color: 0x9a9a9a }) // Grey
-  );
-  hair.position.y = 1.4;
-  group.add(hair);
-
-  // Glasses frames
-  const glassFrame = new THREE.Mesh(
-    new THREE.BoxGeometry(0.32, 0.06, 0.02),
-    new THREE.MeshLambertMaterial({ color: 0x2a2a2a })
-  );
-  glassFrame.position.set(0, 1.22, 0.15);
-  group.add(glassFrame);
-
-  // Left lens
-  const leftLens = new THREE.Mesh(
-    new THREE.BoxGeometry(0.1, 0.08, 0.01),
-    new THREE.MeshLambertMaterial({ color: 0xaaddff, transparent: true, opacity: 0.3 })
-  );
-  leftLens.position.set(-0.08, 1.22, 0.15);
-  group.add(leftLens);
-
-  // Right lens
-  const rightLens = new THREE.Mesh(
-    new THREE.BoxGeometry(0.1, 0.08, 0.01),
-    new THREE.MeshLambertMaterial({ color: 0xaaddff, transparent: true, opacity: 0.3 })
-  );
-  rightLens.position.set(0.08, 1.22, 0.15);
-  group.add(rightLens);
-
-  // Eyes behind glasses
-  const leftEye = new THREE.Mesh(
-    new THREE.SphereGeometry(0.03, 6, 6),
-    new THREE.MeshBasicMaterial({ color: 0x111111 })
-  );
-  leftEye.position.set(-0.08, 1.21, 0.14);
-  group.add(leftEye);
-
-  const rightEye = new THREE.Mesh(
-    new THREE.SphereGeometry(0.03, 6, 6),
-    new THREE.MeshBasicMaterial({ color: 0x111111 })
-  );
-  rightEye.position.set(0.08, 1.21, 0.14);
-  group.add(rightEye);
-
-  // Arms
-  const leftArm = new THREE.Mesh(
-    new THREE.BoxGeometry(0.1, 0.4, 0.1),
-    new THREE.MeshLambertMaterial({ color: 0xf8f8f8 })
-  );
-  leftArm.position.set(-0.3, 0.7, 0);
-  group.add(leftArm);
-
-  const rightArm = new THREE.Mesh(
-    new THREE.BoxGeometry(0.1, 0.4, 0.1),
-    new THREE.MeshLambertMaterial({ color: 0xf8f8f8 })
-  );
-  rightArm.position.set(0.3, 0.7, 0);
-  group.add(rightArm);
-
-  // Hands
-  const leftHand = new THREE.Mesh(
-    new THREE.BoxGeometry(0.08, 0.1, 0.08),
-    new THREE.MeshLambertMaterial({ color: 0xc49a6c })
-  );
-  leftHand.position.set(-0.3, 0.45, 0);
-  group.add(leftHand);
-
-  const rightHand = new THREE.Mesh(
-    new THREE.BoxGeometry(0.08, 0.1, 0.08),
-    new THREE.MeshLambertMaterial({ color: 0xc49a6c })
-  );
-  rightHand.position.set(0.3, 0.45, 0);
-  group.add(rightHand);
-
-  return group;
-}
-
-// Helper function to create historical NPC by scroll ID
-function createHistoricalNPC(scrollId: number): THREE.Group {
-  switch (scrollId) {
-    case 1:
-      return createJackiePullingerNPC();
-    case 2:
-      return createAlbertNgNPC();
-    case 3:
-      return createChanWaiShuiNPC();
-    case 4:
-      return createHuiTungChoyNPC();
-    case 5:
-      return createIdaShumNPC();
-    case 6:
-      return createChanKwongNPC();
-    case 7:
-      return createDrWongNPC();
-    default:
-      return createPersonMesh();
-  }
 }
 
 // Create a fox mesh
@@ -3313,13 +2528,6 @@ function spawnOutdoorNPCs() {
         ) {
           const scrollId = scrollsForOutdoor[outdoorScrollsAssigned];
           if (scrollId !== undefined) {
-            // Replace generic mesh with historical character mesh
-            outdoorScene.remove(mesh);
-            mesh = createHistoricalNPC(scrollId);
-            mesh.position.set(x, 0, z);
-            outdoorScene.add(mesh);
-            npcData.mesh = mesh;
-
             npcData.hasScroll = true;
             npcData.scrollId = scrollId;
             npcData.scrollCollected = false;
@@ -3413,13 +2621,6 @@ function spawnIndoorNPCs(buildingIdx: number, floorIdx: number, floorW: number, 
     if (type === 'person' && indoorScrollsAssigned < scrollsForIndoor.length && i === 0) {
       const scrollId = scrollsForIndoor[indoorScrollsAssigned];
       if (scrollId !== undefined) {
-        // Replace generic mesh with historical character mesh
-        indoorScene.remove(mesh);
-        mesh = createHistoricalNPC(scrollId);
-        mesh.position.set(x, 0, z);
-        indoorScene.add(mesh);
-        npcData.mesh = mesh;
-
         npcData.hasScroll = true;
         npcData.scrollId = scrollId;
         npcData.scrollCollected = false;
@@ -7356,9 +6557,7 @@ function openScrollViewer() {
         <div class="scroll-item-preview">${scroll.excerpt}</div>
         <div class="scroll-item-full">${scroll.fullText}</div>
       `;
-      item.addEventListener('click', (e) => {
-        // Don't toggle if clicking a link
-        if ((e.target as HTMLElement).tagName === 'A') return;
+      item.addEventListener('click', () => {
         item.classList.toggle('expanded');
       });
     } else {
@@ -7397,12 +6596,10 @@ function showNPCDialogue(npc: NPC) {
     // NPC has a scroll to give
     const scroll = scrollData.find((s) => s.id === npc.scrollId);
     if (scroll) {
-      // Extract character name from scroll name (format: "Name - Title")
-      const characterName = scroll.name.split(' - ')[0] ?? 'A STRANGER';
-      npcDialogueHeader.textContent = characterName.toUpperCase();
+      npcDialogueHeader.textContent = 'A STRANGER APPROACHES...';
       npcDialogueText.textContent = scroll.excerpt;
       npcDialogueAccept.classList.remove('hidden');
-      npcDialogueAccept.textContent = 'HEAR THEIR STORY';
+      npcDialogueAccept.textContent = 'ACCEPT SCROLL';
     }
   } else {
     // Regular NPC dialogue
