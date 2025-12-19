@@ -2049,6 +2049,8 @@ interface NPC {
   // Supernatural character properties
   characterId?: string;
   characterName?: string;
+  // Historical character flag (real KWC residents)
+  isHistorical?: boolean;
 }
 
 // ============================================
@@ -2233,10 +2235,263 @@ const supernaturalCharacters: SupernaturalCharacter[] = [
   },
 ];
 
+// ============================================
+// HISTORICAL CHARACTERS - Real people from Kowloon Walled City
+// ============================================
+interface HistoricalCharacter {
+  id: string;
+  name: string;
+  occupation: string;
+  story: string; // 200-word story
+  source: string;
+  sourceUrl: string;
+  appearance: {
+    skinColor: number;
+    clothColor: number;
+    pantsColor: number;
+    hairColor: number;
+    accessory?: string;
+    gender: 'male' | 'female';
+    age: 'young' | 'middle' | 'elderly';
+  };
+  interactions: {
+    greeting: string;
+    backstory: string;
+    farewell: string;
+  };
+}
+
+// 10 real people from Kowloon Walled City based on documented accounts
+const historicalCharacters: HistoricalCharacter[] = [
+  {
+    id: 'jackie_pullinger',
+    name: 'Jackie Pullinger',
+    occupation: 'Missionary',
+    story: `I arrived in Hong Kong in 1966 with just ten dollars and a dream. Everyone told me I was foolish—a young English woman with no mission board, no support, walking into the darkest corner of Kowloon. The Walled City was called "Hak Nam"—the City of Darkness. When I first entered those narrow alleys, I understood why. No sunlight reached the lower floors. Water dripped constantly. The air smelled of opium and despair. I started a youth club in a tiny room, offering ping pong and a listening ear. The Triad boys laughed at me, smeared sewage on my walls, destroyed my equipment. But I didn't leave. Slowly, something changed. Drug addicts began finding freedom. Gang members started asking questions. A Triad boss sent guards to protect my club. For decades I watched transformation happen in the most hopeless place imaginable. The Walled City taught me that darkness isn't the absence of light—it's where light matters most. These alleys held more courage and community than any place I've known.`,
+    source: 'South China Morning Post',
+    sourceUrl: 'https://www.scmp.com/lifestyle/article/2048647/britons-50-years-helping-hong-kong-addicts-beat-drugs-and-find-god',
+    appearance: {
+      skinColor: 0xf5d0c5,
+      clothColor: 0x4a6a8a,
+      pantsColor: 0x3a3a4a,
+      hairColor: 0x8a6a4a,
+      gender: 'female',
+      age: 'middle',
+    },
+    interactions: {
+      greeting: 'Welcome to Hak Nam. Are you lost, or searching for something?',
+      backstory: 'Let me tell you about this place and its people...',
+      farewell: 'Remember—light matters most in the darkest places.',
+    },
+  },
+  {
+    id: 'heung_yin_king',
+    name: 'Heung Yin-king',
+    occupation: 'Resident (Eldest Daughter)',
+    story: `Our family of six moved here from a rooftop hut in Hung Hom in the 1960s. That first home was only 70 square feet, shared with seven other families near Tung Tau Chuen Road. There wasn't even space for a dinner table—we ate from a board laid over Mother's knitting machine while sitting on the bed. But we were happy. So many children to play with! Later we moved to a bigger flat on Tai Cheng Street, fourth floor. No running water though. As the eldest daughter, hauling buckets from the communal tap became my job. Up four floors, every single day. My arms grew strong but I stopped growing tall—that's my joke anyway. People outside thought we were poor and miserable. They didn't understand. We celebrated festivals together, watched out for each other's children, shared food when times were hard. The walls pressed close but somehow our hearts had room. When they demolished the City, I cried. Not for the building—for the community we'd never find again.`,
+    source: 'The Travel Club',
+    sourceUrl: 'https://www.thetravelclub.org/articles/travelogues/664-kowloon-walled-city-life-in-the-city-of-darkness',
+    appearance: {
+      skinColor: 0xe8c4a8,
+      clothColor: 0x8a5a6a,
+      pantsColor: 0x4a4a5a,
+      hairColor: 0x1a1a1a,
+      gender: 'female',
+      age: 'young',
+    },
+    interactions: {
+      greeting: 'You look tired. The stairs here will do that to you.',
+      backstory: 'Sit, rest. Let me tell you about growing up in these walls...',
+      farewell: 'Take care on those steps. And drink water!',
+    },
+  },
+  {
+    id: 'lam_po_chun',
+    name: 'Lam Po-chun',
+    occupation: 'Postman',
+    story: `For twelve years, from 1979 to 1989, I delivered mail to the most densely populated place on Earth. My route covered 350 buildings, 8,500 premises, over 33,000 residents—all crammed into an area smaller than a city block. There were no proper addresses, just floors stacked upon floors, rooms carved from rooms. I learned every alley, every stairwell, every shortcut across rooftops. The job had dangers you wouldn't expect. Once I dropped a letter into a mailbox and got electrocuted—a wire was touching the metal. I also never saw rats so big anywhere else in Hong Kong. They were like cats, fearless, staring at you from the pipes. But I loved my work. I knew everyone. Old Mrs. Law on the third floor, Mr. Chan with his seven cats, the noodle maker whose children did homework on flour-covered benches. They trusted me with their letters, their news from distant family, their connection to the outside world. When the City came down, a piece of me went with it.`,
+    source: 'Hive Life',
+    sourceUrl: 'https://hivelife.com/city-of-darkness/',
+    appearance: {
+      skinColor: 0xd4a574,
+      clothColor: 0x2a5a3a,
+      pantsColor: 0x3a3a3a,
+      hairColor: 0x2a2a2a,
+      accessory: 'hat',
+      gender: 'male',
+      age: 'middle',
+    },
+    interactions: {
+      greeting: 'Letter for you? No? Then perhaps a story instead.',
+      backstory: 'I walked every inch of this maze for twelve years...',
+      farewell: 'Stay dry—everything leaks here.',
+    },
+  },
+  {
+    id: 'hui_tung_choy',
+    name: 'Hui Tung-choy',
+    occupation: 'Noodle Factory Owner',
+    story: `My noodle factory was my home and my home was my factory—there was no difference. By day, my workers and I mixed flour, rolled dough, cut and dried noodles on wooden racks. The air was thick with flour dust. By night, when the machines stopped, my wife and two daughters joined me. We laid boards across the work benches for sleeping. The children did their homework on surfaces still dusty with flour, their papers sometimes stuck to dried dough. People ask how we lived like that. I ask them: how else would we live? Rent outside was impossible. Here, I could work and watch my daughters grow. They played in the corridors with the other children, knew every neighbor, learned that community matters more than space. My noodles fed thousands across Kowloon. Some said eighty percent of the fishballs in Hong Kong came from the Walled City. We worked hard, lived simply, and never felt poor because we had what mattered—family, purpose, belonging.`,
+    source: 'Industrial History of Hong Kong',
+    sourceUrl: 'https://industrialhistoryhk.org/kowloon-walled-city/',
+    appearance: {
+      skinColor: 0xd4a574,
+      clothColor: 0xeeeeee,
+      pantsColor: 0x5a5a5a,
+      hairColor: 0x2a2a2a,
+      gender: 'male',
+      age: 'middle',
+    },
+    interactions: {
+      greeting: 'Careful of the flour—it gets everywhere.',
+      backstory: 'This bench? My daughters sleep here at night...',
+      farewell: 'Try our noodles sometime. Best in Kowloon!',
+    },
+  },
+  {
+    id: 'chan_pak',
+    name: 'Chan Pak',
+    occupation: 'Grocery Store Owner',
+    story: `My shop on Lung Chun Back Road was small—barely room for me, my goods, and my cats. Seven cats I had, all rescued from the alleys. People laughed at first, said a grocer shouldn't keep so many animals around food. But those cats kept the rats away, and in the Walled City, rats were bigger than you'd believe. My customers understood. They'd come for rice, oil, vegetables, but they'd stay to pet the cats, share gossip, catch their breath from the endless stairs. The shop became more than a business—it was a rest stop, a meeting point, a place to feel normal. I knew who was sick, who was struggling, whose children had passed their exams. News traveled through my store faster than any newspaper. When someone couldn't pay, I wrote it in my book. Most paid eventually. Those who couldn't, I forgave. We were all surviving together. The City wasn't just buildings stacked on buildings. It was people stacked on people, holding each other up.`,
+    source: 'City of Darkness by Greg Girard and Ian Lambot',
+    sourceUrl: 'https://www.mplus.org.hk/en/magazine/exploring-kowloon-walled-city-photographic-journey/',
+    appearance: {
+      skinColor: 0xc9a882,
+      clothColor: 0x6a5a4a,
+      pantsColor: 0x4a4a4a,
+      hairColor: 0x5a5a5a,
+      gender: 'male',
+      age: 'elderly',
+    },
+    interactions: {
+      greeting: 'Mind the cats. They think they own the place.',
+      backstory: 'Running this shop taught me everything about our community...',
+      farewell: 'Come back soon. The cats will miss you.',
+    },
+  },
+  {
+    id: 'albert_ng',
+    name: 'Albert Ng (Ng Kam-po)',
+    occupation: 'Former Child Resident',
+    story: `We moved to the Walled City because it was cheap. That's the simple truth—my family couldn't afford anywhere else. What I remember most is the darkness. Walking through those alleys, water dripping constantly from pipes overhead, never seeing sunlight until you reached the rooftops. But for a child, it was an adventure. We played ping-pong in the corridors, racing through passages we knew by heart. The rooftops were our playground—we'd leap from building to building, drag old mattresses up there and jump on them for hours. Looking back, it was dangerous. We didn't know better. To us, it was just home. The adults worked constantly, cramped in tiny factories and shops, but they always watched out for us kids. There was trust in those walls. We walked to school through the maze of alleys and never felt afraid. The criminals kept to themselves, and the community protected its own. It wasn't romantic living there. But we had hope. That's what outsiders never understood—we always had hope.`,
+    source: 'Asia Society',
+    sourceUrl: 'https://asiasociety.org/hong-kong/life-kowloon-walled-city',
+    appearance: {
+      skinColor: 0xd4a574,
+      clothColor: 0x4a5a6a,
+      pantsColor: 0x2a2a3a,
+      hairColor: 0x1a1a1a,
+      gender: 'male',
+      age: 'young',
+    },
+    interactions: {
+      greeting: 'Hey! Want to see the rooftops? Best view in Kowloon.',
+      backstory: 'Growing up here was like living in a vertical village...',
+      farewell: 'Race you to the top floor!',
+    },
+  },
+  {
+    id: 'law_yu_yi',
+    name: 'Law Yu-yi',
+    occupation: 'Elderly Resident',
+    story: `Ninety years I have lived, many of them in this small, humid flat off Lung Chun First Alley. My son passed years ago, but his wife still cares for me—that is the old way, the proper way. Our room is barely larger than a closet, but we have a window that catches morning light, and that is more than many can say in this place. I have watched the City grow like bamboo shooting upward, each year another floor, another family, another story stacked on top of ours. The young people complain about the damp, the noise, the cramped spaces. They don't remember what came before. War, hunger, uncertainty. Here at least we have walls, neighbors who check on us, doctors who don't ask for papers. I light incense each morning at our small shrine and give thanks. Not for luxury—for safety, for community, for another day. When I die, I hope my spirit stays in these walls. This is home.`,
+    source: 'City of Darkness by Greg Girard and Ian Lambot',
+    sourceUrl: 'https://hivelife.com/city-of-darkness/',
+    appearance: {
+      skinColor: 0xc9a882,
+      clothColor: 0x3a3a4a,
+      pantsColor: 0x2a2a3a,
+      hairColor: 0xaaaaaa,
+      gender: 'female',
+      age: 'elderly',
+    },
+    interactions: {
+      greeting: 'Sit, child. My old bones don\'t move so fast anymore.',
+      backstory: 'Ninety years I have seen. Let me tell you what matters...',
+      farewell: 'May your ancestors watch over you.',
+    },
+  },
+  {
+    id: 'kwok_tsan_ming',
+    name: 'Kwok Tsan-ming',
+    occupation: 'Fishball Factory Worker',
+    story: `Every morning at four, I'm standing over the fryer on Kwong Ming Street, ladling fishballs until my arms ache. They say more than eighty percent of the fishballs eaten in Kowloon come from inside these walls. I believe it—there are dozens of factories like ours, all producing day and night. The work is hot, the hours are long, and the smell of fish oil soaks into everything you own. But it's honest work. I came here with nothing, no papers, no connections. The Walled City didn't ask questions. If you could work, you could stay. My boss is fair, pays on time, lets me sleep in the back room. The other workers have become family. We share meals, share stories, share the exhaustion of another sixteen-hour shift. Outsiders see only the crowded buildings and dark alleys. They don't taste what we create—golden, crispy fishballs that bring people joy across the city. Our hands may be rough, but our work feeds thousands.`,
+    source: 'Industrial History of Hong Kong',
+    sourceUrl: 'https://industrialhistoryhk.org/kowloon-walled-city/',
+    appearance: {
+      skinColor: 0xd4a574,
+      clothColor: 0xeeeeee,
+      pantsColor: 0x4a4a5a,
+      hairColor: 0x2a2a2a,
+      accessory: 'apron',
+      gender: 'male',
+      age: 'young',
+    },
+    interactions: {
+      greeting: 'Fresh fishballs! Still hot from the fryer.',
+      backstory: 'You want to know about the fishball trade? Let me tell you...',
+      farewell: 'Come back hungry next time!',
+    },
+  },
+  {
+    id: 'ng_kam_mui',
+    name: 'Ng Kam-mui',
+    occupation: 'Cafe Owner',
+    story: `The Chung Fat Cafe sits right at the edge of the City, on Tung Tau Tsuen Road where the walls meet the outside world. That location was no accident—taxi drivers love us. They pull up between fares, step in for hot milk tea and conversation, then disappear back into the streets. My cashier's desk faces the door so I can greet everyone who enters. I know the regulars by name, know their problems and their joys. A cafe in the Walled City is more than a business. We're a bridge between the darkness inside and the bright chaos outside. Drivers bring news from across Hong Kong. Residents come for a taste of normalcy. The tea is strong, the toast is crispy, and the talk is free. Some say the Walled City was lawless, dangerous, unfit for decent people. They never sat in my cafe, never watched neighbors laugh together, never saw the taxi drivers leave bigger tips than necessary because they knew times were hard. This place had heart.`,
+    source: 'City of Darkness by Greg Girard and Ian Lambot',
+    sourceUrl: 'https://www.mplus.org.hk/en/magazine/exploring-kowloon-walled-city-photographic-journey/',
+    appearance: {
+      skinColor: 0xd4a574,
+      clothColor: 0x8a4a4a,
+      pantsColor: 0x3a3a3a,
+      hairColor: 0x3a3a3a,
+      gender: 'female',
+      age: 'middle',
+    },
+    interactions: {
+      greeting: 'Tea? Coffee? Sit anywhere—all seats are good seats.',
+      backstory: 'Every taxi driver in Kowloon knows this cafe...',
+      farewell: 'Don\'t be a stranger. The kettle\'s always hot.',
+    },
+  },
+  {
+    id: 'dr_wong',
+    name: 'Dr. Wong',
+    occupation: 'Unlicensed Dentist',
+    story: `I trained in Guangzhou, graduated top of my class, practiced for fifteen years on the mainland. Then I came to Hong Kong and learned my qualifications meant nothing here. The British wouldn't recognize Chinese degrees. So I had a choice: abandon everything I knew or find somewhere that didn't ask for papers. The Walled City welcomed me. My clinic is small but clean—I insist on that. Sterilized tools, proper lighting, fair prices. My patients are workers who can't afford the licensed dentists outside, families who trust skill over certificates. Some colleagues here learned through apprenticeship, not formal school. We don't judge each other. What matters is the work—easing pain, fixing problems, treating everyone with dignity. The authorities call us illegal. My patients call us lifesavers. When the City was demolished, many of us scattered. But those skills, that knowledge, it doesn't disappear with the walls. I still fix teeth. I just had to learn to hide better.`,
+    source: 'Atlas Obscura',
+    sourceUrl: 'https://www.atlasobscura.com/articles/kowloon-walled-city',
+    appearance: {
+      skinColor: 0xd4a574,
+      clothColor: 0xffffff,
+      pantsColor: 0x4a4a5a,
+      hairColor: 0x4a4a4a,
+      accessory: 'glasses',
+      gender: 'male',
+      age: 'middle',
+    },
+    interactions: {
+      greeting: 'Any tooth pain? I can help with that.',
+      backstory: 'My diploma may not be recognized, but my skills are real...',
+      farewell: 'Remember to brush twice daily!',
+    },
+  },
+];
+
+// Create scroll data for historical characters (IDs 11-20, bonus scrolls)
+const historicalScrollData: Scroll[] = historicalCharacters.map((char, idx) => ({
+  id: idx + 11, // Scroll IDs 11-20
+  name: char.name,
+  excerpt: `"${char.story.substring(0, 100)}..."`,
+  fullText: `${char.story}\n\n— ${char.name}, ${char.occupation}\nSource: ${char.sourceUrl}`,
+  characterId: char.id,
+}));
+
 // Dialogue state for multi-step conversations
 type DialogueStage = 'greeting' | 'backstory' | 'accept' | 'farewell' | 'closed';
 let currentDialogueStage: DialogueStage = 'closed';
 let isHoodlumDialogue = false;
+let isHistoricalDialogue = false;
 
 // ============================================
 // SCROLL SYSTEM - Ancient wisdom from supernatural characters
@@ -2249,13 +2504,16 @@ interface Scroll {
   characterId: string;
 }
 
-const scrollData: Scroll[] = supernaturalCharacters.map((char, idx) => ({
+const supernaturalScrollData: Scroll[] = supernaturalCharacters.map((char, idx) => ({
   id: idx + 1,
   name: char.name,
   excerpt: `"${char.scrollQuote}"`,
   fullText: `${char.scrollQuote}\n\n— ${char.name}, from "${char.story}"\nSource: ${char.source}`,
   characterId: char.id,
 }));
+
+// Combined scroll data: supernatural (1-10) + historical bonus scrolls (11-20)
+const scrollData: Scroll[] = [...supernaturalScrollData, ...historicalScrollData];
 
 // Track collected scrolls by ID
 const collectedScrolls: number[] = [];
@@ -2267,6 +2525,136 @@ const assignedScrollIds: Set<number> = new Set();
 
 const outdoorNPCs: NPC[] = [];
 const indoorNPCs: NPC[] = [];
+
+// Create historical character mesh - solid (not ghostly) with unique appearance based on character data
+function createHistoricalMesh(characterId: string): THREE.Group {
+  const group = new THREE.Group();
+
+  const char = historicalCharacters.find(c => c.id === characterId);
+  if (!char) return createPersonMesh(); // Fallback
+
+  const { skinColor, clothColor, pantsColor, hairColor, accessory, gender, age } = char.appearance;
+
+  const skinMat = new THREE.MeshLambertMaterial({ color: skinColor });
+  const clothMat = new THREE.MeshLambertMaterial({ color: clothColor });
+  const pantsMat = new THREE.MeshLambertMaterial({ color: pantsColor });
+  const hairMat = new THREE.MeshLambertMaterial({ color: hairColor });
+
+  // Torso - slightly different proportions for gender
+  const torsoWidth = gender === 'female' ? 0.35 : 0.42;
+  const torso = new THREE.Mesh(new THREE.BoxGeometry(torsoWidth, 0.5, 0.25), clothMat);
+  torso.position.y = 0.75;
+  group.add(torso);
+
+  // Legs
+  const leftLeg = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.5, 0.16), pantsMat);
+  leftLeg.position.set(-0.1, 0.25, 0);
+  group.add(leftLeg);
+  const rightLeg = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.5, 0.16), pantsMat);
+  rightLeg.position.set(0.1, 0.25, 0);
+  group.add(rightLeg);
+
+  // Head - slightly smaller for females, more weathered look for elderly
+  const headSize = gender === 'female' ? 0.28 : 0.32;
+  const head = new THREE.Mesh(new THREE.BoxGeometry(headSize, 0.32, 0.28), skinMat);
+  head.position.y = 1.2;
+  group.add(head);
+
+  // Hair - different styles based on gender and age
+  if (age === 'elderly' && gender === 'female') {
+    // Bun style for elderly women
+    const bun = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), hairMat);
+    bun.position.set(0, 1.45, -0.05);
+    group.add(bun);
+    const hairBase = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.08, 0.3), hairMat);
+    hairBase.position.y = 1.4;
+    group.add(hairBase);
+  } else if (gender === 'female') {
+    // Longer hair for women
+    const hair = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.18, 0.32), hairMat);
+    hair.position.y = 1.42;
+    group.add(hair);
+    // Side hair
+    const leftHair = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.25, 0.2), hairMat);
+    leftHair.position.set(-0.18, 1.25, 0);
+    group.add(leftHair);
+    const rightHair = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.25, 0.2), hairMat);
+    rightHair.position.set(0.18, 1.25, 0);
+    group.add(rightHair);
+  } else {
+    // Standard male hair
+    const hair = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.12, 0.3), hairMat);
+    hair.position.y = 1.42;
+    group.add(hair);
+  }
+
+  // Eyes
+  const eyeMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
+  const eyeY = age === 'elderly' ? 1.18 : 1.22;
+  const leftEye = new THREE.Mesh(new THREE.SphereGeometry(0.035, 6, 6), eyeMat);
+  leftEye.position.set(-0.07, eyeY, 0.14);
+  group.add(leftEye);
+  const rightEye = new THREE.Mesh(new THREE.SphereGeometry(0.035, 6, 6), eyeMat);
+  rightEye.position.set(0.07, eyeY, 0.14);
+  group.add(rightEye);
+
+  // Arms
+  const leftArm = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.4, 0.1), clothMat);
+  leftArm.position.set(-0.28, 0.7, 0);
+  group.add(leftArm);
+  const rightArm = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.4, 0.1), clothMat);
+  rightArm.position.set(0.28, 0.7, 0);
+  group.add(rightArm);
+
+  // Hands
+  const leftHand = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.1, 0.08), skinMat);
+  leftHand.position.set(-0.28, 0.45, 0);
+  group.add(leftHand);
+  const rightHand = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.1, 0.08), skinMat);
+  rightHand.position.set(0.28, 0.45, 0);
+  group.add(rightHand);
+
+  // Accessories based on character
+  if (accessory === 'hat') {
+    // Postman's cap
+    const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.2, 0.1, 12), new THREE.MeshLambertMaterial({ color: 0x2a3a2a }));
+    cap.position.y = 1.48;
+    group.add(cap);
+    const brim = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.02, 0.15), new THREE.MeshLambertMaterial({ color: 0x2a3a2a }));
+    brim.position.set(0, 1.44, 0.1);
+    group.add(brim);
+  } else if (accessory === 'glasses') {
+    // Simple wire glasses
+    const glassesMat = new THREE.MeshLambertMaterial({ color: 0x333333 });
+    const leftLens = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.008, 6, 12), glassesMat);
+    leftLens.position.set(-0.07, 1.22, 0.15);
+    group.add(leftLens);
+    const rightLens = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.008, 6, 12), glassesMat);
+    rightLens.position.set(0.07, 1.22, 0.15);
+    group.add(rightLens);
+    const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.008, 0.008), glassesMat);
+    bridge.position.set(0, 1.22, 0.15);
+    group.add(bridge);
+  } else if (accessory === 'apron') {
+    // Work apron
+    const apron = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.4, 0.02), new THREE.MeshLambertMaterial({ color: 0xeeeeee }));
+    apron.position.set(0, 0.65, 0.14);
+    group.add(apron);
+  }
+
+  // Add a subtle golden glow to indicate they're special (different from supernatural blue)
+  const glowLight = new THREE.PointLight(0xffdd88, 0.3, 3);
+  glowLight.position.set(0, 1.0, 0);
+  group.add(glowLight);
+
+  // Name tag floating above - subtle indicator
+  const tagMat = new THREE.MeshBasicMaterial({ color: 0xffdd88 });
+  const tag = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.08, 0.02), tagMat);
+  tag.position.set(0, 1.7, 0);
+  group.add(tag);
+
+  return group;
+}
 
 // Create a person mesh - same style as player character
 function createPersonMesh(): THREE.Group {
@@ -3359,6 +3747,65 @@ function spawnSupernaturalCharacters() {
   }
 }
 
+// The historical characters who carry bonus scrolls (real KWC residents)
+const historicalNPCs: NPC[] = [];
+
+// Spawn the 10 historical characters at fixed locations throughout the city
+function spawnHistoricalCharacters() {
+  // Fixed spawn locations - different from supernatural characters, spread in different areas
+  const spawnLocations = [
+    { x: 5, z: -5 }, // Jackie Pullinger - near spawn, easy to find first
+    { x: -25, z: -15 }, // Heung Yin-king
+    { x: 20, z: -18 }, // Lam Po-chun (Postman)
+    { x: -12, z: -30 }, // Hui Tung-choy (Noodle Factory)
+    { x: 28, z: -35 }, // Chan Pak (Grocery Store)
+    { x: -30, z: -42 }, // Albert Ng
+    { x: 8, z: -48 }, // Law Yu-yi (Elderly)
+    { x: -18, z: -55 }, // Kwok Tsan-ming (Fishball Worker)
+    { x: 22, z: -58 }, // Ng Kam-mui (Cafe Owner)
+    { x: -5, z: -65 }, // Dr. Wong (Dentist)
+  ];
+
+  for (let i = 0; i < historicalCharacters.length; i++) {
+    const char = historicalCharacters[i];
+    if (!char) continue;
+
+    const location = spawnLocations[i] ?? {
+      x: Math.random() * 40 - 20,
+      z: -40 + Math.random() * 30,
+    };
+    const mesh = createHistoricalMesh(char.id);
+
+    mesh.position.set(location.x, 0, location.z); // On the ground (not floating like ghosts)
+    outdoorScene.add(mesh);
+
+    const scrollId = i + 11; // Scroll IDs 11-20 (bonus scrolls)
+
+    const npcData: NPC = {
+      mesh,
+      x: location.x,
+      z: location.z,
+      targetX: location.x + (Math.random() - 0.5) * 8,
+      targetZ: location.z + (Math.random() - 0.5) * 8,
+      speed: 0.025, // Move slowly - they're telling stories
+      type: 'person',
+      indoor: false,
+      buildingIdx: -1,
+      floorIdx: -1,
+      hasScroll: true,
+      scrollId,
+      scrollCollected: collectedScrolls.includes(scrollId),
+      characterId: char.id,
+      characterName: char.name,
+      isHistorical: true, // New flag to identify historical characters
+    };
+
+    historicalNPCs.push(npcData);
+    outdoorNPCs.push(npcData);
+    assignedScrollIds.add(scrollId);
+  }
+}
+
 // Spawn outdoor NPCs
 function spawnOutdoorNPCs() {
   // Spawn various NPCs in the city - increased counts
@@ -4084,6 +4531,8 @@ function updateSupernaturalCharacters() {
 spawnOutdoorNPCs();
 // Spawn supernatural characters (the 10 unique ghosts with scrolls)
 spawnSupernaturalCharacters();
+// Spawn historical characters (the 10 real KWC residents with bonus scrolls)
+spawnHistoricalCharacters();
 // Spawn ambient ghosts (wandering spectral figures)
 spawnAmbientGhosts();
 
@@ -8740,24 +9189,41 @@ function showNPCDialogue(npc: NPC) {
 
   currentDialogueNPC = npc;
   isHoodlumDialogue = false;
+  isHistoricalDialogue = npc.isHistorical ?? false;
 
   if (npc.hasScroll && !npc.scrollCollected && npc.scrollId !== undefined && npc.characterId) {
-    // Supernatural character with a scroll to give - start multi-step dialogue
-    const character = supernaturalCharacters.find((c) => c.id === npc.characterId);
-    if (character) {
+    // Character with a scroll to give - check if supernatural or historical
+    const supernaturalChar = supernaturalCharacters.find((c) => c.id === npc.characterId);
+    const historicalChar = historicalCharacters.find((c) => c.id === npc.characterId);
+
+    if (supernaturalChar) {
       currentDialogueStage = 'greeting';
-      npcDialogueHeader.textContent = character.name.toUpperCase();
-      npcDialogueText.textContent = `"${character.interactions.greeting}"`;
+      npcDialogueHeader.textContent = supernaturalChar.name.toUpperCase();
+      npcDialogueText.textContent = `"${supernaturalChar.interactions.greeting}"`;
       npcDialogueAccept.classList.remove('hidden');
       npcDialogueAccept.textContent = 'CONTINUE';
+    } else if (historicalChar) {
+      currentDialogueStage = 'greeting';
+      npcDialogueHeader.textContent = `${historicalChar.name.toUpperCase()} — ${historicalChar.occupation}`;
+      npcDialogueText.textContent = `"${historicalChar.interactions.greeting}"`;
+      npcDialogueAccept.classList.remove('hidden');
+      npcDialogueAccept.textContent = 'HEAR THEIR STORY';
     }
   } else if (npc.hasScroll && npc.scrollCollected && npc.characterId) {
     // Already collected this character's scroll - show farewell only
-    const character = supernaturalCharacters.find((c) => c.id === npc.characterId);
-    if (character) {
+    const supernaturalChar = supernaturalCharacters.find((c) => c.id === npc.characterId);
+    const historicalChar = historicalCharacters.find((c) => c.id === npc.characterId);
+
+    if (supernaturalChar) {
       currentDialogueStage = 'farewell';
-      npcDialogueHeader.textContent = character.name.toUpperCase();
-      npcDialogueText.textContent = `"${character.interactions.farewell}"`;
+      npcDialogueHeader.textContent = supernaturalChar.name.toUpperCase();
+      npcDialogueText.textContent = `"${supernaturalChar.interactions.farewell}"`;
+      npcDialogueAccept.classList.remove('hidden');
+      npcDialogueAccept.textContent = 'FAREWELL';
+    } else if (historicalChar) {
+      currentDialogueStage = 'farewell';
+      npcDialogueHeader.textContent = `${historicalChar.name.toUpperCase()} — ${historicalChar.occupation}`;
+      npcDialogueText.textContent = `"${historicalChar.interactions.farewell}"`;
       npcDialogueAccept.classList.remove('hidden');
       npcDialogueAccept.textContent = 'FAREWELL';
     }
@@ -8874,49 +9340,83 @@ function advanceDialogue() {
     return;
   }
 
-  // Handle supernatural character multi-step dialogue
-  const character = supernaturalCharacters.find((c) => c.id === currentDialogueNPC?.characterId);
-  if (!character) {
+  // Check if this is a historical or supernatural character
+  const supernaturalChar = supernaturalCharacters.find((c) => c.id === currentDialogueNPC?.characterId);
+  const historicalChar = historicalCharacters.find((c) => c.id === currentDialogueNPC?.characterId);
+
+  if (supernaturalChar) {
+    // Handle supernatural character multi-step dialogue
+    switch (currentDialogueStage) {
+      case 'greeting':
+        currentDialogueStage = 'backstory';
+        npcDialogueHeader.textContent = `${supernaturalChar.name.toUpperCase()} SPEAKS...`;
+        npcDialogueText.textContent = `"${supernaturalChar.scrollQuote}"`;
+        npcDialogueAccept.textContent = 'ACCEPT SCROLL';
+        break;
+
+      case 'backstory':
+        if (currentDialogueNPC.scrollId !== undefined) {
+          collectScroll(currentDialogueNPC.scrollId);
+          currentDialogueNPC.scrollCollected = true;
+        }
+        currentDialogueStage = 'accept';
+        npcDialogueHeader.textContent = 'SCROLL RECEIVED';
+        npcDialogueText.textContent = `"${supernaturalChar.interactions.congratulation}"\n\n"${supernaturalChar.interactions.handoff}"`;
+        npcDialogueAccept.textContent = 'CONTINUE';
+        break;
+
+      case 'accept':
+        currentDialogueStage = 'farewell';
+        npcDialogueHeader.textContent = supernaturalChar.name.toUpperCase();
+        npcDialogueText.textContent = `"${supernaturalChar.interactions.farewell}"`;
+        npcDialogueAccept.textContent = 'FAREWELL';
+        break;
+
+      case 'farewell':
+        closeNPCDialogue();
+        break;
+
+      default:
+        closeNPCDialogue();
+    }
+  } else if (historicalChar) {
+    // Handle historical character multi-step dialogue (real KWC residents)
+    switch (currentDialogueStage) {
+      case 'greeting':
+        currentDialogueStage = 'backstory';
+        npcDialogueHeader.textContent = `${historicalChar.name.toUpperCase()}'S STORY`;
+        // Show their full 200-word story
+        npcDialogueText.textContent = historicalChar.story;
+        npcDialogueAccept.textContent = 'SAVE THEIR MEMORY';
+        break;
+
+      case 'backstory':
+        if (currentDialogueNPC.scrollId !== undefined) {
+          collectScroll(currentDialogueNPC.scrollId);
+          currentDialogueNPC.scrollCollected = true;
+        }
+        currentDialogueStage = 'accept';
+        npcDialogueHeader.textContent = 'MEMORY PRESERVED';
+        npcDialogueText.textContent = `You have recorded the story of ${historicalChar.name}, ${historicalChar.occupation.toLowerCase()}.\n\nSource: ${historicalChar.sourceUrl}`;
+        npcDialogueAccept.textContent = 'CONTINUE';
+        break;
+
+      case 'accept':
+        currentDialogueStage = 'farewell';
+        npcDialogueHeader.textContent = `${historicalChar.name.toUpperCase()} — ${historicalChar.occupation}`;
+        npcDialogueText.textContent = `"${historicalChar.interactions.farewell}"`;
+        npcDialogueAccept.textContent = 'FAREWELL';
+        break;
+
+      case 'farewell':
+        closeNPCDialogue();
+        break;
+
+      default:
+        closeNPCDialogue();
+    }
+  } else {
     closeNPCDialogue();
-    return;
-  }
-
-  switch (currentDialogueStage) {
-    case 'greeting':
-      // Move to backstory - show the scroll quote
-      currentDialogueStage = 'backstory';
-      npcDialogueHeader.textContent = `${character.name.toUpperCase()} SPEAKS...`;
-      npcDialogueText.textContent = `"${character.scrollQuote}"`;
-      npcDialogueAccept.textContent = 'ACCEPT SCROLL';
-      break;
-
-    case 'backstory':
-      // Accept the scroll and show congratulation
-      if (currentDialogueNPC.scrollId !== undefined) {
-        collectScroll(currentDialogueNPC.scrollId);
-        currentDialogueNPC.scrollCollected = true;
-      }
-      currentDialogueStage = 'accept';
-      npcDialogueHeader.textContent = 'SCROLL RECEIVED';
-      npcDialogueText.textContent = `"${character.interactions.congratulation}"\n\n"${character.interactions.handoff}"`;
-      npcDialogueAccept.textContent = 'CONTINUE';
-      break;
-
-    case 'accept':
-      // Show farewell
-      currentDialogueStage = 'farewell';
-      npcDialogueHeader.textContent = character.name.toUpperCase();
-      npcDialogueText.textContent = `"${character.interactions.farewell}"`;
-      npcDialogueAccept.textContent = 'FAREWELL';
-      break;
-
-    case 'farewell':
-      // Close dialogue
-      closeNPCDialogue();
-      break;
-
-    default:
-      closeNPCDialogue();
   }
 }
 
@@ -9681,6 +10181,13 @@ function update() {
   if (keys.right) mx += currentSpeed;
   if (keys.up) mz -= currentSpeed;
   if (keys.down) mz += currentSpeed;
+
+  // Normalize diagonal movement so it's not faster
+  if (mx !== 0 && mz !== 0) {
+    const length = Math.sqrt(mx * mx + mz * mz);
+    mx = (mx / length) * currentSpeed;
+    mz = (mz / length) * currentSpeed;
+  }
 
   if (mx !== 0 || mz !== 0) {
     // Calculate facing direction - UP (negative Z) should face north

@@ -31,26 +31,32 @@ This template comes with a pre-configured cursor environment. To get started, [d
 
 ## Historical Sources
 
-The NPCs and stories in this game are based on real residents of Kowloon Walled City (1898-1993). Their accounts help preserve the memory of this unique community.
+The NPCs and stories in this game are based on real residents of Kowloon Walled City (1898-1993). Their accounts help preserve the memory of this unique community. You can find these 10 historical characters (with golden glows) throughout the city to hear their stories.
 
-### Featured Residents
+### Featured Residents (Bonus Scrolls 11-20)
 
-| Character            | Role                                              | Source                                           |
-| -------------------- | ------------------------------------------------- | ------------------------------------------------ |
-| **Jackie Pullinger** | British missionary, founded St. Stephen's Society | _Chasing the Dragon_ (memoir), BBC documentaries |
-| **Albert Ng**        | Childhood resident (1970s-1988), now pastor       | BBC World Service interviews, Island ECC         |
-| **Chan Wai Shui**    | Noodle factory owner, Lo Yan Street               | Industrial History HK archives                   |
-| **Hui Tung Choy**    | Family noodle factory operator                    | _City of Darkness Revisited_, The Guardian       |
-| **Ida Shum**         | Community member                                  | South China Morning Post (2024)                  |
-| **Chan Kwong**       | Golf ball factory entrepreneur                    | _City of Darkness Revisited_                     |
-| **Dr. Wong**         | Unlicensed dentist (archetype)                    | Multiple documentary sources                     |
+| Character | Role | Source URL |
+| --- | --- | --- |
+| **Jackie Pullinger** | British missionary who arrived in 1966, founded St. Stephen's Society | https://www.scmp.com/lifestyle/article/2048647/britons-50-years-helping-hong-kong-addicts-beat-drugs-and-find-god |
+| **Heung Yin-king** | Eldest daughter of a family of 6, hauled water up 4 floors daily | https://www.thetravelclub.org/articles/travelogues/664-kowloon-walled-city-life-in-the-city-of-darkness |
+| **Lam Po-chun** | Postman who delivered mail in the City for 12 years (1979-1989) | https://hivelife.com/city-of-darkness/ |
+| **Hui Tung-choy** | Noodle factory owner whose family lived in the workplace | https://industrialhistoryhk.org/kowloon-walled-city/ |
+| **Chan Pak** | Grocery store owner with 7 cats on Lung Chun Back Road | https://www.mplus.org.hk/en/magazine/exploring-kowloon-walled-city-photographic-journey/ |
+| **Albert Ng (Ng Kam-po)** | Childhood resident who played on rooftops | https://asiasociety.org/hong-kong/life-kowloon-walled-city |
+| **Law Yu-yi** | 90-year-old elderly resident, lived with daughter-in-law | https://hivelife.com/city-of-darkness/ |
+| **Kwok Tsan-ming** | Fishball factory worker on Kwong Ming Street | https://industrialhistoryhk.org/kowloon-walled-city/ |
+| **Ng Kam-mui** | Owner of Chung Fat Cafe on Tung Tau Tsuen Road | https://www.mplus.org.hk/en/magazine/exploring-kowloon-walled-city-photographic-journey/ |
+| **Dr. Wong** | Unlicensed dentist trained in Guangzhou | https://www.atlasobscura.com/articles/kowloon-walled-city |
 
 ### Primary Sources
 
-- Girard, G. & Lambot, I. _City of Darkness Revisited_ (2014) — Comprehensive photography and interviews
+- Girard, G. & Lambot, I. _City of Darkness: Life in Kowloon Walled City_ (1993) — Comprehensive photography and 32 extended interviews
+- Girard, G. & Lambot, I. _City of Darkness Revisited_ (2014) — Updated edition with new material
 - Pullinger, J. _Chasing the Dragon_ (1980) — First-hand account of missionary work
-- Wall Street Journal. "City of Imagination: Kowloon Walled City 20 Years Later" (2014)
-- South China Morning Post. "Remembering Hong Kong's 'City of Darkness'" (2024)
-- BBC World Service. Former resident interview series
-- Industrial History HK. Factory and manufacturing documentation
-- M+ Museum, Hong Kong. Suenn Ho's Kowloon Walled City Research Archive
+- Asia Society Hong Kong: https://asiasociety.org/hong-kong/life-kowloon-walled-city
+- South China Morning Post: https://www.scmp.com/lifestyle/article/2048647/britons-50-years-helping-hong-kong-addicts-beat-drugs-and-find-god
+- Industrial History of Hong Kong: https://industrialhistoryhk.org/kowloon-walled-city/
+- M+ Museum, Hong Kong: https://www.mplus.org.hk/en/magazine/exploring-kowloon-walled-city-photographic-journey/
+- Hive Life - City of Darkness: https://hivelife.com/city-of-darkness/
+- The Travel Club: https://www.thetravelclub.org/articles/travelogues/664-kowloon-walled-city-life-in-the-city-of-darkness
+- Atlas Obscura: https://www.atlasobscura.com/articles/kowloon-walled-city
